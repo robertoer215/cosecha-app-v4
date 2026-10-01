@@ -498,6 +498,7 @@ input.invalid{border-bottom-color:var(--danger)}
 .cocina[data-estado="confirmado"] .cocina-estado{color:var(--green)}
 .cocina[data-estado="sin_confirmar"] .cocina-estado{color:var(--muted-ink)}
 .cocina[data-estado="sin_confirmar"] .cocina-estado::before{background:transparent;border:1px solid currentColor}
+.cocina[data-estado="demo"] .cocina-estado{color:var(--accent-ink)}
 /* 268 px = 32 de padding + 13 líneas de 18px (12px x line-height 1.5). NO son 12
    líneas: el escalado lineal del máximo declarado antes (193px con 11px de letra)
    da 244px, que deja un cuarto de línea de margen, y los 6px de margin entre <p>
