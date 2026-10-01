@@ -24,12 +24,14 @@ Los datos del usuario viven SOLO en el dispositivo (`localStorage`, esquema vers
 |---|---|
 | Modo demo en producción | ✅ Publicado y verificado (0 contactos con n8n, plato completo) |
 | Colapso src/↔raíz | ✅ En `main` |
-| Shell 4 pestañas + Hoy | ✅ En `integracion`, 116 tests en verde |
+| Shell 4 pestañas + Hoy | ✅ En `integracion` |
 | js/almacen.js + js/temporizador.js | ✅ Integrados con sus tests |
-| js/diario.js + js/entreno.js | ⏳ Agentes construyendo; con el plazo del 2-oct se integran COMPLETOS (sin recortes de emergencia) |
-| Base de alimentos USDA (≥1.500) | ⏳ Pipeline en marcha (fdc.sqlite ya extraído); mientras tanto el Diario usa la base mínima de la carta (37 items, `scripts/base_minima_carta.mjs`) |
-| Ejercicios es-MX + rutinas | ⏳ En producción por agentes |
-| Excel en Drive | ⏳ Pendiente de la base de alimentos |
+| js/diario.js + js/entreno.js | ✅ Integrados; humo CDP del camino feliz completo en verde; **167 tests** |
+| Base de alimentos (1.510: USDA CC0 + carta) | ✅ 100 % con fuente/id/licencia, 0 duplicados, 187 desvíos 4/4/9 marcados, 2.133 porciones; **3 verificadores adversariales: 0 discrepancias**; round-trip Excel→JSON idéntico |
+| Ejercicios (876, es-MX) + 10 rutinas | ✅ 1:1 con free-exercise-db, revisión de entrenador (9 correcciones); rutinas con 97 ids verificados, 0 rotos |
+| Excel maestro | ✅ Versionado en `data/COSECHA_Base_Alimentos.xlsx` + [puntero en Drive](https://drive.google.com/file/d/1yqI7HJIjF7yItdDHdxsSMyHLXyV0GtQI/view). ⚠️ Bloqueo documentado: el conector de Drive exige el binario inline en base64 (258 K caracteres) — transcribirlo garantiza corrupción, así que el maestro queda en GitHub (versionado) y en Drive el puntero; arrastrarlo a Drive toma 10 s si se quiere la copia física |
+| Cobertura WHOOP | ✅ `docs/cobertura-whoop.md`: 286 nombres públicos contrastados |
+| Auditoría multi-rol | 🔄 Ronda 1 en curso (11 roles + 3 refutadores por hallazgo) |
 
 ## Decisiones tomadas y por qué
 
