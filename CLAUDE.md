@@ -1,9 +1,37 @@
-# Contexto del proyecto — Cosecha
+# Contexto del proyecto — Cosecha App v4
 
-App de un restaurante fast-casual saludable. El usuario arma un plato modular
-y la app calcula macros personalizados, sugiere extras y genera un QR para cocina.
+Una sola app con cuatro pestañas que comparten un perfil y una meta: **Hoy**
+(resumen del día + acciones), **Pedir** (el armador de plato del restaurante),
+**Diario** (contador de macros) y **Entrenar** (registro de fuerza). Este repo
+es una COPIA independiente de `cosecha-macro-calculator`: el original es de
+solo lectura y aquí `MODO_DEMO` queda encendido (ver "Modo demo").
 
-## Arquitectura
+## Arquitectura v4 (1-oct-2026)
+
+- `index.html` — cuatro `<main>` hermanos (`vista-hoy`, `vista-pedir`,
+  `vista-diario`, `vista-entrenar`) + tabbar fija inferior. Solo Hoy y Pedir
+  cargan al inicio; Diario y Entrenar se montan con `import()` dinámico la
+  primera vez que se abren (la carga inicial de Pedir no crece).
+- `js/almacen.js` — ÚNICA puerta a localStorage (`cosecha.v1`): estado
+  versionado con `migrar()` tolerante, exportar/importar JSON, helpers del
+  diario. Los datos del usuario NUNCA salen del dispositivo (regla del
+  encargo: sin backend ni analítica en esta entrega).
+- `js/temporizador.js` — descanso por HORA DE FIN (timestamp), nunca restando
+  segundos: tras bloquear pantalla el tiempo sigue exacto. Reloj inyectable
+  para tests; capa de avisos (WakeLock, beep WebAudio, vibración) aparte.
+- `js/diario.js` + `css/diario.css`, `js/entreno.js` + `css/entreno.css` —
+  cada módulo renderiza TODO dentro de su `<section>` vía
+  `init({ raiz, getMeta })`; `getMeta()` da la meta POR COMIDA (de
+  `calcularMeta()`/manual, cacheada en el almacén). Sin fórmulas paralelas.
+- `data/` — `alimentos.json` (hoy: base mínima de la carta vía
+  `scripts/base_minima_carta.mjs`; la base USDA ≥1.500 con fuente/id/licencia
+  la reemplaza cuando su pipeline termine), `ejercicios.json` (free-exercise-db
+  traducido, Unlicense; imágenes por CDN, no en el repo), `rutinas.json`.
+  Cada JSON se carga al abrir SU pestaña.
+- El shell (`app.js`: `goTab`, `renderHoy`, persistencia de perfil,
+  `agregarPlatoAlDiario`) lo edita UNA sola persona/agente a la vez.
+
+## Arquitectura de Pedir (heredada)
 - `index.html` — markup, sin lógica inline salvo onclick que llaman funciones globales
 - `css/styles.css` — todos los estilos. Paleta crema + acento naranja (#C05A1F)
 - `js/data.js` — datos: ingredientes con `costoKg` (coste real de la preparación, del costeo), factores, constantes de precio
