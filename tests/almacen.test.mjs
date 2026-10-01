@@ -32,7 +32,10 @@ function storageFalso() {
 const PERFIL = {
   sexo: 'masculino', edad: 25, peso: 75, altura: 175,
   actividad: 'moderado', objetivo: 'mantener', comidas: 3,
-  unidadPeso: 'kg', comidasDiario: null, actualizado: 1700000000000
+  unidadPeso: 'kg', comidasDiario: null,
+  // Preferencias de UI que migrar() conserva con defaults deterministas.
+  terminos: false, modo: 'calc', subModo: 'comida',
+  actualizado: 1700000000000
 };
 
 // ---------- estadoInicial ----------

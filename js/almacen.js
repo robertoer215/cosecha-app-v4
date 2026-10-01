@@ -73,6 +73,12 @@ function migrarPerfil(p) {
     actividad: p.actividad, objetivo: p.objetivo, comidas: p.comidas,
     unidadPeso: p.unidadPeso === 'lb' ? 'lb' : 'kg',
     comidasDiario: esNumero(p.comidasDiario) && p.comidasDiario > 0 ? p.comidasDiario : null,
+    // Preferencias de la UI que viajan con el perfil: aceptar términos y el
+    // modo del formulario. No afectan al cálculo, pero perderlas obligaría a
+    // re-aceptar y re-elegir en cada visita.
+    terminos: p.terminos === true,
+    modo: p.modo === 'manual' ? 'manual' : 'calc',
+    subModo: p.subModo === 'total' ? 'total' : 'comida',
     // 0 = "no sabemos cuándo": determinista, y la UI lo trata como "hace tiempo".
     actualizado: esNumero(p.actualizado) ? p.actualizado : 0
   };
