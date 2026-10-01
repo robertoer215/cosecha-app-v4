@@ -897,7 +897,7 @@ function sinSalto(idRegion, fn) {
   if (delta) window.scrollBy(0, delta);
 }
 
-const ESTADO_LBL = { confirmando: 'Confirmando con cocina…', confirmado: 'Confirmado por cocina', sin_confirmar: 'Sin confirmar con cocina' };
+const ESTADO_LBL = { confirmando: 'Confirmando con cocina…', confirmado: 'Confirmado por cocina', sin_confirmar: 'Sin confirmar con cocina', demo: 'Modo demo' };
 const MOTIVO_TXT = { timeout: 'Cocina no respondió a tiempo.', red: 'Sin conexión con cocina.',
                      http: 'Cocina no aceptó el pedido.', respuesta_invalida: 'Cocina respondió algo que no es un pedido.' };
 
@@ -912,6 +912,9 @@ function pintarCocina() {
     const body = $('cocina-body'), propWrap = $('cocina-propuesta');
     if (est === 'confirmando') {
       body.innerHTML = SKEL(8);
+    } else if (est === 'demo') {
+      body.innerHTML = `<p class="cocina-nota">Modo demo: esta copia no envía pedidos a cocina. Tu resumen y tu código funcionan con los números de tu pantalla.</p>`;
+      if (propWrap) propWrap.innerHTML = '';
     } else if (est === 'sin_confirmar') {
       const errs = cocina.errores.length ? ' ' + cocina.errores.map(esc).join('. ') + '.' : '';
       body.innerHTML = `<p class="cocina-nota">${MOTIVO_TXT[cocina.motivo] || MOTIVO_TXT.red}${errs} Tu resumen y tu código siguen siendo válidos con los números de tu pantalla.</p>`;
@@ -978,7 +981,7 @@ function confirmarConCocina(extra = {}) {
   const local = lineasLocales();
   const pedido = armarPedido(meta, local.lineas, extra);
   const clave = clavePedido(pedido);
-  if (clave === cocina.clave && (cocina.estado === 'confirmando' || cocina.estado === 'confirmado')) { pintarCocina(); return; }
+  if (clave === cocina.clave && (cocina.estado === 'confirmando' || cocina.estado === 'confirmado' || cocina.estado === 'demo')) { pintarCocina(); return; }
   if (cocina.llamada) cocina.llamada.cancelar();
   // Un plato que cocina ya confirmó en esta sesión se vuelve a enseñar, no a pedir.
   const previo = cocina.historial.get(clave);
@@ -1000,7 +1003,7 @@ function confirmarConCocina(extra = {}) {
         cocina.historial.set(clave, { respuesta: res.data, local });
         if (cocina.historial.size > 20) cocina.historial.delete(cocina.historial.keys().next().value);
       } else {
-        cocina.estado = 'sin_confirmar'; cocina.motivo = res.motivo; cocina.errores = res.errores || [];
+        cocina.estado = res.motivo === 'demo' ? 'demo' : 'sin_confirmar'; cocina.motivo = res.motivo; cocina.errores = res.errores || [];
       }
       cocina.llamada = null;
       pintarCocina();
