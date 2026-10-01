@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { armarPedido, clavePedido, compararConCocina, llamarCocina, normalizarRespuesta, origenMeta, K_DE_ETIQUETA } from '../js/cocina.js';
+import { armarPedido, clavePedido, compararConCocina, llamarCocina, normalizarRespuesta, origenMeta, K_DE_ETIQUETA, MODO_DEMO } from '../js/cocina.js';
 import { calcularMeta, metaManualComida, metaManualTotal } from '../js/calc.js';
 
 const meta = { kcal: 744, prot: 45, carb: 96, gras: 20, comidas: 3, objetivo: 'manual' };
@@ -142,9 +142,30 @@ test('normalizar: pedido_id no ASCII o vacío tumba la respuesta', () => {
   assert.equal(normalizarRespuesta(b), null);
 });
 
+// ── MODO DEMO · en esta copia el envío a cocina está apagado ─────────────────
+// Las pruebas de la ruta real (más abajo) pasan `modoDemo: false` a propósito:
+// esa maquinaria tiene que seguir funcionando para cuando el dueño encienda el
+// envío con un webhook propio, pero el DEFAULT del repo nunca toca la red.
+
+test('MODO_DEMO viene encendido: el default de esta copia no envía a cocina', () => {
+  assert.equal(MODO_DEMO, true);
+});
+
+test('en modo demo la llamada no toca la red: resuelve a motivo "demo" sin invocar fetch', async () => {
+  let llamadas = 0;
+  const fetchImpl = async () => { llamadas++; return { ok: true, status: 200, json: async () => respuestaIgual() }; };
+  const { promesa, cancelar } = llamarCocina(armarPedido(meta, lineas), { fetchImpl });   // sin modoDemo: aplica el default
+  cancelar();   // cancelar existe y no rompe, aunque en demo no haya nada que abortar
+  const r = await promesa;
+  assert.equal(r.ok, false);
+  assert.equal(r.motivo, 'demo');
+  assert.deepEqual(r.errores, []);
+  assert.equal(llamadas, 0);
+});
+
 test('un 200 con ok:false conserva los errores que mandó cocina', async () => {
   const fetchImpl = async () => ({ ok: true, status: 200, json: async () => ({ ok: false, errores: ['seleccion: 3 módulos de carbohidrato; el máximo son 2 por categoría'] }) });
-  const r = await llamarCocina({}, { fetchImpl }).promesa;
+  const r = await llamarCocina({}, { fetchImpl, modoDemo: false }).promesa;
   assert.equal(r.ok, false);
   assert.equal(r.motivo, 'http');
   assert.equal(r.errores.length, 1);
@@ -153,7 +174,7 @@ test('un 200 con ok:false conserva los errores que mandó cocina', async () => {
 test('llamarCocina devuelve la respuesta ya normalizada', async () => {
   const cruda = respuestaIgual(); cruda.avisos = 'no-array'; cruda.total = '233';
   const fetchImpl = async () => ({ ok: true, status: 200, json: async () => cruda });
-  const r = await llamarCocina({}, { fetchImpl }).promesa;
+  const r = await llamarCocina({}, { fetchImpl, modoDemo: false }).promesa;
   assert.equal(r.ok, true);
   assert.deepEqual(r.data.avisos, []);
   assert.equal(r.data.total, 233);
@@ -165,7 +186,7 @@ test('llamarCocina devuelve la respuesta cuando cocina contesta 200 con un pedid
   const pedido = armarPedido(meta, lineas);
   let enviado = null;
   const fetchImpl = async (url, init) => { enviado = JSON.parse(init.body); return respOk(respuestaIgual()); };
-  const { promesa } = llamarCocina(pedido, { fetchImpl });
+  const { promesa } = llamarCocina(pedido, { fetchImpl, modoDemo: false });
   const r = await promesa;
   assert.equal(r.ok, true);
   assert.equal(r.data.pedido_id, 'PED-20260917120000-P01C01G01');
@@ -174,7 +195,7 @@ test('llamarCocina devuelve la respuesta cuando cocina contesta 200 con un pedid
 
 test('un 400 de cocina termina en sin confirmar con los errores que mandó', async () => {
   const fetchImpl = async () => ({ ok: false, status: 400, json: async () => ({ ok: false, errores: ['seleccion: hay ids repetidos'] }) });
-  const r = await llamarCocina({}, { fetchImpl }).promesa;
+  const r = await llamarCocina({}, { fetchImpl, modoDemo: false }).promesa;
   assert.equal(r.ok, false);
   assert.equal(r.motivo, 'http');
   assert.deepEqual(r.errores, ['seleccion: hay ids repetidos']);
@@ -182,14 +203,14 @@ test('un 400 de cocina termina en sin confirmar con los errores que mandó', asy
 
 test('un 200 que no es un pedido (html, vacío) no se toma por confirmación', async () => {
   const fetchImpl = async () => ({ ok: true, status: 200, json: async () => { throw new Error('no json'); } });
-  const r = await llamarCocina({}, { fetchImpl }).promesa;
+  const r = await llamarCocina({}, { fetchImpl, modoDemo: false }).promesa;
   assert.equal(r.ok, false);
   assert.equal(r.motivo, 'respuesta_invalida');
 });
 
 test('el fallo de red termina en sin confirmar', async () => {
   const fetchImpl = async () => { throw new TypeError('Failed to fetch'); };
-  const r = await llamarCocina({}, { fetchImpl }).promesa;
+  const r = await llamarCocina({}, { fetchImpl, modoDemo: false }).promesa;
   assert.equal(r.ok, false);
   assert.equal(r.motivo, 'red');
 });
@@ -197,7 +218,7 @@ test('el fallo de red termina en sin confirmar', async () => {
 test('pasado el timeout la llamada se aborta y termina en sin confirmar', async () => {
   const fetchImpl = (url, init) => new Promise((_, rej) => { init.signal.addEventListener('abort', () => rej(new DOMException('aborted', 'AbortError'))); });
   const t0 = Date.now();
-  const r = await llamarCocina({}, { fetchImpl, timeoutMs: 40 }).promesa;
+  const r = await llamarCocina({}, { fetchImpl, timeoutMs: 40, modoDemo: false }).promesa;
   assert.equal(r.ok, false);
   assert.equal(r.motivo, 'timeout');
   assert.ok(Date.now() - t0 < 1000);
@@ -205,7 +226,7 @@ test('pasado el timeout la llamada se aborta y termina en sin confirmar', async 
 
 test('cancelar (el cliente editó el plato) no se confunde con un timeout', async () => {
   const fetchImpl = (url, init) => new Promise((_, rej) => { init.signal.addEventListener('abort', () => rej(new DOMException('aborted', 'AbortError'))); });
-  const { promesa, cancelar } = llamarCocina({}, { fetchImpl, timeoutMs: 5000 });
+  const { promesa, cancelar } = llamarCocina({}, { fetchImpl, timeoutMs: 5000, modoDemo: false });
   cancelar();
   const r = await promesa;
   assert.equal(r.motivo, 'cancelado');

@@ -12,6 +12,12 @@
 // ═════════════════════════════════════════════════════════════════════════════
 
 export const COCINA_URL = 'https://n8n.srv1683942.hstgr.cloud/webhook/cosecha-plato';
+// MODO DEMO (esta copia, Fase 0): el envío a cocina está APAGADO. El webhook de
+// arriba escribe un pedido REAL en la hoja de Pedidos de producción, así que
+// ninguna petición debe salir de esta copia. La guarda vive AQUÍ, en la función
+// que llama, no en quien la usa: así ningún código futuro lo rodea por accidente.
+// Pasar a false solo con OK del dueño y un webhook propio.
+export const MODO_DEMO = true;
 // 15 s, no 8: medido el 18-sep-2026 desde el navegador, cocina tarda 4,5–6,1 s
 // (n8n 3,6–5,4 s, el agente 1,6–3,4 s de eso) y el máximo visto el 17-sep fue 7,6 s.
 // Con 8 s un teléfono en Wi-Fi caía en "Sin confirmar" con el pedido YA registrado.
@@ -141,7 +147,10 @@ export function normalizarRespuesta(d) {
 // vuelve a editar el plato antes de que cocina conteste, la respuesta vieja no
 // debe pintar encima del resumen nuevo). Timeout y fallo de red terminan igual:
 // { ok:false } con su motivo, y el resumen se queda con los números locales.
-export function llamarCocina(pedido, { timeoutMs = COCINA_TIMEOUT_MS, fetchImpl = globalThis.fetch, url = COCINA_URL } = {}) {
+export function llamarCocina(pedido, { timeoutMs = COCINA_TIMEOUT_MS, fetchImpl = globalThis.fetch, url = COCINA_URL, modoDemo = MODO_DEMO } = {}) {
+  // En demo se resuelve al instante, sin red y con la misma forma que un fallo:
+  // app.js ya sabe quedarse con los números locales; solo cambia el motivo.
+  if (modoDemo) return { promesa: Promise.resolve({ ok: false, motivo: 'demo', errores: [] }), cancelar: () => {} };
   const ctrl = new AbortController();
   let porTimeout = false;
   const timer = setTimeout(() => { porTimeout = true; ctrl.abort(); }, timeoutMs);
