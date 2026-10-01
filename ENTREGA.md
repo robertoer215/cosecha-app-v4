@@ -42,6 +42,10 @@ Los datos del usuario viven SOLO en el dispositivo (`localStorage`, esquema vers
 7. **Imágenes de ejercicios por CDN de free-exercise-db** (Unlicense), no en el repo — límite de 20 MB.
 8. **INCMNSZ descartado** en esta entrega: no se confirmaron términos de reuso. Fuentes: USDA FDC (CC0), free-exercise-db (Unlicense), carta COSECHA (propia).
 
+## Bitácora de incidentes
+
+- **23:07** — Las dos flotas de agentes (datos y módulos) murieron ("Workflow aborted") sin aviso; lo detectó la sesión gemela revisando las transcripciones y lo verifiqué (ningún archivo avanzaba desde las 23:07). **23:26** — Relanzadas con resume sobre sus runId (lo completado vuelve de caché: almacén, temporizador, diseño, extracción USDA y descarga de ejercicios). Desde entonces siempre queda un vigilante en segundo plano que me re-despierta si un workflow vuelve a caerse en silencio.
+
 ## Auditoría
 
 - Verificación continua de esta noche: tests (116 ✓), plato de punta a punta en la URL pública con registro de red (0 peticiones a n8n), línea base de rendimiento de Pedir (124 KB, DCL mediana 106 ms, `scratchpad/base-rendimiento-pedir.json`).
