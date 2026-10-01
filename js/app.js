@@ -1,7 +1,8 @@
 import { ING, SIZES, OBJ_LABEL, CATS, CAT_LABEL, IMG_DIR, MAX_MODULOS_CAT } from './data.js';
 import { precio, mac, calcularMeta, metaManualComida, metaManualTotal,
          porcionar, explicarCambio, proponerCierre, tamanosPermitidos, UMBRAL_G, cubrenGrasa, nombreCorto } from './calc.js';
-import { armarPedido, clavePedido, compararConCocina, llamarCocina, K_DE_ETIQUETA } from './cocina.js';
+import { armarPedido, clavePedido, compararConCocina, llamarCocina, K_DE_ETIQUETA, origenMeta } from './cocina.js';
+import * as almacen from './almacen.js';
 
 let meta = {}, selBase = {}, szBase = {}, selExtra = {}, szExtra = {};
 
@@ -25,6 +26,157 @@ const CATS_STEPS = ['proteina', 'carbohidrato', 'vegetal', 'grasa'];
 const STEP_LABELS = {proteina:'Proteína', carbohidrato:'Carbohidrato', vegetal:'Vegetal', grasa:'Grasa saludable'};
 
 const $ = id => document.getElementById(id);
+
+// ── SHELL · tres áreas en una app ────────────────────────────────────────────
+// Pedir (esta pantalla), Diario y Entrenar conviven como <main> hermanos; la
+// tabbar fija de abajo cambia cuál se ve. Los módulos se montan la PRIMERA vez
+// que se abren, con import dinámico: la carga inicial de Pedir no crece. El
+// perfil y la meta POR COMIDA viven en el almacén local y se comparten: nadie
+// rellena su perfil dos veces.
+let estadoLocal = almacen.cargar();
+const modulosMontados = {};
+
+function getMetaCompartida() {
+  if (meta && typeof meta.kcal === 'number') {
+    return { kcal: meta.kcal, prot: meta.prot, carb: meta.carb, gras: meta.gras, comidas: meta.comidas, origen: origenMeta(meta) };
+  }
+  return estadoLocal.metaCache;
+}
+
+window.goTab = async function(tab) {
+  const vistas = { hoy: 'vista-hoy', pedir: 'vista-pedir', diario: 'vista-diario', entrenar: 'vista-entrenar' };
+  Object.entries(vistas).forEach(([k, id]) => {
+    $(id).hidden = k !== tab;
+    const btn = $('tab-' + k);
+    if (k === tab) btn.setAttribute('aria-current', 'page'); else btn.removeAttribute('aria-current');
+  });
+  if (tab === 'hoy') { renderHoy(); window.scrollTo(0, 0); return; }
+  if (tab !== 'pedir' && !modulosMontados[tab]) {
+    const raiz = $(vistas[tab]);
+    try {
+      const mod = await import(tab === 'diario' ? './diario.js' : './entreno.js');
+      (tab === 'diario' ? mod.initDiario : mod.initEntreno)({ raiz, getMeta: getMetaCompartida });
+      modulosMontados[tab] = mod;
+    } catch (e) {
+      raiz.innerHTML = '<p class="modulo-error">Esta sección no se pudo cargar. Recarga la página e intenta de nuevo.</p>';
+      console.warn('modulo ' + tab + ':', e.message);
+    }
+  } else if (modulosMontados[tab]) {
+    // El almacén pudo cambiar desde otra pestaña (un plato añadido al diario
+    // desde Pedir, por ejemplo): el módulo decide qué refrescar.
+    modulosMontados[tab].refrescar?.();
+  }
+  window.scrollTo(0, 0);
+};
+
+// El plato del resumen entra al diario en UN toque, con los mismos números que
+// muestra la pantalla (lineasLocales: el mismo motor que ve cocina).
+window.agregarPlatoAlDiario = function() {
+  const btn = $('btn-diario-plato');
+  const local = lineasLocales();
+  if (!local.lineas.length) return;
+  const entrada = {
+    id: 'PLATO-' + Date.now(),
+    nombre: 'Plato COSECHA',
+    detalle: local.lineas.map(l => l.nombre).join(', '),
+    gramos: local.lineas.reduce((a, l) => a + l.g, 0),
+    porcion: null,
+    macros: { prot: local.macros.prot, carb: local.macros.carb, gras: local.macros.gras, kcalFuente: local.macros.kcal },
+    origen: 'plato',
+    ts: Date.now()
+  };
+  estadoLocal = almacen.agregarAlDiario(estadoLocal, almacen.hoyISO(), almacen.comidaPorHora(), entrada);
+  almacen.guardar(estadoLocal);
+  if (btn) { btn.textContent = '✓ En tu diario de hoy'; btn.classList.add('ok'); btn.disabled = true; }
+};
+
+// La pantalla Hoy: resumen del día (lo consumido del diario contra la meta) y
+// las tres acciones. Se repinta en cada apertura releyendo el almacén, porque
+// Diario, Entrenar o Pedir pudieron escribir desde su pestaña.
+function renderHoy() {
+  estadoLocal = almacen.cargar();
+  const f = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+  $('hoy-fecha').textContent = f.charAt(0).toUpperCase() + f.slice(1);
+  const m = getMetaCompartida();
+  $('hoy-resumen').hidden = !m;
+  $('hoy-sin-meta').hidden = !!m;
+  if (m) {
+    const dia = estadoLocal.diario[almacen.hoyISO()] || {};
+    const tot = { prot: 0, carb: 0, gras: 0 };
+    Object.values(dia).forEach(lista => (lista || []).forEach(e => {
+      tot.prot += e.macros.prot; tot.carb += e.macros.carb; tot.gras += e.macros.gras;
+    }));
+    // kcal derivadas 4/4/9, igual que la meta: el panel siempre cuadra.
+    const kcal = Math.round(4 * tot.prot + 4 * tot.carb + 9 * tot.gras);
+    const n = (m.origen === 'manual_comida' ? (estadoLocal.perfil?.comidasDiario || 1) : m.comidas) || 1;
+    const metaDia = { kcal: m.kcal * n, prot: m.prot * n, carb: m.carb * n, gras: m.gras * n };
+    $('hoy-kcal').textContent = `${kcal} / ${metaDia.kcal} kcal`;
+    [['p', 'prot'], ['c', 'carb'], ['g', 'gras']].forEach(([s, k]) => {
+      $('hoy-v-' + s).textContent = `${Math.round(tot[k])}/${metaDia[k]}g`;
+      $('hoy-b-' + s).style.transform = `scaleX(${Math.min(1, metaDia[k] ? tot[k] / metaDia[k] : 0)})`;
+    });
+  }
+  // Lo último de Entrenar: una sesión a medias invita a retomarla; si no, la última hecha.
+  const ult = $('hoy-ultimo');
+  const activa = estadoLocal.entreno.sesionActiva;
+  const sesiones = estadoLocal.entreno.sesiones;
+  if (activa) {
+    ult.hidden = false;
+    ult.innerHTML = `<button class="hoy-card hoy-card-accent" onclick="goTab('entrenar')"><div><div class="hc-t">Tienes una sesión en curso</div><div class="hc-s">Tócala para continuar donde la dejaste</div></div></button>`;
+  } else if (sesiones.length) {
+    const s = sesiones[sesiones.length - 1];
+    const series = s.ejercicios.reduce((a, e) => a + e.series.filter(x => x.hecha).length, 0);
+    const vol = Math.round(s.ejercicios.reduce((a, e) => a + e.series.filter(x => x.hecha).reduce((b, x) => b + x.reps * x.pesoKg, 0), 0));
+    ult.hidden = false;
+    ult.innerHTML = `<div class="hc-s">Última sesión: ${new Date(s.inicioMs).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })} · ${series} series · ${vol} kg de volumen</div>`;
+  } else {
+    ult.hidden = true;
+    ult.innerHTML = '';
+  }
+}
+
+// Al calcular la meta, el perfil y la meta quedan en el almacén para que
+// Diario y Entrenar los usen sin volver a preguntar nada.
+function persistirPerfilYMeta() {
+  const previo = estadoLocal.perfil || {};
+  estadoLocal = almacen.guardarPerfil(estadoLocal, {
+    ...previo,
+    sexo: $('sexo').value, edad: numCampo('edad'), peso: numCampo('peso'), altura: numCampo('altura'),
+    comidas: +$('comidas').value,
+    objetivo: document.querySelector('.obj-card.selected')?.dataset.o,
+    actividad: document.querySelector('.act-card.selected')?.dataset.a,
+    modo: modoActual, subModo: subModoActual,
+    unidadPeso: previo.unidadPeso || 'kg',
+    comidasDiario: previo.comidasDiario ?? null,
+    terminos: modoActual === 'calc' ? true : (previo.terminos ?? false),
+    actualizado: Date.now()
+  });
+  estadoLocal = almacen.guardarMetaCache(estadoLocal, getMetaCompartida());
+  almacen.guardar(estadoLocal);
+}
+
+// Un perfil ya guardado rellena el formulario al abrir, y los términos
+// aceptados no se vuelven a pedir: Continuar queda a un toque.
+function restaurarPerfil() {
+  const p = estadoLocal.perfil;
+  if (!p) return;
+  try {
+    if (p.sexo) $('sexo').value = p.sexo;
+    if (p.edad) $('edad').value = p.edad;
+    if (p.peso) $('peso').value = p.peso;
+    if (p.altura) $('altura').value = p.altura;
+    if (p.comidas) $('comidas').value = String(p.comidas);
+    if (p.objetivo) document.querySelectorAll('.obj-card').forEach(c => c.classList.toggle('selected', c.dataset.o === p.objetivo));
+    if (p.actividad) document.querySelectorAll('.act-card').forEach(c => c.classList.toggle('selected', c.dataset.a === p.actividad));
+    if (p.modo === 'manual') window.setMode('manual');
+    if (p.terminos) {
+      $('terms-btn').classList.add('accepted');
+      $('terms-icon').textContent = '●';
+      $('terms-btn-txt').textContent = 'Aceptado';
+      $('btn-calcular').disabled = false;
+    }
+  } catch (e) { console.warn('perfil guardado:', e.message); }
+}
 
 // Foto del ingrediente. Las fotos son cuadradas y los contenedores no siempre:
 // `foco` recentra el recorte en los platos que no están al centro de su imagen.
@@ -158,6 +310,7 @@ window.calcular = function() {
   szManual = {}; ajustando = {}; ultimoPorc = null; porque = null; idsRecalc = [];
   platoCatIdx = 0;
   reiniciarCocina();
+  persistirPerfilYMeta();
   renderMeta();
   renderBase();
   updateGlobalTracker();
@@ -1114,6 +1267,10 @@ function pintarResumen() {
     <div class="qr-section"><div class="qr-hd"><div class="qr-hd-lbl">Código para cocina</div><div class="qr-hd-tag">Escanear en caja</div></div>
       <div class="qr-body"><div class="qr-code-wrap"><div id="qr-canvas"></div><p>Escanea para<br>ver orden</p><div class="qr-pedido" id="qr-pedido"></div></div>
       <div class="qr-instructions"><div class="qr-inst-title">Porciones exactas</div>${instHTML}</div></div></div>`;
+  // Un plato nuevo en el resumen rearma el botón del diario (vive fuera de
+  // res-content a propósito: así no se repinta con cada respuesta de cocina).
+  const bd = $('btn-diario-plato');
+  if (bd) { bd.textContent = '+ Añadir a mi diario'; bd.classList.remove('ok'); bd.disabled = false; }
   // Repintar el resumen estando ya en él (al aceptar el cierre) no debe
   // devolver al cliente al principio de la página.
   if (!$('sc2').classList.contains('active')) goStep(2);
@@ -1132,3 +1289,8 @@ window.goStep = function(n) {
   }
   window.scrollTo({top:0,behavior:'smooth'});
 };
+
+// Arranque: el perfil guardado rellena el formulario (corre al final, cuando
+// setMode y compañía ya existen en window) y la app abre en Hoy.
+restaurarPerfil();
+renderHoy();

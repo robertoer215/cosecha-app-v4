@@ -780,3 +780,34 @@ input.invalid:focus-visible{outline-color:var(--danger)}
      Empata en 0-2-0 con la regla de arriba y gana por orden de fuente. */
   .btn-main:hover{transform:none}
 }
+
+/* ── Shell de pestañas · Pedir / Diario / Entrenar ──────────────────────────
+   La tabbar es fija abajo (patrón de app móvil); el padding del body reserva
+   su espacio para que ningún contenido quede tapado. Solo tokens existentes. */
+body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+.vista-modulo[hidden]{display:none}
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:100;display:flex;background:var(--surface);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom)}
+.tab-btn{flex:1;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:0;cursor:pointer;color:var(--muted-ink);font-family:var(--sans);font-size:11px;letter-spacing:.4px}
+.tab-btn svg{width:22px;height:22px}
+.tab-btn[aria-current="page"]{color:var(--accent-ink)}
+.tab-btn:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.btn-diario{display:block;width:100%;min-height:48px;margin-top:10px;background:none;border:1px solid var(--accent);color:var(--accent-ink);border-radius:var(--r-md);font-family:var(--sans);font-size:13px;cursor:pointer}
+.btn-diario:disabled{opacity:.6;cursor:default}
+.btn-diario.ok{border-color:var(--green);color:var(--green)}
+.btn-diario:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.modulo-error{color:var(--muted-ink);font-family:var(--sans);font-size:13px;padding:24px 16px;text-align:center}
+
+/* ── Pantalla Hoy · puerta de entrada ─────────────────────────────────────── */
+main[hidden]{display:none}
+.hoy-resumen{margin-top:14px}
+.hoy-kcal{font-family:var(--mono, 'IBM Plex Mono', monospace);font-size:12px;color:var(--text);font-variant-numeric:tabular-nums}
+.hoy-barras{padding:14px 20px 18px;display:grid;gap:12px}
+.hoy-sin-meta{margin-top:14px;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);display:grid;gap:12px;justify-items:start}
+.hoy-acciones{margin-top:14px;display:grid;gap:10px}
+.hoy-card{display:flex;gap:14px;align-items:center;min-height:64px;padding:14px 16px;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);cursor:pointer;text-align:left;font-family:var(--sans)}
+.hoy-card svg{width:26px;height:26px;color:var(--accent-ink);flex-shrink:0}
+.hoy-card-accent{border-color:var(--accent)}
+.hoy-card:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hc-t{font-size:14px;font-weight:600;color:var(--text)}
+.hc-s{font-size:12px;color:var(--muted-ink);margin-top:2px;line-height:1.5}
+.hoy-ultimo{margin-top:14px}

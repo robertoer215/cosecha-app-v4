@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cosecha — Armador de Plato Modular</title>
 <link rel="stylesheet" href="css/styles.css">
+<link rel="stylesheet" href="css/diario.css">
+<link rel="stylesheet" href="css/entreno.css">
 <link rel="icon" href="data:,">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -17,6 +19,49 @@
       <div class="tagline" style="margin-top:3px">Alimentación inteligente</div>
     </div>
   </div>
+
+  <!-- Las áreas de la app viven en <main> hermanos; la tabbar de abajo cambia
+       cuál se ve. Diario y Entrenar se montan la primera vez que se abren
+       (import dinámico): la carga inicial no crece. "Hoy" es la puerta de
+       entrada: resumen del día y las tres acciones. -->
+  <main id="vista-hoy">
+    <div class="eyebrow" id="hoy-fecha"></div>
+    <div class="stitle">Hola</div>
+    <div class="ssub">¿Qué quieres hacer hoy?</div>
+
+    <div class="gap-wrap hoy-resumen" id="hoy-resumen" hidden>
+      <div class="gap-hd"><span>Tu día</span><span class="hoy-kcal" id="hoy-kcal"></span></div>
+      <div class="hoy-barras">
+        <div class="gt-bar-wrap"><div class="gt-bar-top"><span class="gt-bar-lbl">Proteína</span><span class="gt-bar-val" id="hoy-v-p">0/0g</span></div><div class="bar-bg"><div class="bar-fill bp" id="hoy-b-p" style="transform:scaleX(0)"></div></div></div>
+        <div class="gt-bar-wrap"><div class="gt-bar-top"><span class="gt-bar-lbl">Carbos</span><span class="gt-bar-val" id="hoy-v-c">0/0g</span></div><div class="bar-bg"><div class="bar-fill bc" id="hoy-b-c" style="transform:scaleX(0)"></div></div></div>
+        <div class="gt-bar-wrap"><div class="gt-bar-top"><span class="gt-bar-lbl">Grasas</span><span class="gt-bar-val" id="hoy-v-g">0/0g</span></div><div class="bar-bg"><div class="bar-fill bg2" id="hoy-b-g" style="transform:scaleX(0)"></div></div></div>
+      </div>
+    </div>
+
+    <div class="hoy-sin-meta" id="hoy-sin-meta" hidden>
+      <p class="hc-s">Crea tu perfil una sola vez y las tres secciones compartirán tu meta.</p>
+      <button class="btn btn-main" onclick="goTab('pedir')">Crear mi perfil</button>
+    </div>
+
+    <div class="hoy-acciones">
+      <button class="hoy-card hoy-card-accent" onclick="goTab('pedir')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 5c0 1.2 1 1.6 1 2.8M13.5 5c0 1.2 1 1.6 1 2.8"/></svg>
+        <div><div class="hc-t">Pedir a COSECHA</div><div class="hc-s">Arma un plato a tu medida y añádelo a tu diario</div></div>
+      </button>
+      <button class="hoy-card" onclick="goTab('diario')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 2-2h12v18H7a2 2 0 0 1-2-2z"/><path d="M9 3v18"/></svg>
+        <div><div class="hc-t">Registrar comida</div><div class="hc-s">Lleva tus macros de lo que comes en casa</div></div>
+      </button>
+      <button class="hoy-card" onclick="goTab('entrenar')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6.5 7.5v9M3.5 9.5v5M17.5 7.5v9M20.5 9.5v5M6.5 12h11"/></svg>
+        <div><div class="hc-t">Entrenar</div><div class="hc-s">Registra tu sesión con descansos automáticos</div></div>
+      </button>
+    </div>
+
+    <div class="hoy-ultimo" id="hoy-ultimo" hidden></div>
+  </main>
+
+  <main id="vista-pedir" hidden>
 
   <!-- aria-live: la barra ya no cambia por una acción directa del usuario sino por
        un CÁLCULO que dispara tocar otra cosa. Sin anuncio, un lector de pantalla
@@ -140,8 +185,33 @@
     <div class="stitle">Tu plato</div>
     <div class="ssub">Composición nutricional, precio final y código para cocina.</div>
     <div id="res-content"></div>
+    <button class="btn-diario" id="btn-diario-plato" onclick="agregarPlatoAlDiario()">+ Añadir a mi diario</button>
     <div class="btn-row"><button class="btn btn-ghost" onclick="goStep(1)">← Editar plato</button><button class="btn btn-main" onclick="goStep(0)">Nueva consulta</button></div>
   </div>
+
+  </main>
+
+  <main id="vista-diario" class="vista-modulo" hidden></main>
+  <main id="vista-entrenar" class="vista-modulo" hidden></main>
+
+  <nav class="tabbar" aria-label="Secciones de la app">
+    <button class="tab-btn" id="tab-hoy" aria-current="page" onclick="goTab('hoy')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 11l8-7 8 7"/><path d="M6 9.5V20h12V9.5"/></svg>
+      <span>Hoy</span>
+    </button>
+    <button class="tab-btn" id="tab-pedir" onclick="goTab('pedir')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 5c0 1.2 1 1.6 1 2.8M13.5 5c0 1.2 1 1.6 1 2.8"/></svg>
+      <span>Pedir</span>
+    </button>
+    <button class="tab-btn" id="tab-diario" onclick="goTab('diario')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 2-2h12v18H7a2 2 0 0 1-2-2z"/><path d="M9 3v18"/></svg>
+      <span>Diario</span>
+    </button>
+    <button class="tab-btn" id="tab-entrenar" onclick="goTab('entrenar')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6.5 7.5v9M3.5 9.5v5M17.5 7.5v9M20.5 9.5v5M6.5 12h11"/></svg>
+      <span>Entrenar</span>
+    </button>
+  </nav>
 
 </div>
 <script type="module" src="js/app.js"></script>
