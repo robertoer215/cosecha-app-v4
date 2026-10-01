@@ -1,0 +1,853 @@
+[
+ {
+  "id": "ALI-0001",
+  "nombre": "Pollo al cilantro y limón",
+  "sinonimos": [],
+  "grupo": "Proteínas",
+  "estado": "listo para comer",
+  "kcal": 110,
+  "proteina_g": 20.67,
+  "carbohidratos_g": 0,
+  "grasa_g": 2.33,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "P01",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Porción estándar (150 g)",
+    "g": 150,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0002",
+  "nombre": "Salmón al pastor con achiote",
+  "sinonimos": [],
+  "grupo": "Proteínas",
+  "estado": "listo para comer",
+  "kcal": 184.62,
+  "proteina_g": 21.54,
+  "carbohidratos_g": 1.54,
+  "grasa_g": 10,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "P02",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Porción estándar (130 g)",
+    "g": 130,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0003",
+  "nombre": "Tenderloin al mole verde",
+  "sinonimos": [],
+  "grupo": "Proteínas",
+  "estado": "listo para comer",
+  "kcal": 140,
+  "proteina_g": 22,
+  "carbohidratos_g": 0.67,
+  "grasa_g": 5.33,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "P03",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Porción estándar (150 g)",
+    "g": 150,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0004",
+  "nombre": "Guacamole artesanal",
+  "sinonimos": [],
+  "grupo": "Grasas",
+  "estado": "listo para comer",
+  "kcal": 160,
+  "proteina_g": 1.67,
+  "carbohidratos_g": 8.33,
+  "grasa_g": 15,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "G01",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Porción estándar (60 g)",
+    "g": 60,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0005",
+  "nombre": "Nueces con chile piquín",
+  "sinonimos": [],
+  "grupo": "Grasas",
+  "estado": "listo para comer",
+  "kcal": 660,
+  "proteina_g": 16,
+  "carbohidratos_g": 12,
+  "grasa_g": 64,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "G02",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Porción estándar (25 g)",
+    "g": 25,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0006",
+  "nombre": "Semillas de girasol tostadas",
+  "sinonimos": [],
+  "grupo": "Grasas",
+  "estado": "listo para comer",
+  "kcal": 575,
+  "proteina_g": 20,
+  "carbohidratos_g": 20,
+  "grasa_g": 50,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "G03",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Porción estándar (20 g)",
+    "g": 20,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0007",
+  "nombre": "Arroz con edamame y granada",
+  "sinonimos": [],
+  "grupo": "Cereales y tubérculos",
+  "estado": "listo para comer",
+  "kcal": 122.5,
+  "proteina_g": 2.5,
+  "carbohidratos_g": 23.33,
+  "grasa_g": 2.17,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "C01",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Porción estándar (120 g)",
+    "g": 120,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0008",
+  "nombre": "Camote asado con chile ancho",
+  "sinonimos": [],
+  "grupo": "Cereales y tubérculos",
+  "estado": "listo para comer",
+  "kcal": 160,
+  "proteina_g": 2.31,
+  "carbohidratos_g": 24.62,
+  "grasa_g": 5.77,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "C02",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Porción estándar (130 g)",
+    "g": 130,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0009",
+  "nombre": "Esquites con yogur y feta",
+  "sinonimos": [],
+  "grupo": "Cereales y tubérculos",
+  "estado": "listo para comer",
+  "kcal": 124,
+  "proteina_g": 5,
+  "carbohidratos_g": 14,
+  "grasa_g": 5.3,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "C03",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Porción estándar (100 g)",
+    "g": 100,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0010",
+  "nombre": "Brócoli al carbón sobre tzatziki",
+  "sinonimos": [],
+  "grupo": "Verduras",
+  "estado": "listo para comer",
+  "kcal": 62.5,
+  "proteina_g": 4.17,
+  "carbohidratos_g": 7.5,
+  "grasa_g": 1.67,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "V01",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Porción estándar (120 g)",
+    "g": 120,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0011",
+  "nombre": "Espárragos asados con limón",
+  "sinonimos": [],
+  "grupo": "Verduras",
+  "estado": "listo para comer",
+  "kcal": 35,
+  "proteina_g": 4,
+  "carbohidratos_g": 5,
+  "grasa_g": 0.5,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "V02",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Porción estándar (100 g)",
+    "g": 100,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": true
+ },
+ {
+  "id": "ALI-0012",
+  "nombre": "Ensalada de nopal con jitomate",
+  "sinonimos": [],
+  "grupo": "Verduras",
+  "estado": "listo para comer",
+  "kcal": 40.91,
+  "proteina_g": 1.82,
+  "carbohidratos_g": 7.27,
+  "grasa_g": 0.45,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "V03",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Porción estándar (110 g)",
+    "g": 110,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0013",
+  "nombre": "Verduras tatemadas con cacahuate",
+  "sinonimos": [],
+  "grupo": "Verduras",
+  "estado": "listo para comer",
+  "kcal": 75,
+  "proteina_g": 2.5,
+  "carbohidratos_g": 8.33,
+  "grasa_g": 3.33,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "V04",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Porción estándar (120 g)",
+    "g": 120,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0014",
+  "nombre": "Arándano y romero",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 13.6,
+  "proteina_g": 0.2,
+  "carbohidratos_g": 3.2,
+  "grasa_g": 0.06,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE01",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (500 ml)",
+    "g": 500,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0015",
+  "nombre": "Pepino y hierbabuena",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 12.4,
+  "proteina_g": 0.4,
+  "carbohidratos_g": 2.6,
+  "grasa_g": 0.06,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE02",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (500 ml)",
+    "g": 500,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0016",
+  "nombre": "Fresa y jengibre",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 13.8,
+  "proteina_g": 0.2,
+  "carbohidratos_g": 3.2,
+  "grasa_g": 0.08,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE03",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (500 ml)",
+    "g": 500,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0017",
+  "nombre": "Toronja, albahaca y sal de mar",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 10.8,
+  "proteina_g": 0.2,
+  "carbohidratos_g": 2.6,
+  "grasa_g": 0.02,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE04",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (500 ml)",
+    "g": 500,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0018",
+  "nombre": "Piña, chía y hierbabuena",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 23.2,
+  "proteina_g": 0.4,
+  "carbohidratos_g": 4,
+  "grasa_g": 0.64,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE05",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (500 ml)",
+    "g": 500,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0019",
+  "nombre": "Jamaica en frío",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 13.6,
+  "proteina_g": 0.2,
+  "carbohidratos_g": 3.2,
+  "grasa_g": 0,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE06",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (500 ml)",
+    "g": 500,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0020",
+  "nombre": "Espresso Doble",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 8.33,
+  "proteina_g": 0,
+  "carbohidratos_g": 2.78,
+  "grasa_g": 0.28,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE07",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (36 ml)",
+    "g": 36,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": true
+ },
+ {
+  "id": "ALI-0021",
+  "nombre": "Latte",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 55.86,
+  "proteina_g": 2.73,
+  "carbohidratos_g": 4.3,
+  "grasa_g": 2.93,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE08",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (256 ml)",
+    "g": 256,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0022",
+  "nombre": "Cappuccino",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 50,
+  "proteina_g": 2.74,
+  "carbohidratos_g": 4.11,
+  "grasa_g": 2.6,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE09",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (146 ml)",
+    "g": 146,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0023",
+  "nombre": "Cold Brew",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 1.79,
+  "proteina_g": 0,
+  "carbohidratos_g": 0.36,
+  "grasa_g": 0.04,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE10",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (280 ml)",
+    "g": 280,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0024",
+  "nombre": "Espresso Coconut Cloud",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 84.66,
+  "proteina_g": 0.57,
+  "carbohidratos_g": 5.11,
+  "grasa_g": 6.7,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE11",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (176 ml)",
+    "g": 176,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0025",
+  "nombre": "Matcha Latte",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 61.05,
+  "proteina_g": 2.81,
+  "carbohidratos_g": 7.02,
+  "grasa_g": 2.46,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE12",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (285 ml)",
+    "g": 285,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0026",
+  "nombre": "Dirty Chai Latte",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 45.61,
+  "proteina_g": 1.69,
+  "carbohidratos_g": 5.74,
+  "grasa_g": 1.76,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE13",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (296 ml)",
+    "g": 296,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0027",
+  "nombre": "Horchata Cold Brew",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 31.03,
+  "proteina_g": 0.34,
+  "carbohidratos_g": 5.17,
+  "grasa_g": 0.97,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE14",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (290 ml)",
+    "g": 290,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0028",
+  "nombre": "Berry Protein",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 61.49,
+  "proteina_g": 5.96,
+  "carbohidratos_g": 5.11,
+  "grasa_g": 1.89,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE15",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (470 ml)",
+    "g": 470,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0029",
+  "nombre": "Cacao Peanut",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 149.09,
+  "proteina_g": 9.09,
+  "carbohidratos_g": 17.27,
+  "grasa_g": 4.77,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE16",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (440 ml)",
+    "g": 440,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0030",
+  "nombre": "Mango Coconut",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 81.67,
+  "proteina_g": 5.83,
+  "carbohidratos_g": 13.75,
+  "grasa_g": 0.31,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE17",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (480 ml)",
+    "g": 480,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0031",
+  "nombre": "Vanilla Matcha",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 69.52,
+  "proteina_g": 7.14,
+  "carbohidratos_g": 5.95,
+  "grasa_g": 1.93,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE18",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (420 ml)",
+    "g": 420,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0032",
+  "nombre": "Mamey",
+  "sinonimos": [],
+  "grupo": "Bebidas",
+  "estado": "listo para comer",
+  "kcal": 95.33,
+  "proteina_g": 6.89,
+  "carbohidratos_g": 13.78,
+  "grasa_g": 1.4,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "BE19",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Botella (450 ml)",
+    "g": 450,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0033",
+  "nombre": "Chocolate Chip Cookie",
+  "sinonimos": [],
+  "grupo": "Postres",
+  "estado": "listo para comer",
+  "kcal": 532.31,
+  "proteina_g": 6.15,
+  "carbohidratos_g": 53.85,
+  "grasa_g": 32.15,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "PS01",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Pieza (65 g)",
+    "g": 65,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0034",
+  "nombre": "Raspberry & Pistachio Cookie",
+  "sinonimos": [],
+  "grupo": "Postres",
+  "estado": "listo para comer",
+  "kcal": 501.54,
+  "proteina_g": 7.69,
+  "carbohidratos_g": 49.23,
+  "grasa_g": 30.31,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "PS02",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Pieza (65 g)",
+    "g": 65,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0035",
+  "nombre": "Banana Bread",
+  "sinonimos": [],
+  "grupo": "Postres",
+  "estado": "listo para comer",
+  "kcal": 336.84,
+  "proteina_g": 5.26,
+  "carbohidratos_g": 37.89,
+  "grasa_g": 18.11,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "PS03",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Pieza (95 g)",
+    "g": 95,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0036",
+  "nombre": "Carrot Chai Cake",
+  "sinonimos": [],
+  "grupo": "Postres",
+  "estado": "listo para comer",
+  "kcal": 388.18,
+  "proteina_g": 7.27,
+  "carbohidratos_g": 33.64,
+  "grasa_g": 25.27,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "PS04",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Pieza (110 g)",
+    "g": 110,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-0037",
+  "nombre": "Marbled Chocolate & Tahini Cake",
+  "sinonimos": [],
+  "grupo": "Postres",
+  "estado": "listo para comer",
+  "kcal": 408.57,
+  "proteina_g": 8.57,
+  "carbohidratos_g": 38.1,
+  "grasa_g": 24.86,
+  "fibra_g": null,
+  "fuente": "Carta COSECHA (js/data.js)",
+  "id_fuente": "PS05",
+  "licencia": "Propia",
+  "porciones": [
+   {
+    "nombre": "Pieza (105 g)",
+    "g": 105,
+    "fuente": "Carta COSECHA"
+   }
+  ],
+  "kcalDesvia": false
+ }
+]
