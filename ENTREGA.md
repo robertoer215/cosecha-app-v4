@@ -1,6 +1,6 @@
 # ENTREGA — COSECHA App v4
 
-**Última actualización: 1-oct-2026 23:18** (se actualiza hasta las 23:50; el servicio se corta ~00:00)
+**Última actualización: 1-oct-2026 23:25.** Plazo real: el plan de Roberto caduca el **2-oct a las 16:42 (Madrid)**; entrega final como muy tarde a las **16:00**. Trabajo continuo y autónomo hasta entonces: cada avance se commitea y pushea, y este archivo se mantiene al día. Criterio de terminado: app casi lista para lanzar y una ronda completa de auditoría (roles independientes + 3 refutadores por hallazgo) sin ningún defecto S0/S1/S2 confirmado.
 
 ## URL
 
@@ -26,8 +26,8 @@ Los datos del usuario viven SOLO en el dispositivo (`localStorage`, esquema vers
 | Colapso src/↔raíz | ✅ En `main` |
 | Shell 4 pestañas + Hoy | ✅ En `integracion`, 116 tests en verde |
 | js/almacen.js + js/temporizador.js | ✅ Integrados con sus tests |
-| js/diario.js + js/entreno.js | ⏳ Agentes construyendo (se integran si llegan enteros; si no, sus pestañas se ocultan antes que entregarlas rotas) |
-| Base de alimentos USDA (≥1.500) | ⏳ En producción por agentes; si no llega completa esta noche, el Diario arranca con la carta COSECHA como base mínima |
+| js/diario.js + js/entreno.js | ⏳ Agentes construyendo; con el plazo del 2-oct se integran COMPLETOS (sin recortes de emergencia) |
+| Base de alimentos USDA (≥1.500) | ⏳ Pipeline en marcha (fdc.sqlite ya extraído); mientras tanto el Diario usa la base mínima de la carta (37 items, `scripts/base_minima_carta.mjs`) |
 | Ejercicios es-MX + rutinas | ⏳ En producción por agentes |
 | Excel en Drive | ⏳ Pendiente de la base de alimentos |
 
