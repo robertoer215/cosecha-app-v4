@@ -4,15 +4,14 @@ App de un restaurante fast-casual saludable. El usuario arma un plato modular
 y la app calcula macros personalizados, sugiere extras y genera un QR para cocina.
 
 ## Arquitectura
-- `src/index.html` — markup, sin lógica inline salvo onclick que llaman funciones globales
-- `src/css/styles.css` — todos los estilos. Paleta crema + acento naranja (#C05A1F)
-- `src/js/data.js` — datos: ingredientes con `costoKg` (coste real de la preparación, del costeo), factores, constantes de precio
-- `src/js/calc.js` — funciones puras: precio(), mac(), calcularMeta(), y el MODO IA:
+- `index.html` — markup, sin lógica inline salvo onclick que llaman funciones globales
+- `css/styles.css` — todos los estilos. Paleta crema + acento naranja (#C05A1F)
+- `js/data.js` — datos: ingredientes con `costoKg` (coste real de la preparación, del costeo), factores, constantes de precio
+- `js/calc.js` — funciones puras: precio(), mac(), calcularMeta(), y el MODO IA:
   porcionar(), explicarCambio(), proponerCierre()
-- `src/js/app.js` — estado y render de la UI; expone funciones a window
+- `js/app.js` — estado y render de la UI; expone funciones a window
 - `assets/ingredientes/` — foto de cada ingrediente, 600×600 JPEG (~110 KB). Son
   derivadas con `sips` de las fotos de la landing (repo cosecha-landing/assets).
-  `src/assets` es un symlink a `../assets` para no duplicar los binarios en git.
 
 ## Fotos de ingredientes
 - `data.js` trae `img` (nombre de archivo) y `foco` (object-position) por ingrediente.
@@ -23,10 +22,10 @@ y la app calcula macros personalizados, sugiere extras y genera un QR para cocin
   Van con `loading="lazy"`: el paso 2 sólo muestra una categoría a la vez.
 - El ticket de cocina (instrucciones del QR) va sin fotos a propósito: es para staff.
 
-## Duplicación src/ ↔ raíz (deuda conocida)
-Los 5 archivos de `src/` y la raíz son copias idénticas: `npm run dev` sirve `src/`,
-los tests importan de `../js/` y GitHub Pages sirve la raíz. Al tocar código hay que
-copiar a las dos. Pendiente decidir si se colapsa en una sola ubicación.
+## Duplicación src/ ↔ raíz (RESUELTA 1-oct-2026)
+La copia `src/` se eliminó: la raíz es la única ubicación. `npm run dev` sirve la
+raíz, los tests importan de `../js/` y GitHub Pages sirve la raíz. (Hasta `ccb51a4`
+eran copias idénticas que había que editar por duplicado.)
 
 ## Modo IA — el tamaño es una respuesta, no una pregunta
 El usuario elige QUÉ comer (proteína → carbohidrato → vegetal → grasa, mismas
