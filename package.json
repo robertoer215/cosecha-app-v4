@@ -4,8 +4,8 @@
   "description": "Armador de plato modular con macros personalizados — Cosecha",
   "type": "module",
   "scripts": {
-    "dev": "npx serve src -p 3000",
-    "start": "npx serve src -p 3000",
+    "dev": "npx serve . -p 3000",
+    "start": "npx serve . -p 3000",
     "test": "node --test tests/*.test.mjs"
   },
   "keywords": ["foodtech", "nutricion", "fast-casual"],
