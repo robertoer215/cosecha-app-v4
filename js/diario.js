@@ -1,0 +1,1050 @@
+// ─────────────────────────────────────────────────────────────────────────────
+// DIARIO DE MACROS — la pestaña que comparte meta y registro con Pedir.
+//
+// El shell (app.js) monta este módulo con initDiario({ raiz, getMeta }) la
+// primera vez que se abre la pestaña, y llama refrescar() al volver a ella:
+// el almacén pudo cambiar desde Pedir (un plato añadido al diario) y aquí se
+// relee entero en vez de adivinar qué cambió.
+//
+// Reglas de la casa que este módulo respeta a rajatabla:
+// - La meta POR COMIDA llega por getMeta() (calcularMeta()/manual, cacheada en
+//   el almacén). Aquí no hay fórmulas de meta: metaDelDia() solo multiplica por
+//   el número de comidas, igual que hace la pantalla Hoy.
+// - Las kcal MOSTRADAS se derivan SIEMPRE 4P+4C+9G al pintar (kcalDerivada):
+//   es la misma regla con la que se construye la meta, así el "te quedan X"
+//   cuadra por construcción. kcalFuente (la etiqueta) es dato de respaldo y
+//   solo asoma cuando difiere de la derivada en más de un 15 %.
+// - localStorage se toca SOLO a través de js/almacen.js, y cada mutación
+//   produce un estado nuevo que se persiste con guardar().
+//
+// La base de alimentos (data/alimentos.json, valores por 100 g) se carga UNA
+// vez, al abrir el buscador por primera vez, y el índice vive en memoria: el
+// buscador no toca la red al teclear. Si el archivo no está, el buscador lo
+// dice y los recientes (que salen del propio diario) siguen funcionando.
+//
+// Las funciones de arriba del archivo son puras y están testeadas en
+// tests/diario.test.mjs; el DOM empieza donde dice "ESTADO DE LA UI". Nada
+// fuera de initDiario()/refrescar() toca document: los tests importan este
+// módulo en Node, sin navegador.
+// ─────────────────────────────────────────────────────────────────────────────
+
+import * as almacen from './almacen.js';
+// El mismo ±4 g por macro con el que el resumen de Pedir pinta "En tu meta":
+// un diario que marcara "fuera" con otro umbral contradiría a la otra pestaña.
+import { UMBRAL_G } from './calc.js';
+
+// Las cuatro franjas, en su orden de render (el mismo del almacén).
+const COMIDAS = ['desayuno', 'comida', 'cena', 'colaciones'];
+const COMIDA_LBL = { desayuno: 'Desayuno', comida: 'Comida', cena: 'Cena', colaciones: 'Colaciones' };
+
+// El deshacer vive 5 s: suficiente para reaccionar, poco para estorbar.
+const TOAST_MS = 5000;
+
+// ── FUNCIONES PURAS (testeadas con fixtures inline, sin DOM ni red) ──────────
+
+// Minúsculas, sin acentos y con los espacios colapsados: "Plátano  TABASCO"
+// y "platano tabasco" son la misma consulta. NFD separa la letra de su tilde
+// y el rango U+0300–U+036F borra solo la tilde, nunca la letra (la ñ se
+// conserva como n+virgulilla → "n": "ñame" se encuentra tecleando "name",
+// que es exactamente lo que hace quien no encuentra la ñ en su teclado).
+export function normalizarTexto(s) {
+  return String(s ?? '')
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[̀-ͯ]/g, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+// El índice se construye una sola vez por carga de la base: normalizar en
+// cada tecleo multiplicaría el trabajo por el número de letras escritas.
+// `nombre` queda aparte de `texto` para poder rankear el prefijo del nombre
+// por encima del acierto en un sinónimo.
+export function construirIndice(alimentos) {
+  if (!Array.isArray(alimentos)) return [];
+  const indice = [];
+  for (const a of alimentos) {
+    if (!a || typeof a.nombre !== 'string' || a.nombre === '') continue;
+    const nombre = normalizarTexto(a.nombre);
+    const sinonimos = Array.isArray(a.sinonimos)
+      ? a.sinonimos.map(normalizarTexto).filter(s => s !== '').join(' ')
+      : '';
+    indice.push({ alimento: a, nombre, texto: sinonimos ? nombre + ' ' + sinonimos : nombre });
+  }
+  return indice;
+}
+
+// Búsqueda local por subcadenas: cada palabra de la consulta tiene que
+// aparecer en el nombre o en los sinónimos (AND, no OR: "arroz pollo" no
+// debe traer todos los arroces MÁS todos los pollos). El orden premia al
+// nombre que EMPIEZA por la consulta, luego al que la contiene, y al final
+// los aciertos solo por sinónimo; dentro de cada grupo, alfabético, para que
+// el mismo tecleo pinte siempre la misma lista.
+export function buscar(indice, consulta, limite = 20) {
+  const q = normalizarTexto(consulta);
+  if (q === '') return [];
+  const palabras = q.split(' ');
+  const aciertos = [];
+  for (const item of indice) {
+    if (!palabras.every(p => item.texto.includes(p))) continue;
+    const rango = item.nombre.startsWith(q) ? 0 : item.nombre.includes(palabras[0]) ? 1 : 2;
+    aciertos.push({ item, rango });
+  }
+  aciertos.sort((a, b) => a.rango - b.rango || a.item.nombre.localeCompare(b.item.nombre));
+  return aciertos.slice(0, limite).map(x => x.item.alimento);
+}
+
+// Macros de una cantidad concreta de un alimento de la base (valores por
+// 100 g). Sin porción, `cantidad` son gramos; con porción, `cantidad` es el
+// número de porciones (1.5 tazas) y los gramos se derivan de porcion.g.
+// Redondeo a 1 decimal: es la resolución con la que el almacén guarda y
+// suficiente para que una suma de 20 entradas no arrastre basura binaria.
+// kcalFuente se escala igual: es la etiqueta de la base, guardada como dato.
+export function macrosDeCantidad(alimento, cantidad, porcion = null) {
+  const n = Number.isFinite(cantidad) && cantidad > 0 ? cantidad : 0;
+  const gramos = porcion && Number.isFinite(porcion.g) ? n * porcion.g : n;
+  const f = gramos / 100;
+  const r1 = x => Math.round((Number(x) || 0) * f * 10) / 10;
+  return {
+    gramos: Math.round(gramos * 10) / 10,
+    macros: {
+      prot: r1(alimento.proteina_g),
+      carb: r1(alimento.carbohidratos_g),
+      gras: r1(alimento.grasa_g),
+      kcalFuente: r1(alimento.kcal)
+    }
+  };
+}
+
+// LA regla de las kcal mostradas: 4P + 4C + 9G, la misma con la que la meta
+// se deriva de sus macros. Ningún otro sitio del módulo multiplica 4/4/9.
+// Devuelve el número crudo; quien pinta redondea.
+export function kcalDerivada(m) {
+  return 4 * (Number(m?.prot) || 0) + 4 * (Number(m?.carb) || 0) + 9 * (Number(m?.gras) || 0);
+}
+
+// Suma un día del diario: total y subtotal por comida, con la kcal derivada
+// del TOTAL de macros (no de la suma de kcal por entrada: así total y barras
+// cuadran siempre entre sí). Tolera día ausente o franjas que falten.
+export function sumarDia(dia) {
+  const total = { prot: 0, carb: 0, gras: 0, kcal: 0, comidas: {} };
+  for (const c of COMIDAS) {
+    const sub = { prot: 0, carb: 0, gras: 0, kcal: 0 };
+    const lista = dia && Array.isArray(dia[c]) ? dia[c] : [];
+    for (const e of lista) {
+      sub.prot += e.macros.prot;
+      sub.carb += e.macros.carb;
+      sub.gras += e.macros.gras;
+    }
+    sub.kcal = kcalDerivada(sub);
+    total.comidas[c] = sub;
+    total.prot += sub.prot;
+    total.carb += sub.carb;
+    total.gras += sub.gras;
+  }
+  total.kcal = kcalDerivada(total);
+  return total;
+}
+
+// La meta del DÍA a partir de la meta POR COMIDA que entrega getMeta().
+// - origen 'formula' o 'manual_dia': meta × meta.comidas (el usuario ya dijo
+//   cuántas comidas al repartir su meta).
+// - origen 'manual_comida': la meta llegó ya por comida (comidas = 1) y NADIE
+//   ha dicho cuántas comidas hace al día → hace falta perfil.comidasDiario.
+//   Sin él se devuelve { pendiente: true } y la UI lo pregunta UNA vez.
+// Aquí no se calcula ninguna meta: solo se multiplica la que ya existe.
+export function metaDelDia(meta, perfil) {
+  if (!meta || !Number.isFinite(meta.prot)) return null;
+  let n;
+  if (meta.origen === 'manual_comida') {
+    n = perfil && Number.isFinite(perfil.comidasDiario) && perfil.comidasDiario > 0
+      ? perfil.comidasDiario
+      : null;
+    if (n === null) return { pendiente: true };
+  } else {
+    n = Number.isFinite(meta.comidas) && meta.comidas > 0 ? meta.comidas : 1;
+  }
+  return { kcal: meta.kcal * n, prot: meta.prot * n, carb: meta.carb * n, gras: meta.gras * n, n };
+}
+
+// Suma días a una fecha ISO en hora LOCAL: el Date local absorbe el cambio de
+// mes/año y hoyISO() la vuelve a formatear con la misma regla del almacén.
+function sumarDias(fechaISO, delta) {
+  const [a, m, d] = fechaISO.split('-').map(Number);
+  return almacen.hoyISO(new Date(a, m - 1, d + delta).getTime());
+}
+
+// ── ESTADO DE LA UI (de aquí para abajo hay DOM) ─────────────────────────────
+
+let raiz = null;            // la <section> que el shell nos presta
+let raizCableada = null;    // contra doble init: los listeners se cuelgan una vez
+let getMeta = null;         // la meta POR COMIDA, siempre del shell
+let estado = null;          // snapshot del almacén; cada mutación lo reemplaza
+let fecha = '';             // día visible ('YYYY-MM-DD')
+let vista = 'dia';          // 'dia' | 'buscar' | 'detalle' | 'semana'
+
+// Buscador
+let base = null;            // lista de alimentos (por 100 g) o null
+let indice = [];            // índice normalizado en memoria
+let baseError = false;      // fetch fallido → "Base de alimentos no disponible"
+let basePromesa = null;     // la carga corre UNA vez; se resetea solo si falló
+let consulta = '';
+let comidaDestino = 'comida';
+let enfocarBuscador = false;
+let chipPorId = new Map();  // id → última entrada, para los chips de recientes
+
+// Detalle (alta o edición de una entrada)
+let det = null;
+
+// Toast de deshacer: una sola acción viva a la vez; la nueva pisa a la vieja.
+let toastTimer = null;
+let deshacerFn = null;
+
+// "Tus datos"
+let datosAbierto = false;
+let importPendiente = null; // estado ya migrado, esperando confirmación
+let importError = '';
+let importOk = false;
+let fallaGuardado = false;  // guardar() devolvió false: se avisa, no se rompe
+
+const esc = s => String(s).replace(/[&<>"']/g, c => (
+  { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+));
+// Cifras sin basura binaria: 1 decimal si lo hay, entero si no.
+const fmt1 = n => String(Math.round(n * 10) / 10);
+const CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>';
+const MAS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+
+function persistir() {
+  // Si localStorage falla (modo privado, cuota), la sesión sigue en memoria y
+  // el día lo avisa una vez: perder datos en silencio sería peor que avisar.
+  if (!almacen.guardar(estado)) fallaGuardado = true;
+}
+
+function irVista(v) {
+  vista = v;
+  render();
+  window.scrollTo(0, 0);
+}
+
+// ── Base de alimentos: fetch lazy, una vez ───────────────────────────────────
+
+function cargarBase() {
+  if (basePromesa) return basePromesa;
+  baseError = false;
+  basePromesa = fetch('data/alimentos.json')
+    .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); })
+    .then(lista => {
+      base = Array.isArray(lista) ? lista : [];
+      indice = construirIndice(base);
+    })
+    .catch(() => {
+      // Promesa a null: "Reintentar" puede volver a disparar la carga.
+      baseError = true;
+      basePromesa = null;
+    })
+    .finally(() => {
+      // Solo la zona de resultados: un render() completo reconstruiría el
+      // campo de búsqueda y le robaría el foco justo al empezar a teclear.
+      if (vista !== 'buscar') return;
+      const zona = raiz?.querySelector('[data-zona="resultados"]');
+      if (zona) zona.innerHTML = htmlResultados();
+    });
+  return basePromesa;
+}
+
+// ── Recientes y frecuentes ───────────────────────────────────────────────────
+
+// La última entrada registrada con ese id, buscando del día más nuevo al más
+// viejo: es la que presta nombre y cantidad al chip ("Avena · 60 g").
+function ultimaEntradaPorId(id) {
+  const fechas = Object.keys(estado.diario).sort().reverse();
+  for (const f of fechas) {
+    const dia = estado.diario[f];
+    for (const c of COMIDAS) {
+      const lista = dia[c] || [];
+      for (let i = lista.length - 1; i >= 0; i--) {
+        if (lista[i].id === id) return lista[i];
+      }
+    }
+  }
+  return null;
+}
+
+// Chips del buscador: recientes primero (el orden del almacén ya es "más
+// reciente al frente") y después los frecuentes de los últimos 30 días que no
+// estén ya en la fila. Tocar un chip registra con la última cantidad: es el
+// camino de ≤3 toques (+ de la comida → chip) para lo que comes a diario.
+function chipsSugeridos() {
+  chipPorId = new Map();
+  const vistos = new Set();
+  const recientes = [];
+  for (const id of estado.recientes.alimentos) {
+    if (recientes.length >= 8) break;
+    const e = ultimaEntradaPorId(id);
+    if (!e) continue;
+    recientes.push(e);
+    vistos.add(id);
+    chipPorId.set(id, e);
+  }
+  const cuenta = {};
+  const fechas = Object.keys(estado.diario).sort().reverse().slice(0, 30);
+  for (const f of fechas) {
+    for (const c of COMIDAS) {
+      for (const e of estado.diario[f][c] || []) cuenta[e.id] = (cuenta[e.id] || 0) + 1;
+    }
+  }
+  const frecuentes = [];
+  for (const id of Object.keys(cuenta).sort((a, b) => cuenta[b] - cuenta[a])) {
+    if (frecuentes.length >= 4) break;
+    if (vistos.has(id)) continue;
+    const e = ultimaEntradaPorId(id);
+    if (!e) continue;
+    frecuentes.push(e);
+    chipPorId.set(id, e);
+  }
+  return recientes.concat(frecuentes);
+}
+
+// ── Mutaciones del diario (todas pasan por el almacén y persisten) ───────────
+
+function agregarEntradas(f, comida, entradas, textoToast) {
+  for (const e of entradas) {
+    estado = almacen.agregarAlDiario(estado, f, comida, e);
+  }
+  persistir();
+  irVista('dia');
+  // El deshacer quita las N últimas de esa franja. Es seguro porque el toast
+  // nuevo pisa al anterior: solo la ÚLTIMA acción es deshacible, así que las
+  // entradas a quitar siguen siendo las últimas de la lista.
+  const n = entradas.length;
+  mostrarToast(textoToast, () => {
+    for (let i = 0; i < n; i++) {
+      const lista = estado.diario[f]?.[comida] || [];
+      estado = almacen.quitarDelDiario(estado, f, comida, lista.length - 1);
+    }
+    persistir();
+    if (vista === 'dia') render();
+  });
+}
+
+function agregarDesdeChip(id) {
+  const e = chipPorId.get(id);
+  if (!e) return;
+  // Se repite tal cual (misma cantidad, mismos macros), con ts de ahora.
+  agregarEntradas(fecha, comidaDestino, [{ ...e, ts: Date.now() }],
+    `${e.nombre} en ${COMIDA_LBL[comidaDestino].toLowerCase()}`);
+}
+
+function repetirAyer(comida) {
+  const ayer = estado.diario[sumarDias(fecha, -1)];
+  const lista = ayer?.[comida] || [];
+  if (!lista.length) return;
+  agregarEntradas(fecha, comida, lista.map(e => ({ ...e, ts: Date.now() })),
+    `${lista.length === 1 ? '1 alimento' : lista.length + ' alimentos'} de ayer en ${COMIDA_LBL[comida].toLowerCase()}`);
+}
+
+// ── Detalle: alta desde la base, o edición de una entrada existente ──────────
+
+function porcionDe(al) {
+  const p = Array.isArray(al.porciones) ? al.porciones[0] : null;
+  return p && typeof p.nombre === 'string' && Number.isFinite(p.g) && p.g > 0
+    ? { nombre: p.nombre, g: p.g }
+    : null;
+}
+
+function abrirDetalleNuevo(al) {
+  const porcion = porcionDe(al);
+  det = {
+    modo: 'nuevo',
+    alimento: al,
+    id: typeof al.id === 'string' && al.id !== '' ? al.id : al.nombre,
+    nombre: al.nombre,
+    comida: comidaDestino,
+    porcion,
+    // Con porción casera se parte de 1 porción; sin ella, de 100 g (la unidad
+    // de la base). Nunca un campo vacío: un valor es editable, un hueco no.
+    cantidad: porcion ? 1 : 100,
+    editable: true,
+    ref: null,
+    entrada: null
+  };
+  irVista('detalle');
+}
+
+function abrirDetalleEdicion(f, comida, indice) {
+  const e = estado.diario[f]?.[comida]?.[indice];
+  if (!e) return;
+  const enBase = base ? base.find(a => a.id === e.id) : null;
+  let alimento = null, porcion = null, cantidad = 0, editable = false;
+  if (enBase) {
+    alimento = enBase;
+    const match = e.porcion && Array.isArray(enBase.porciones)
+      ? enBase.porciones.find(p => p.g === e.porcion.g && p.nombre === e.porcion.nombre)
+      : null;
+    porcion = match ? { nombre: match.nombre, g: match.g } : null;
+    cantidad = porcion ? Math.round((e.gramos / porcion.g) * 100) / 100 : e.gramos;
+    editable = true;
+  } else if (e.gramos > 0) {
+    // Sin alimento en la base (un plato COSECHA, o una base que cambió), la
+    // propia entrada hace de alimento por 100 g: reescalar sigue siendo
+    // posible y los macros guardan la misma proporción que traían.
+    const f100 = 100 / e.gramos;
+    alimento = {
+      id: e.id, nombre: e.nombre,
+      proteina_g: e.macros.prot * f100,
+      carbohidratos_g: e.macros.carb * f100,
+      grasa_g: e.macros.gras * f100,
+      kcal: e.macros.kcalFuente * f100,
+      porciones: e.porcion ? [e.porcion] : []
+    };
+    porcion = e.porcion ? { ...e.porcion } : null;
+    cantidad = porcion ? Math.round((e.gramos / porcion.g) * 100) / 100 : e.gramos;
+    editable = true;
+  }
+  // Con gramos en 0 no hay proporción que escalar: solo mover de comida o quitar.
+  det = {
+    modo: 'editar', alimento, porcion, cantidad, editable,
+    id: e.id, nombre: e.nombre, comida,
+    ref: { fecha: f, comida, indice }, entrada: e
+  };
+  irVista('detalle');
+}
+
+function confirmarDetalle() {
+  if (det.modo === 'nuevo') {
+    const { gramos, macros } = macrosDeCantidad(det.alimento, det.cantidad, det.porcion);
+    if (gramos <= 0) return; // cantidad vacía o 0: no hay nada que registrar
+    const entrada = {
+      id: det.id, nombre: det.nombre, gramos,
+      porcion: det.porcion, macros, origen: 'base', ts: Date.now()
+    };
+    agregarEntradas(fecha, det.comida, [entrada],
+      `${entrada.nombre} en ${COMIDA_LBL[det.comida].toLowerCase()}`);
+    return;
+  }
+  const ref = det.ref;
+  let gramos, porcion, macros;
+  if (det.editable) {
+    ({ gramos, macros } = macrosDeCantidad(det.alimento, det.cantidad, det.porcion));
+    if (gramos <= 0) return;
+    porcion = det.porcion;
+  } else {
+    ({ gramos, porcion, macros } = det.entrada);
+  }
+  if (det.comida === ref.comida) {
+    estado = almacen.editarEnDiario(estado, ref.fecha, ref.comida, ref.indice, { gramos, porcion, macros });
+  } else {
+    // Cambió de franja: se quita de donde estaba y se agrega a la nueva, con
+    // su ts original (fue comida cuando fue comida; mover no es re-registrar).
+    const nueva = { ...det.entrada, gramos, porcion, macros };
+    estado = almacen.quitarDelDiario(estado, ref.fecha, ref.comida, ref.indice);
+    estado = almacen.agregarAlDiario(estado, ref.fecha, det.comida, nueva);
+  }
+  persistir();
+  irVista('dia');
+}
+
+function quitarDesdeDetalle() {
+  const { fecha: f, comida: c, indice } = det.ref;
+  const e = estado.diario[f]?.[c]?.[indice];
+  estado = almacen.quitarDelDiario(estado, f, c, indice);
+  persistir();
+  irVista('dia');
+  if (e) {
+    // Deshacer re-agrega al FINAL de la franja: se pierde la posición exacta,
+    // pero recuperar el dato importa más que el orden dentro de la comida.
+    mostrarToast(`Quitaste ${e.nombre}`, () => {
+      estado = almacen.agregarAlDiario(estado, f, c, e);
+      persistir();
+      if (vista === 'dia') render();
+    });
+  }
+}
+
+// ── Toast de deshacer ────────────────────────────────────────────────────────
+
+function mostrarToast(texto, fn) {
+  const zona = raiz.querySelector('[data-zona="toast"]');
+  if (!zona) return;
+  clearTimeout(toastTimer);
+  deshacerFn = fn || null;
+  zona.innerHTML = `<div class="dia-toast" role="status">
+    <span class="dia-toast-txt">${esc(texto)}</span>
+    ${fn ? '<button type="button" class="dia-toast-btn" data-accion="deshacer">Deshacer</button>' : ''}
+  </div>`;
+  // Doble rAF: la clase de entrada tiene que llegar un frame después de que
+  // el nodo exista, o la transición (solo transform/opacity) no corre. Con
+  // prefers-reduced-motion el barrido global de styles.css la deja en .01ms.
+  const t = zona.firstElementChild;
+  requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add('dia-toast-on')));
+  toastTimer = setTimeout(ocultarToast, TOAST_MS);
+}
+
+function ocultarToast() {
+  clearTimeout(toastTimer);
+  toastTimer = null;
+  deshacerFn = null;
+  const zona = raiz?.querySelector('[data-zona="toast"]');
+  if (zona) zona.innerHTML = '';
+}
+
+// ── Exportar / importar ──────────────────────────────────────────────────────
+
+function exportarRespaldo() {
+  const blob = new Blob([almacen.exportarJSON(estado)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `cosecha-respaldo-${almacen.hoyISO()}.json`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  // El revoke va diferido: revocar en el mismo tick corta la descarga en Safari.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+function recibirArchivo(archivo) {
+  archivo.text().then(texto => {
+    importOk = false;
+    try {
+      // importarJSON migra y valida; si el archivo no sirve, lanza con un
+      // mensaje en es-MX que se pinta tal cual bajo los botones.
+      importPendiente = almacen.importarJSON(texto);
+      importError = '';
+    } catch (e) {
+      importPendiente = null;
+      importError = e.message;
+    }
+    datosAbierto = true;
+    render();
+  });
+}
+
+function confirmarImportacion() {
+  estado = importPendiente;
+  importPendiente = null;
+  importOk = true;
+  persistir();
+  fecha = almacen.hoyISO();
+  datosAbierto = true;
+  render();
+}
+
+// ── HTML de cada vista ───────────────────────────────────────────────────────
+
+function etiquetaFecha(f) {
+  const hoy = almacen.hoyISO();
+  const [a, m, d] = f.split('-').map(Number);
+  const txt = new Date(a, m - 1, d).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
+  if (f === hoy) return 'Hoy · ' + txt;
+  if (f === sumarDias(hoy, -1)) return 'Ayer · ' + txt;
+  return txt.charAt(0).toUpperCase() + txt.slice(1);
+}
+
+// Una barra de macro con el patrón EXACTO del tracker de Pedir: riel .bar-bg,
+// relleno .bar-fill animado con transform:scaleX (nunca width) y los tres
+// canales --green/--blue/--amber. .bover marca el exceso con su trama.
+function htmlBarra(lbl, clase, valor, meta, unidad = 'g') {
+  const frac = meta > 0 ? Math.min(1, valor / meta) : 0;
+  const umbral = unidad === 'g' ? UMBRAL_G : UMBRAL_G * 17; // ±4 g ↔ ±68 kcal (4·4+4·4+9·4)
+  const over = meta > 0 && valor > meta + umbral;
+  return `<div class="gt-bar-wrap">
+    <div class="gt-bar-top"><span class="gt-bar-lbl">${lbl}</span><span class="gt-bar-val">${Math.round(valor)}/${Math.round(meta)}${unidad}</span></div>
+    <div class="bar-bg"><div class="bar-fill ${clase}${over ? ' bover' : ''}" style="transform:scaleX(${frac})"></div></div>
+  </div>`;
+}
+
+function htmlProgreso(md, sumas) {
+  const kcal = Math.round(sumas.kcal);
+  const restante = Math.round(md.kcal - sumas.kcal);
+  const linea = restante >= 0
+    ? `Te quedan ${restante} kcal hoy.`
+    : `Llevas ${-restante} kcal por encima de tu meta.`;
+  return `<section class="gap-wrap dia-progreso" aria-label="Progreso del día">
+    <div class="gap-hd dia-progreso-hd"><span>Tu día</span><span class="dia-kcal">${kcal} / ${Math.round(md.kcal)} kcal</span></div>
+    <div class="dia-barras">
+      ${htmlBarra('Proteína', 'bp', sumas.prot, md.prot)}
+      ${htmlBarra('Carbos', 'bc', sumas.carb, md.carb)}
+      ${htmlBarra('Grasas', 'bg2', sumas.gras, md.gras)}
+    </div>
+    <p class="dia-restante">${linea}</p>
+  </section>`;
+}
+
+// La meta llegó por comida y nadie dijo cuántas comidas al día: se pregunta
+// UNA vez (guardarPerfil la deja en perfil.comidasDiario) y no se vuelve a ver.
+function htmlPreguntaComidas() {
+  return `<section class="gap-wrap dia-pregunta" aria-label="Comidas por día">
+    <div class="gap-hd"><span>Tu meta</span></div>
+    <div class="dia-pregunta-body">
+      <p>Tu meta está definida por comida. ¿Cuántas comidas registras al día? Lo preguntamos una sola vez.</p>
+      <div class="dia-pills">
+        ${[2, 3, 4, 5].map(n => `<button type="button" class="dia-pill" data-accion="comidas-dia" data-n="${n}">${n}</button>`).join('')}
+      </div>
+    </div>
+  </section>`;
+}
+
+function htmlEntrada(e, comida, i) {
+  const kcal = Math.round(kcalDerivada(e.macros));
+  const cant = e.porcion
+    ? `${fmt1(e.gramos / e.porcion.g)} × ${esc(e.porcion.nombre)}`
+    : `${fmt1(e.gramos)} g`;
+  return `<li><button type="button" class="dia-entrada" data-accion="editar-entrada" data-comida="${comida}" data-indice="${i}">
+    <span class="dia-e-main">
+      <span class="dia-e-nm">${esc(e.nombre)}</span>
+      <span class="dia-e-sub">${cant} · P${Math.round(e.macros.prot)} C${Math.round(e.macros.carb)} G${Math.round(e.macros.gras)}</span>
+    </span>
+    <span class="dia-e-kcal">${kcal} kcal</span>
+  </button></li>`;
+}
+
+function htmlComidas(sumas) {
+  const dia = estado.diario[fecha] || {};
+  const ayer = estado.diario[sumarDias(fecha, -1)] || {};
+  return COMIDAS.map(c => {
+    const lista = dia[c] || [];
+    const sub = sumas.comidas[c];
+    // Sin entradas el subtotal se queda vacío: un "—" junto al botón de +
+    // se leía como un botón de menos (visto en el humo con Chrome).
+    const kcal = lista.length ? `${Math.round(sub.kcal)} kcal` : '';
+    const repetir = !lista.length && (ayer[c] || []).length
+      ? `<div class="dia-vacia-zona"><button type="button" class="dia-chip" data-accion="repetir-ayer" data-comida="${c}">
+           <span class="dia-chip-nm">Repetir lo de ayer</span><span class="dia-chip-sub">${(ayer[c]).length === 1 ? '1 alimento' : (ayer[c]).length + ' alimentos'}</span>
+         </button></div>`
+      : '';
+    const cuerpo = lista.length
+      ? `<ul class="dia-lista">${lista.map((e, i) => htmlEntrada(e, c, i)).join('')}</ul>`
+      : `<p class="dia-vacia">Aún no registras nada.</p>${repetir}`;
+    return `<section class="dia-comida" aria-label="${COMIDA_LBL[c]}">
+      <header class="dia-comida-hd">
+        <span class="dia-comida-nm">${COMIDA_LBL[c]}</span>
+        <span class="dia-comida-kcal">${kcal}</span>
+        <button type="button" class="dia-mas" data-accion="abrir-buscar" data-comida="${c}" aria-label="Agregar a ${COMIDA_LBL[c].toLowerCase()}">${MAS}</button>
+      </header>
+      ${cuerpo}
+    </section>`;
+  }).join('');
+}
+
+function htmlDatos() {
+  const confirmar = importPendiente ? `<div class="dia-import-confirmar" role="alert">
+      <p>Esto sustituye tu diario y tus entrenamientos actuales por los del respaldo.</p>
+      <div class="dia-datos-botones">
+        <button type="button" class="btn btn-main" data-accion="importar-confirmar">Sí, importar</button>
+        <button type="button" class="btn btn-ghost" data-accion="importar-cancelar">Cancelar</button>
+      </div>
+    </div>` : '';
+  return `<details class="dia-datos"${datosAbierto ? ' open' : ''}>
+    <summary class="dia-datos-sum" data-accion="datos-toggle">
+      <span>Tus datos</span>
+      <span class="dia-datos-chev" aria-hidden="true">${CHEV}</span>
+    </summary>
+    <div class="dia-datos-body">
+      <p>Tu diario vive solo en este dispositivo: nada sale a ningún servidor. Llévate un respaldo en JSON o restaura uno.</p>
+      <div class="dia-datos-botones">
+        <button type="button" class="btn btn-ghost" data-accion="exportar">Exportar respaldo</button>
+        <button type="button" class="btn btn-ghost" data-accion="importar-elegir">Importar respaldo</button>
+      </div>
+      <input type="file" accept="application/json,.json" data-rol="importar-file" hidden aria-hidden="true">
+      ${importError ? `<p class="form-error" role="alert">${esc(importError)}</p>` : ''}
+      ${confirmar}
+      ${importOk ? '<p class="dia-datos-ok">Respaldo importado.</p>' : ''}
+    </div>
+  </details>`;
+}
+
+// Sin meta no hay contra qué medir el día: el diario espera al perfil en vez
+// de inventarse una meta propia (regla del proyecto: una sola fuente de meta).
+function htmlVacio() {
+  return `<div class="dia-vacio">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 2-2h12v18H7a2 2 0 0 1-2-2z"/><path d="M9 3v18"/></svg>
+    <p class="dia-vacio-t">Tu diario usa la misma meta que tu plato</p>
+    <p class="dia-vacio-s">Crea tu perfil una sola vez y aquí verás tu progreso de proteína, carbohidratos y grasas de cada día.</p>
+    <button type="button" class="btn btn-main" data-accion="ir-pedir">Completa tu perfil en Pedir</button>
+  </div>
+  ${htmlDatos()}`;
+}
+
+function htmlDia() {
+  const meta = getMeta ? getMeta() : null;
+  if (!meta) return htmlVacio();
+  const md = metaDelDia(meta, estado.perfil);
+  const sumas = sumarDia(estado.diario[fecha]);
+  const hoy = almacen.hoyISO();
+  const esHoy = fecha === hoy;
+  const aviso = fallaGuardado
+    ? '<p class="form-error" role="alert">No pude guardar en este dispositivo: tus cambios podrían perderse al cerrar. Revisa el espacio o el modo privado.</p>'
+    : '';
+  return `<nav class="dia-fechas" aria-label="Cambiar de día">
+      <button type="button" class="dia-fecha-btn" data-accion="fecha-prev" aria-label="Día anterior">${CHEV}</button>
+      <div class="dia-fecha-centro">
+        <span class="dia-fecha-lbl">${etiquetaFecha(fecha)}</span>
+        ${esHoy ? '' : '<button type="button" class="dia-hoy-btn" data-accion="fecha-hoy">Hoy</button>'}
+      </div>
+      <button type="button" class="dia-fecha-btn dia-fecha-sig" data-accion="fecha-next" aria-label="Día siguiente" ${esHoy ? 'disabled' : ''}>${CHEV}</button>
+    </nav>
+    ${aviso}
+    ${md && md.pendiente ? htmlPreguntaComidas() : ''}
+    ${md && !md.pendiente ? htmlProgreso(md, sumas) : ''}
+    ${htmlComidas(sumas)}
+    <button type="button" class="btn btn-ghost dia-semana-btn" data-accion="ver-semana">Ver mi semana</button>
+    ${htmlDatos()}`;
+}
+
+// ── Buscador ─────────────────────────────────────────────────────────────────
+
+function htmlChips() {
+  const chips = chipsSugeridos();
+  if (!chips.length) return '';
+  return `<div class="dia-chips-zona">
+    <div class="sec-lbl">Recientes y frecuentes</div>
+    <div class="dia-chips">${chips.map(e => {
+      const cant = e.porcion ? `${fmt1(e.gramos / e.porcion.g)} × ${esc(e.porcion.nombre)}` : `${fmt1(e.gramos)} g`;
+      return `<button type="button" class="dia-chip" data-accion="chip" data-id="${esc(e.id)}">
+        <span class="dia-chip-nm">${esc(e.nombre)}</span>
+        <span class="dia-chip-sub">${cant} · ${Math.round(kcalDerivada(e.macros))} kcal</span>
+      </button>`;
+    }).join('')}</div>
+  </div>`;
+}
+
+function htmlResultados() {
+  if (baseError) {
+    return `<div class="dia-estado">
+      <p class="dia-vacio-t">Base de alimentos no disponible</p>
+      <p class="dia-vacio-s">No pude cargar la lista de alimentos. Tus recientes siguen funcionando.</p>
+      <button type="button" class="btn btn-ghost" data-accion="reintentar-base">Reintentar</button>
+    </div>`;
+  }
+  if (base === null) return '<p class="dia-estado dia-vacio-s">Cargando la base de alimentos…</p>';
+  if (normalizarTexto(consulta) === '') return '';
+  const lista = buscar(indice, consulta);
+  if (!lista.length) {
+    return `<p class="dia-estado dia-vacio-s">Nada con «${esc(consulta)}». Prueba con otro nombre.</p>`;
+  }
+  return `<ul class="dia-lista dia-resultados">${lista.map(a => {
+    const kcal = Math.round(kcalDerivada({ prot: a.proteina_g, carb: a.carbohidratos_g, gras: a.grasa_g }));
+    const p = porcionDe(a);
+    return `<li><button type="button" class="dia-entrada" data-accion="resultado" data-id="${esc(a.id)}">
+      <span class="dia-e-main">
+        <span class="dia-e-nm">${esc(a.nombre)}</span>
+        <span class="dia-e-sub">P${fmt1(a.proteina_g)} C${fmt1(a.carbohidratos_g)} G${fmt1(a.grasa_g)} · por 100 g${p ? ` · ${esc(p.nombre)}` : ''}</span>
+      </span>
+      <span class="dia-e-kcal">${kcal} kcal</span>
+    </button></li>`;
+  }).join('')}</ul>`;
+}
+
+function htmlBuscar() {
+  return `<div class="dia-sub-hd">
+      <button type="button" class="dia-volver" data-accion="volver-dia">${CHEV}<span>Diario</span></button>
+    </div>
+    <div class="stitle dia-sub-titulo">Agregar a ${COMIDA_LBL[comidaDestino].toLowerCase()}</div>
+    <div class="dia-buscar-campo">
+      <label class="dia-lbl" for="dia-buscar-input">Alimento</label>
+      <input type="search" id="dia-buscar-input" data-rol="buscar-input" value="${esc(consulta)}"
+        placeholder="Busca por nombre, sin acentos da igual" autocomplete="off">
+    </div>
+    ${normalizarTexto(consulta) === '' ? htmlChips() : ''}
+    <div data-zona="resultados">${htmlResultados()}</div>`;
+}
+
+// ── Detalle ──────────────────────────────────────────────────────────────────
+
+function htmlVivo() {
+  if (!det.editable) {
+    const m = det.entrada.macros;
+    return `<div class="dia-vivo-macros">P ${fmt1(m.prot)} g · C ${fmt1(m.carb)} g · G ${fmt1(m.gras)} g</div>
+      <div class="dia-vivo-kcal">${Math.round(kcalDerivada(m))} kcal</div>`;
+  }
+  const { gramos, macros } = macrosDeCantidad(det.alimento, det.cantidad, det.porcion);
+  const kcal = Math.round(kcalDerivada(macros));
+  const etiqueta = Math.round(macros.kcalFuente);
+  // La etiqueta solo asoma cuando contradice de verdad a los macros (>15 %):
+  // los ±9 kcal de redondeo conocidos de la base no son noticia.
+  const difiere = kcal > 0 && Math.abs(etiqueta - kcal) / kcal > 0.15;
+  return `<div class="dia-vivo-macros">P ${fmt1(macros.prot)} g · C ${fmt1(macros.carb)} g · G ${fmt1(macros.gras)} g</div>
+    <div class="dia-vivo-kcal">${kcal} kcal</div>
+    ${det.porcion ? `<div class="dia-vivo-g">${fmt1(gramos)} g en total</div>` : ''}
+    ${difiere ? `<div class="dia-vivo-etq">La etiqueta dice ${etiqueta} kcal: difiere de sus propios macros.</div>` : ''}`;
+}
+
+function htmlDetalle() {
+  const porciones = det.editable && det.alimento && Array.isArray(det.alimento.porciones)
+    ? det.alimento.porciones.filter(p => p && Number.isFinite(p.g) && p.g > 0)
+    : [];
+  const pills = det.editable ? `<div class="dia-pills">
+      <button type="button" class="dia-pill${det.porcion ? '' : ' dia-pill-on'}" data-accion="porcion" data-idx="-1" aria-pressed="${!det.porcion}">Gramos</button>
+      ${porciones.map((p, i) => `<button type="button" class="dia-pill${det.porcion && det.porcion.nombre === p.nombre && det.porcion.g === p.g ? ' dia-pill-on' : ''}" data-accion="porcion" data-idx="${i}" aria-pressed="${!!(det.porcion && det.porcion.g === p.g && det.porcion.nombre === p.nombre)}">${esc(p.nombre)}</button>`).join('')}
+    </div>` : '';
+  const campo = det.editable ? `<div class="dia-campo">
+      <label class="dia-lbl" for="dia-cantidad">Cantidad</label>
+      <div class="dia-cant-fila">
+        <input type="number" id="dia-cantidad" data-rol="detalle-cantidad" inputmode="decimal"
+          min="0" step="${det.porcion ? '0.5' : '1'}" value="${det.cantidad}">
+        <span class="dia-cant-unidad">${det.porcion ? 'porciones' : 'g'}</span>
+      </div>
+      ${pills}
+    </div>` : '<p class="dia-vacio-s">Esta entrada no trae gramos: puedes moverla de comida o quitarla.</p>';
+  const cta = det.modo === 'nuevo' ? `Agregar a ${COMIDA_LBL[det.comida].toLowerCase()}` : 'Guardar cambios';
+  return `<div class="dia-sub-hd">
+      <button type="button" class="dia-volver" data-accion="detalle-volver">${CHEV}<span>${det.modo === 'nuevo' ? 'Buscar' : 'Diario'}</span></button>
+    </div>
+    <div class="stitle dia-sub-titulo">${esc(det.nombre)}</div>
+    ${campo}
+    <div class="dia-vivo" data-zona="detalle-macros" aria-live="polite">${htmlVivo()}</div>
+    <div class="dia-campo">
+      <div class="sec-lbl">Comida</div>
+      <div class="sub-toggle" role="group" aria-label="Comida del día">
+        ${COMIDAS.map(c => `<button type="button" class="st-btn${det.comida === c ? ' st-active' : ''}" data-accion="comida-pill" data-comida="${c}" aria-pressed="${det.comida === c}">${COMIDA_LBL[c]}</button>`).join('')}
+      </div>
+    </div>
+    <button type="button" class="btn btn-main dia-cta" data-accion="detalle-confirmar">${cta}</button>
+    ${det.modo === 'editar' ? '<button type="button" class="btn btn-ghost dia-cta dia-danger" data-accion="detalle-quitar">Quitar del diario</button>' : ''}`;
+}
+
+// ── Vista semanal ────────────────────────────────────────────────────────────
+
+function htmlSemana() {
+  const hoy = almacen.hoyISO();
+  const dias = [];
+  for (let i = 6; i >= 0; i--) dias.push(sumarDias(hoy, -i));
+  const acum = { prot: 0, carb: 0, gras: 0 };
+  let conRegistro = 0;
+  for (const f of dias) {
+    const s = sumarDia(estado.diario[f]);
+    if (s.prot || s.carb || s.gras) {
+      conRegistro++;
+      acum.prot += s.prot;
+      acum.carb += s.carb;
+      acum.gras += s.gras;
+    }
+  }
+  const volver = `<div class="dia-sub-hd">
+      <button type="button" class="dia-volver" data-accion="volver-dia">${CHEV}<span>Diario</span></button>
+    </div>
+    <div class="stitle dia-sub-titulo">Tu semana</div>
+    <div class="ssub">${etiquetaFecha(dias[0]).replace('Hoy · ', '').replace('Ayer · ', '')} — ${etiquetaFecha(hoy).replace('Hoy · ', '')}</div>`;
+  if (!conRegistro) {
+    return `${volver}<p class="dia-estado dia-vacio-s">Aún no registras nada en los últimos 7 días. Lo que agregues al diario aparecerá aquí como promedio.</p>`;
+  }
+  // Promedio sobre los días CON registro: los días en blanco no son ceros de
+  // consumo, son días sin datos, y meterlos hundiría el promedio sin razón.
+  const prom = {
+    prot: acum.prot / conRegistro,
+    carb: acum.carb / conRegistro,
+    gras: acum.gras / conRegistro
+  };
+  prom.kcal = kcalDerivada(prom);
+  const meta = getMeta ? getMeta() : null;
+  const md = meta ? metaDelDia(meta, estado.perfil) : null;
+  const barras = md && !md.pendiente
+    ? `<div class="dia-barras dia-sem-barras">
+        ${htmlBarra('Kcal', 'dia-bk', prom.kcal, md.kcal, ' kcal')}
+        ${htmlBarra('Proteína', 'bp', prom.prot, md.prot)}
+        ${htmlBarra('Carbos', 'bc', prom.carb, md.carb)}
+        ${htmlBarra('Grasas', 'bg2', prom.gras, md.gras)}
+      </div>`
+    : `<p class="dia-vacio-s">Promedio: ${Math.round(prom.kcal)} kcal · P${Math.round(prom.prot)} C${Math.round(prom.carb)} G${Math.round(prom.gras)}. Define tu meta en Pedir para comparar.</p>`;
+  return `${volver}
+    <section class="gap-wrap dia-progreso" aria-label="Promedios de la semana">
+      <div class="gap-hd dia-progreso-hd"><span>Promedio diario vs tu meta</span></div>
+      ${barras}
+      <p class="dia-restante">Promedios de ${conRegistro === 1 ? '1 día' : conRegistro + ' días'} con registro de los últimos 7.</p>
+    </section>`;
+}
+
+// ── Render y eventos (delegados: el innerHTML cambia, los listeners no) ──────
+
+function render() {
+  const zona = raiz && raiz.querySelector('[data-zona="vista"]');
+  if (!zona) return;
+  if (vista === 'buscar') zona.innerHTML = htmlBuscar();
+  else if (vista === 'detalle') zona.innerHTML = htmlDetalle();
+  else if (vista === 'semana') zona.innerHTML = htmlSemana();
+  else zona.innerHTML = htmlDia();
+  if (vista === 'buscar' && enfocarBuscador) {
+    enfocarBuscador = false;
+    zona.querySelector('[data-rol="buscar-input"]')?.focus();
+  }
+}
+
+function alClick(ev) {
+  const btn = ev.target.closest('[data-accion]');
+  if (!btn) return;
+  const a = btn.dataset.accion;
+  switch (a) {
+    case 'fecha-prev':
+      fecha = sumarDias(fecha, -1);
+      render();
+      break;
+    case 'fecha-next':
+      // Tope en hoy: el diario registra lo comido, no planifica el futuro.
+      if (fecha !== almacen.hoyISO()) { fecha = sumarDias(fecha, 1); render(); }
+      break;
+    case 'fecha-hoy':
+      fecha = almacen.hoyISO();
+      render();
+      break;
+    case 'ir-pedir':
+      // La navegación es del shell: se toca SU botón en vez de llamar a un
+      // global, así este módulo no asume cómo se llama la función de pestañas.
+      document.getElementById('tab-pedir')?.click();
+      break;
+    case 'abrir-buscar':
+      comidaDestino = COMIDAS.includes(btn.dataset.comida) ? btn.dataset.comida : almacen.comidaPorHora();
+      consulta = '';
+      enfocarBuscador = true;
+      cargarBase();
+      irVista('buscar');
+      break;
+    case 'volver-dia':
+      irVista('dia');
+      break;
+    case 'reintentar-base':
+      cargarBase();
+      render();
+      break;
+    case 'chip':
+      agregarDesdeChip(btn.dataset.id);
+      break;
+    case 'resultado': {
+      const al = base && base.find(x => String(x.id) === btn.dataset.id);
+      if (al) abrirDetalleNuevo(al);
+      break;
+    }
+    case 'editar-entrada':
+      abrirDetalleEdicion(fecha, btn.dataset.comida, Number(btn.dataset.indice));
+      break;
+    case 'repetir-ayer':
+      repetirAyer(btn.dataset.comida);
+      break;
+    case 'ver-semana':
+      irVista('semana');
+      break;
+    case 'comidas-dia': {
+      const n = Number(btn.dataset.n);
+      // Si el perfil es null (meta importada sin perfil), el spread arranca de
+      // {}: la respuesta vale esta sesión aunque migrar() no pueda retenerla.
+      estado = almacen.guardarPerfil(estado, { ...(estado.perfil ?? {}), comidasDiario: n });
+      persistir();
+      render();
+      break;
+    }
+    case 'porcion': {
+      const idx = Number(btn.dataset.idx);
+      const gramosActuales = macrosDeCantidad(det.alimento, det.cantidad, det.porcion).gramos;
+      if (idx < 0) {
+        // A gramos conservando la cantidad real: cambiar de unidad no debe
+        // cambiar lo que hay en el plato.
+        det.porcion = null;
+        det.cantidad = gramosActuales || 100;
+      } else {
+        const p = det.alimento.porciones[idx];
+        det.porcion = { nombre: p.nombre, g: p.g };
+        det.cantidad = gramosActuales > 0 ? Math.max(0.5, Math.round((gramosActuales / p.g) * 2) / 2) : 1;
+      }
+      render();
+      break;
+    }
+    case 'comida-pill':
+      det.comida = btn.dataset.comida;
+      render();
+      break;
+    case 'detalle-volver':
+      irVista(det.modo === 'nuevo' ? 'buscar' : 'dia');
+      break;
+    case 'detalle-confirmar':
+      confirmarDetalle();
+      break;
+    case 'detalle-quitar':
+      quitarDesdeDetalle();
+      break;
+    case 'exportar':
+      exportarRespaldo();
+      break;
+    case 'importar-elegir':
+      raiz.querySelector('[data-rol="importar-file"]')?.click();
+      break;
+    case 'importar-confirmar':
+      confirmarImportacion();
+      break;
+    case 'importar-cancelar':
+      importPendiente = null;
+      importError = '';
+      render();
+      break;
+    case 'datos-toggle':
+      // El click llega ANTES de que el navegador alterne el <details>: el
+      // estado que hay que recordar es el contrario del actual.
+      importOk = false;
+      datosAbierto = !btn.closest('details').open;
+      break;
+    case 'deshacer': {
+      const fn = deshacerFn;
+      ocultarToast();
+      if (fn) fn();
+      break;
+    }
+  }
+}
+
+function alInput(ev) {
+  const rol = ev.target.dataset && ev.target.dataset.rol;
+  if (rol === 'buscar-input') {
+    consulta = ev.target.value;
+    // Solo la zona de resultados: repintar el campo mataría el foco y el cursor.
+    const zona = raiz.querySelector('[data-zona="resultados"]');
+    if (zona) zona.innerHTML = htmlResultados();
+    // Los chips viven fuera de esa zona: con texto se ocultan, sin texto vuelven.
+    const chips = raiz.querySelector('.dia-chips-zona');
+    if (chips && normalizarTexto(consulta) !== '') chips.hidden = true;
+    else if (chips) chips.hidden = false;
+  } else if (rol === 'detalle-cantidad') {
+    det.cantidad = parseFloat(ev.target.value);
+    const zona = raiz.querySelector('[data-zona="detalle-macros"]');
+    if (zona) zona.innerHTML = htmlVivo();
+  }
+}
+
+function alChange(ev) {
+  if (!ev.target.dataset || ev.target.dataset.rol !== 'importar-file') return;
+  const archivo = ev.target.files && ev.target.files[0];
+  // El value se limpia para poder reelegir el MISMO archivo tras un error.
+  ev.target.value = '';
+  if (archivo) recibirArchivo(archivo);
+}
+
+// ── Contrato con el shell ────────────────────────────────────────────────────
+
+export function initDiario(opts) {
+  raiz = opts.raiz;
+  getMeta = opts.getMeta;
+  estado = almacen.cargar();
+  fecha = almacen.hoyISO();
+  vista = 'dia';
+  // El toast vive FUERA de la zona de vista: un render no se lo lleva.
+  raiz.innerHTML = '<div class="dia-wrap" data-zona="vista"></div><div data-zona="toast"></div>';
+  if (raizCableada !== raiz) {
+    raiz.addEventListener('click', alClick);
+    raiz.addEventListener('input', alInput);
+    raiz.addEventListener('change', alChange);
+    raizCableada = raiz;
+  }
+  render();
+}
+
+// El shell llama esto al volver a la pestaña: se relee el almacén entero
+// (Pedir pudo agregar un plato) y se repinta la vista en la que estaba el
+// usuario. Si editaba una entrada que ya no existe, se vuelve al día.
+export function refrescar() {
+  if (!raiz) return;
+  estado = almacen.cargar();
+  if (vista === 'detalle' && det && det.ref) {
+    const { fecha: f, comida: c, indice } = det.ref;
+    if (!estado.diario[f]?.[c]?.[indice]) vista = 'dia';
+  }
+  render();
+}
