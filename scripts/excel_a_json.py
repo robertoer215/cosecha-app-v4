@@ -167,8 +167,11 @@ def main():
         gramos = numero(gramos, "gramos", n)
         if gramos <= 0:
             fallo(f"Porciones fila {n}: gramos={gramos} debe ser > 0")
+        # Contrato del Diario (js/diario.js): la porcion viaja como
+        # {nombre, g, fuente}. La hoja conserva sus encabezados medida/gramos;
+        # el renombre vive SOLO aqui, en la frontera con la app.
         por_id[vid]["porciones"].append(
-            {"medida": medida, "gramos": gramos, "fuente": fuente})
+            {"nombre": medida, "g": gramos, "fuente": fuente})
 
     # ---------------- salida
     out = args.out or os.path.join(os.path.dirname(os.path.abspath(args.xlsx)),
