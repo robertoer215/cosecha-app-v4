@@ -738,10 +738,7 @@ function pintarInicio(raiz) {
     <div class="en-ey">Entrenar</div>
     <h2 class="en-titulo">Tu fuerza</h2>
     <p class="en-sub">Empieza una serie, termínala y el descanso corre solo.</p>
-    ${estado.perfil ? `<div class="en-unidad" role="group" aria-label="Unidad de peso">
-      <span>Unidad de peso</span>
-      ${['kg', 'lb'].map(u => `<button type="button" class="en-unidad-btn${unidadPeso() === u ? ' en-unidad-on' : ''}" aria-pressed="${unidadPeso() === u}" data-unidad="${u}">${u}</button>`).join('')}
-    </div>` : ''}
+
     <div class="en-tabs" role="group" aria-label="Secciones de Entrenar">
       ${['progreso', 'rutinas', 'biblioteca', 'historial'].map(t => `
         <button type="button" class="en-tab${subtab === t ? ' en-tab-on' : ''}"
@@ -749,6 +746,10 @@ function pintarInicio(raiz) {
     </div>
     <div class="en-panel"></div>
     <p class="en-aviso-storage" hidden>No se pudo guardar en este dispositivo. Exporta un respaldo desde Diario antes de cerrar.</p>
+    ${estado.perfil ? `<div class="en-unidad en-unidad-pie" role="group" aria-label="Unidad de peso">
+      <span>Unidad de peso</span>
+      ${['kg', 'lb'].map(u => `<button type="button" class="en-unidad-btn${unidadPeso() === u ? ' en-unidad-on' : ''}" aria-pressed="${unidadPeso() === u}" data-unidad="${u}">${u}</button>`).join('')}
+    </div>` : ''}
     <p class="en-fuentes">Ejercicios e imágenes: free-exercise-db (dominio público). Tus entrenamientos viven solo en este dispositivo.</p>
   </div>`;
   raiz.querySelector('.en-unidad')?.addEventListener('click', e => {
@@ -784,7 +785,7 @@ function pintarPanelRutinas(panel) {
     // DÍA (la suma de todos los días, "38 ejercicios", asustaba y engañaba).
     const nDias = r.diasSemana || dias.length;
     const porDia = dias.length ? Math.round(nEj / dias.length) : 0;
-    const sub = [capital(r.nivel),
+    const sub = [
                  nDias ? `${nDias} ${nDias === 1 ? 'día' : 'días'} por semana` : null,
                  porDia ? `${porDia} ejercicios por día` : null,
                  nSuper ? nSuper + (nSuper === 1 ? ' superserie' : ' superseries') : null,
@@ -798,6 +799,7 @@ function pintarPanelRutinas(panel) {
     return `
     <details class="en-card en-rut">
       <summary class="en-rut-sum">
+        ${r.nivel ? `<span class="en-nivel en-nivel-${esc(r.nivel)}">${esc(capital(r.nivel))}</span>` : ''}
         <span class="en-card-nombre">${esc(r.nombre)}</span>
         <span class="en-card-sub">${esc(sub)}</span>
       </summary>

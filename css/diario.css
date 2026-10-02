@@ -179,3 +179,23 @@
 .dia-manual-link{display:block;width:100%;min-height:44px;margin-top:8px;background:none;border:0;color:var(--accent-ink);font-family:var(--sans);font-size:13px;text-align:left;cursor:pointer}
 .dia-manual-link:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .dia-manual-kcal{font-size:20px;font-weight:300;color:var(--text);font-variant-numeric:tabular-nums;margin:12px 0 4px}
+
+/* ── Pasada UI/UX (2-oct) — mismo idioma visual que la Hoy cálida ─────────── */
+/* Tu día: la misma tarjeta cálida que Hoy (consistencia entre pestañas). */
+.dia-progreso{background:linear-gradient(160deg,var(--ember) 0%,var(--accent-soft) 58%,var(--bg) 100%);box-shadow:var(--lift-sticky)}
+.dia-progreso .bar-bg{background:var(--bg)}
+/* Icono por comida, en el color de su momento del día. */
+.dia-comida-ico{width:20px;height:20px;flex-shrink:0}
+.dia-ico-desayuno{color:var(--amber)}
+.dia-ico-comida{color:var(--accent-ink)}
+.dia-ico-cena{color:var(--blue)}
+.dia-ico-colaciones{color:var(--green)}
+/* Comida vacía: invita a actuar (mismo destino que el +). */
+.dia-vacia-btn{display:block;width:calc(100% - 24px);min-height:48px;margin:12px;padding:0 14px;border:1px dashed var(--border-strong);border-radius:var(--r-sm);background:none;color:var(--accent-deep);font-family:var(--sans);font-size:14px;text-align:left;cursor:pointer;transition:background-color .2s}
+.dia-vacia-btn:hover{background:var(--accent-soft)}
+.dia-vacia-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* Buscador con lupa, mismo patrón que la biblioteca de Entrenar. */
+.dia-buscar-caja{display:flex;align-items:center;gap:10px;min-height:52px;padding:0 16px;margin-top:6px;border:1px solid var(--border-strong);border-radius:var(--r-pill);background:var(--bg)}
+.dia-buscar-caja:focus-within{outline:2px solid var(--accent-ink);outline-offset:2px}
+.dia-buscar-caja svg{width:20px;height:20px;color:var(--muted-ink);flex-shrink:0}
+.dia-buscar-caja input,.dia-buscar-caja #dia-buscar-input{flex:1;min-width:0;min-height:48px;border:0;border-bottom:0;background:transparent;padding:0;font-family:var(--sans);font-size:16px;color:var(--text);outline:none;box-shadow:none}

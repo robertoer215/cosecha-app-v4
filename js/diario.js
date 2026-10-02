@@ -36,6 +36,14 @@ import { UMBRAL_G } from './calc.js';
 // Las cuatro franjas, en su orden de render (el mismo del almacén).
 const COMIDAS = ['desayuno', 'comida', 'cena', 'colaciones'];
 const COMIDA_LBL = { desayuno: 'Desayuno', comida: 'Comida', cena: 'Cena', colaciones: 'Colaciones' };
+// Un icono por comida: le da carácter al día sin texto de más (amanecer,
+// sol, luna, fruta). Trazo 1.8 como la tabbar; decorativos (aria-hidden).
+const COMIDA_ICO = {
+  desayuno: '<path d="M4 18h16M7 18a5 5 0 0 1 10 0M12 7v3M5.6 10.6l1.8 1.8M18.4 10.6l-1.8 1.8"/>',
+  comida: '<circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/>',
+  cena: '<path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/>',
+  colaciones: '<path d="M12 8c-3-2.2-7-1-7 3.5C5 16 8 20 10.5 20c1 0 1-.5 1.5-.5s.5.5 1.5.5C16 20 19 16 19 11.5 19 7 15 5.8 12 8zM12 8c0-2 1-3.5 2.5-4"/>'
+};
 
 // El deshacer vive 5 s: suficiente para reaccionar, poco para estorbar.
 const TOAST_MS = 5000;
@@ -719,9 +727,10 @@ function htmlComidas(sumas) {
       : '';
     const cuerpo = lista.length
       ? `<ul class="dia-lista">${lista.map((e, i) => htmlEntrada(e, c, i)).join('')}</ul>`
-      : `<p class="dia-vacia">Aún no registras nada.</p>${repetir}`;
+      : `<button type="button" class="dia-vacia-btn" data-accion="abrir-buscar" data-comida="${c}">Agrega tu ${COMIDA_LBL[c].toLowerCase()}</button>${repetir}`;
     return `<section class="dia-comida" aria-label="${COMIDA_LBL[c]}">
       <header class="dia-comida-hd">
+        <svg class="dia-comida-ico dia-ico-${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${COMIDA_ICO[c]}</svg>
         <span class="dia-comida-nm">${COMIDA_LBL[c]}</span>
         <span class="dia-comida-kcal">${kcal}</span>
         <button type="button" class="dia-mas" data-accion="abrir-buscar" data-comida="${c}" aria-label="Agregar a ${COMIDA_LBL[c].toLowerCase()}">${MAS}</button>
@@ -868,8 +877,11 @@ function htmlBuscar() {
     <h2 class="stitle dia-sub-titulo">Agregar a ${COMIDA_LBL[comidaDestino].toLowerCase()}</h2>
     <div class="dia-buscar-campo">
       <label class="dia-lbl" for="dia-buscar-input">Alimento</label>
-      <input type="search" id="dia-buscar-input" data-rol="buscar-input" value="${esc(consulta)}"
-        placeholder="Busca por nombre, sin acentos da igual" autocomplete="off">
+      <div class="dia-buscar-caja">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M15.8 15.8L20.5 20.5"/></svg>
+        <input type="search" id="dia-buscar-input" data-rol="buscar-input" value="${esc(consulta)}"
+          placeholder="Busca un alimento" autocomplete="off">
+      </div>
     </div>
     ${normalizarTexto(consulta) === '' ? htmlChips() : ''}
     <div data-zona="resultados">${htmlResultados()}</div>

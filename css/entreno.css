@@ -361,3 +361,12 @@
 .en-rec-tot b{font-weight:600}
 .en-rec-ir{width:100%;margin-top:10px}
 .en-pr-v>span{white-space:nowrap}
+
+/* ── Pasada UI/UX (2-oct) ─────────────────────────────────────────────────── */
+/* El nivel de la rutina, como chip de color: se distingue al vistazo. */
+.en-nivel{display:inline-block;margin-bottom:6px;padding:2px 10px;border-radius:var(--r-pill);font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+.en-nivel-principiante{background:color-mix(in srgb,var(--green) 14%,var(--bg));color:var(--green)}
+.en-nivel-intermedio{background:color-mix(in srgb,var(--blue) 14%,var(--bg));color:var(--blue)}
+.en-nivel-avanzado{background:var(--ember);color:var(--accent-deep)}
+/* La unidad de peso es un ajuste: vive al pie, discreta. */
+.en-unidad-pie{margin:28px 0 0;padding-top:16px;border-top:1px solid var(--border)}
