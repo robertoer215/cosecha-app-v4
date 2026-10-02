@@ -119,7 +119,9 @@ function migrarEntrada(e) {
     id: typeof e.id === 'string' && e.id !== '' ? e.id : e.nombre,
     nombre: e.nombre,
     gramos: esNumero(e.gramos) && e.gramos >= 0 ? e.gramos : 0,
-    porcion: esObjeto(e.porcion) && typeof e.porcion.nombre === 'string' && esNumero(e.porcion.g)
+    // g tiene que ser POSITIVO: con g=0 de un respaldo editado, el diario
+    // dividía gramos/porcion.g y pintaba "Infinity ×" en la lista del día.
+    porcion: esObjeto(e.porcion) && typeof e.porcion.nombre === 'string' && esNumero(e.porcion.g) && e.porcion.g > 0
       ? { nombre: e.porcion.nombre, g: e.porcion.g }
       : null,
     macros: {

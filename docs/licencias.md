@@ -21,3 +21,8 @@ Este documento registra el origen y la licencia de cada fuente de datos usada en
 - **Fuente:** elaboración propia (recetario y carta del restaurante COSECHA).
 - **Licencia:** material propio del proyecto; todos los derechos reservados a COSECHA.
 - **Uso en COSECHA:** platillos, porciones y composición de la carta. Los valores nutricionales derivados se calculan a partir de ingredientes con datos de USDA FoodData Central (CC0).
+
+## Software de terceros en la app
+
+- **qrcodejs 1.0.0** (davidshimjs) — generación del QR del resumen, cargado
+  desde cdnjs. Licencia MIT.

@@ -170,3 +170,6 @@
 
 /* Atribución de fuentes dentro de "Tus datos": discreta, nunca invisible. */
 .dia-fuentes{font-size:11px;color:var(--muted-ink);line-height:1.6}
+/* El placeholder del buscador quedaba en el gris frío del navegador (4,42:1):
+   mismo token que usa el buscador de Entrenar. */
+#dia-buscar-input::placeholder{color:var(--muted)}

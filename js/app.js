@@ -71,12 +71,16 @@ window.goTab = async function(tab) {
   if (tab === 'hoy') { renderHoy(); window.scrollTo(0, 0); return; }
   if (tab !== 'pedir' && !modulosMontados[tab]) {
     const raiz = $(vistas[tab]);
+    // El flag se pone ANTES del await: un doble toque rápido en la pestaña
+    // montaba el módulo dos veces (listeners y render duplicados).
+    modulosMontados[tab] = 'montando';
     try {
       await cargarCSS(tab === 'diario' ? 'diario' : 'entreno');
       const mod = await import(tab === 'diario' ? './diario.js' : './entreno.js');
       (tab === 'diario' ? mod.initDiario : mod.initEntreno)({ raiz, getMeta: getMetaCompartida });
       modulosMontados[tab] = mod;
     } catch (e) {
+      delete modulosMontados[tab];   // reintentable en el siguiente toque
       raiz.innerHTML = '<p class="modulo-error">Esta sección no se pudo cargar. Recarga la página e intenta de nuevo.</p>';
       console.warn('modulo ' + tab + ':', e.message);
     }
@@ -961,7 +965,17 @@ function renderSugg() {
   if(gC>10&&libre('carbohidrato')){const b=ING.filter(i=>i.cat==='carbohidrato'&&!(selBase.carbohidrato||[]).includes(i.id)&&!selExtra[i.id]).sort((a,b2)=>b2.carb-a.carb)[0];if(b)suggs.push({it:b,why:`Faltan ~${gC}g de carbohidratos para energía sostenida.`,m:'Carbohidrato'});}
   if(gG>5&&libre('grasa')){const b=ING.filter(i=>i.cat==='grasa'&&!(selBase.grasa||[]).includes(i.id)&&!selExtra[i.id]).sort((a,b2)=>b2.gras-a.gras)[0];if(b)suggs.push({it:b,why:`Faltan ~${gG}g de grasas saludables.`,m:'Grasa'});}
   if(!suggs.length){
-    $('sugg-wrap').innerHTML=`<div class="sugg-box"><div class="sugg-ok"><div class="sugg-ok-mark">✓</div><div class="sugg-ok-lbl">Tu plato ya cubre tu meta nutricional.</div></div></div>`;
+    // El "✓" solo con el umbral OFICIAL de la app (±UMBRAL_G por macro, el
+    // mismo del tracker y el resumen) y mirando también los EXCESOS: afirmar
+    // "ya cubre tu meta" con la barra de carbos rayada arriba se contradecía.
+    const enMeta=Math.abs(gP)<=UMBRAL_G&&Math.abs(gC)<=UMBRAL_G&&Math.abs(gG)<=UMBRAL_G;
+    const exceso=[];
+    if(-gP>UMBRAL_G)exceso.push(`${Math.round(-gP)} g de proteína`);
+    if(-gC>UMBRAL_G)exceso.push(`${Math.round(-gC)} g de carbohidratos`);
+    if(-gG>UMBRAL_G)exceso.push(`${Math.round(-gG*10)/10} g de grasas`);
+    $('sugg-wrap').innerHTML=enMeta
+      ?`<div class="sugg-box"><div class="sugg-ok"><div class="sugg-ok-mark">✓</div><div class="sugg-ok-lbl">Tu plato ya cubre tu meta nutricional.</div></div></div>`
+      :`<div class="sugg-box"><div class="sugg-ok"><div class="sugg-ok-lbl" style="padding:1.25rem">${exceso.length?`Llevas ${exceso.join(' y ')} por encima de tu meta. Puedes ajustar tamaños en el paso anterior.`:'Tu plato está muy cerca de tu meta: revisa el detalle en el resumen.'}</div></div></div>`;
     return;
   }
   let items='';
@@ -1132,7 +1146,9 @@ function pintarCocina() {
     if (est === 'confirmando') {
       body.innerHTML = SKEL(8);
     } else if (est === 'demo') {
-      body.innerHTML = `<p class="cocina-nota">Modo demo: esta copia no envía pedidos a cocina. Tu resumen y tu código funcionan con los números de tu pantalla.</p>`;
+      // Sin jerga interna ("esta copia"): al usuario se le dice qué pasa y qué
+      // vale de lo que ve.
+      body.innerHTML = `<p class="cocina-nota">Modo demo: aquí no se envían pedidos a cocina. Tu resumen y tu código funcionan con los números de tu pantalla.</p>`;
       if (propWrap) propWrap.innerHTML = '';
     } else if (est === 'sin_confirmar') {
       const errs = cocina.errores.length ? ' ' + cocina.errores.map(esc).join('. ') + '.' : '';
@@ -1392,6 +1408,14 @@ document.querySelectorAll('.obj-card, .act-card').forEach(c => {
   c.setAttribute('aria-pressed', String(c.classList.contains('selected')));
   c.addEventListener('keydown', e => {
     if ((e.key === 'Enter' || e.key === ' ') && e.target === c) { e.preventDefault(); c.click(); }
+  });
+});
+// El stepper es navegación real: también opera con teclado.
+document.querySelectorAll('.s-node').forEach(n => {
+  n.setAttribute('role', 'button');
+  n.setAttribute('tabindex', '0');
+  n.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target === n) { e.preventDefault(); n.click(); }
   });
 });
 

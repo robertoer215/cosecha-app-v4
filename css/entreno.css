@@ -196,3 +196,6 @@
    mismo anillo que el resto de la app. */
 .en-notas:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
 .en-fuentes{font-size:11px;color:var(--muted-ink);line-height:1.6;margin:28px 0 0}
+/* hidden ya gana globalmente (styles.css), pero el formulario de rutina lo
+   declara también aquí por si esta hoja se carga sola en una prueba. */
+.en-rutina-form[hidden]{display:none}

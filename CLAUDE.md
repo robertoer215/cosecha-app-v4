@@ -192,7 +192,8 @@ n8n: aquí no se redacta nada) y propone (`propuesta_cierre`).
 - [x] Integrar API de Anthropic — flujo n8n `Xv459ruzH0Ag71qY` (ver `n8n/README.md`)
 - [ ] Vista de cocina que lea el QR
 - [x] Tests de las funciones de calc.js (tests/calc.test.mjs — `npm test`)
-- [ ] Decidir destino de cosecha-standalone.html (tiene la lógica VIEJA pre-fix)
+- [x] cosecha-standalone.html ELIMINADO (2-oct-2026): Pages lo servía con los
+      precios viejos de la "fórmula de la casa" (pollo $36 vs $144 real).
 - [ ] Alérgenos VERIFICADOS por cocina: hoy el catálogo de n8n los deriva del
       nombre del plato y lo declara fila a fila. No es una garantía alérgica.
 - [x] El inventario de carbohidratos se quedaba corto (48 g con un módulo en

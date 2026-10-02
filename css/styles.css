@@ -820,3 +820,13 @@ main[hidden]{display:none}
 .hc-t{font-size:14px;font-weight:600;color:var(--text)}
 .hc-s{font-size:12px;color:var(--muted-ink);margin-top:2px;line-height:1.5}
 .hoy-ultimo{margin-top:14px}
+
+/* ── Correcciones de la auditoría r2 ─────────────────────────────────────── */
+/* hidden SIEMPRE gana: tres bugs distintos venían de reglas de autor con
+   display pisando el [hidden] del navegador. Se corta la clase entera. */
+[hidden]{display:none!important}
+/* Hoy era la única vista sin gutter: su contenido pegaba al borde físico. */
+#vista-hoy{padding:2.5rem var(--gutter) 1.5rem}
+/* En modo demo no llega respuesta de cocina: la reserva de 268px dejaba un
+   hueco vacío permanente bajo dos líneas de texto. */
+.cocina[data-estado="demo"] .cocina-body{min-height:0}

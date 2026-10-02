@@ -538,7 +538,12 @@ function confirmarImportacion() {
   estado = importPendiente;
   importPendiente = null;
   importOk = true;
-  persistir();
+  // Importar es la ÚNICA operación de reemplazo TOTAL: el respaldo se escribe
+  // entero, sin pasar por el injerto de persistir() (que solo lleva las ramas
+  // del diario y descartaba entrenamientos, rutinas y meta en silencio).
+  const r = almacen.actualizar(() => estado);
+  estado = r.estado;
+  if (!r.guardado) fallaGuardado = true;
   fecha = almacen.hoyISO();
   datosAbierto = true;
   render();
@@ -572,7 +577,7 @@ function htmlProgreso(md, sumas) {
   const kcal = Math.round(sumas.kcal);
   const restante = Math.round(md.kcal - sumas.kcal);
   const linea = restante >= 0
-    ? `Te quedan ${restante} kcal hoy.`
+    ? `Te quedan ${restante} kcal ${fecha === almacen.hoyISO() ? 'hoy' : 'ese día'}.`
     : `Llevas ${-restante} kcal por encima de tu meta.`;
   return `<section class="gap-wrap dia-progreso" aria-label="Progreso del día">
     <div class="gap-hd dia-progreso-hd"><span>Tu día</span><span class="dia-kcal">${kcal} / ${Math.round(md.kcal)} kcal</span></div>
@@ -872,9 +877,22 @@ function htmlSemana() {
 
 // ── Render y eventos (delegados: el innerHTML cambia, los listeners no) ──────
 
+// Re-render con innerHTML tira el foco del teclado a <body>: activar una
+// píldora de porción obligaba a re-tabular desde el principio. Esto describe
+// el control activo por sus data-atributos y lo re-enfoca en el DOM nuevo.
+function selectorFoco(el) {
+  if (!el || el === document.body || !(raiz && raiz.contains(el))) return null;
+  if (el.id) return '#' + CSS.escape(el.id);
+  const d = el.dataset || {};
+  const attrs = ['accion', 'id', 'idx', 'comida', 'n', 'rol'].filter(k => d[k] !== undefined)
+    .map(k => `[data-${k}="${CSS.escape(d[k])}"]`).join('');
+  return attrs ? el.tagName.toLowerCase() + attrs : null;
+}
+
 function render() {
   const zona = raiz && raiz.querySelector('[data-zona="vista"]');
   if (!zona) return;
+  const foco = selectorFoco(document.activeElement);
   if (vista === 'buscar') zona.innerHTML = htmlBuscar();
   else if (vista === 'detalle') zona.innerHTML = htmlDetalle();
   else if (vista === 'semana') zona.innerHTML = htmlSemana();
@@ -882,6 +900,8 @@ function render() {
   if (vista === 'buscar' && enfocarBuscador) {
     enfocarBuscador = false;
     zona.querySelector('[data-rol="buscar-input"]')?.focus();
+  } else if (foco) {
+    zona.querySelector(foco)?.focus({ preventScroll: true });
   }
 }
 

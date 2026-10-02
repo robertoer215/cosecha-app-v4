@@ -473,6 +473,9 @@ function ajustarDescanso(deltaS) {
 
 function saltarDescanso() {
   if (!descansoObj) return;
+  // Saltar es una decisión consciente: no merece la alarma de fin (doble
+  // beep + vibración), que es para avisar a quien está esperando.
+  avisadoFin = true;
   descansoObj.saltar();
   tic();
 }
@@ -545,7 +548,26 @@ function unidadPeso() { return estado.perfil?.unidadPeso === 'lb' ? 'lb' : 'kg';
 
 // ── Render raíz ──────────────────────────────────────────────────────────────
 
+// Re-render con innerHTML tira el foco del teclado a <body>: tras CADA serie
+// palomeada, quien navega con teclado tenía que re-tabular desde el principio.
+// Esto describe el control activo por sus data-atributos estables y lo
+// re-enfoca en el DOM nuevo, si sigue existiendo.
+function selectorFoco(el) {
+  if (!el || el === document.body || !ctx.raiz.contains(el)) return null;
+  if (el.id) return '#' + CSS.escape(el.id);
+  const d = el.dataset || {};
+  const attrs = ['acc', 'id', 'idx', 'tab', 'sid', 'ej', 'serie'].filter(k => d[k] !== undefined)
+    .map(k => `[data-${k}="${CSS.escape(d[k])}"]`).join('');
+  return attrs ? el.tagName.toLowerCase() + attrs : null;
+}
+
 function render() {
+  const foco = selectorFoco(document.activeElement);
+  renderVista();
+  if (foco) ctx.raiz.querySelector(foco)?.focus({ preventScroll: true });
+}
+
+function renderVista() {
   pararReloj();
   const raiz = ctx.raiz;
   // El resumen y el historial necesitan el catálogo (grupos musculares) y las
@@ -832,7 +854,10 @@ function pintarPanelHistorial(panel) {
       <button type="button" class="en-card en-card-btn" data-acc="ver" data-sid="${esc(s.id)}">
         <span class="en-card-nombre">${esc(nombreSesion(s))}</span>
         <span class="en-card-sub">${esc([fechaCorta(s.inicioMs), min ? min + ' min' : null,
-          series + ' series', fmtPeso(volumenSesion(s), unidadPeso()) + ' ' + unidadPeso() + ' de volumen'].filter(Boolean).join(' · '))}</span>
+          series + (series === 1 ? ' serie' : ' series'),
+          // "0 kg de volumen" en una sesión de peso corporal decía que no
+          // hiciste nada: el volumen solo se cita cuando lo hay.
+          volumenSesion(s) > 0 ? fmtPeso(volumenSesion(s), unidadPeso()) + ' ' + unidadPeso() + ' de volumen' : null].filter(Boolean).join(' · '))}</span>
       </button>`;
     }).join('')}
     ${vistos.size ? `<div class="en-sec-lbl">Progreso por ejercicio</div>
@@ -1136,8 +1161,8 @@ function pintarResumen(raiz, ses, { editable }) {
 
     <div class="en-stats">
       <div class="en-stat"><span class="en-stat-val">${min}</span><span class="en-stat-lbl">min</span></div>
-      <div class="en-stat"><span class="en-stat-val">${nSeries}</span><span class="en-stat-lbl">series</span></div>
-      <div class="en-stat"><span class="en-stat-val">${fmtPeso(vol, unidad)}</span><span class="en-stat-lbl">${unidad} de volumen</span></div>
+      <div class="en-stat"><span class="en-stat-val">${nSeries}</span><span class="en-stat-lbl">${nSeries === 1 ? 'serie' : 'series'}</span></div>
+      <div class="en-stat"><span class="en-stat-val">${vol > 0 ? fmtPeso(vol, unidad) : '—'}</span><span class="en-stat-lbl">${vol > 0 ? unidad + ' de volumen' : 'peso corporal'}</span></div>
     </div>
 
     ${grupos.length ? `<div class="en-sec-lbl">Series por grupo muscular</div>
@@ -1161,7 +1186,7 @@ function pintarResumen(raiz, ses, { editable }) {
       <div class="en-res-ej">
         <span class="en-res-ej-nombre">${esc(ej.nombre)}</span>
         <span class="en-res-ej-series">${(ej.series || []).filter(s => s.hecha)
-          .map(s => `${s.reps}×${fmtPeso(s.pesoKg, unidad)}`).join(' · ') || 'sin series hechas'}</span>
+          .map(s => s.pesoKg > 0 ? `${s.reps}×${fmtPeso(s.pesoKg, unidad)}` : `${s.reps} reps`).join(' · ') || 'sin series hechas'}</span>
       </div>`).join('')}
 
     ${editable ? `
