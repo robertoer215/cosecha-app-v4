@@ -54,14 +54,27 @@ function cargarCSS(nombre) {
     cssCargado[nombre] = new Promise(res => {
       const l = document.createElement('link');
       l.rel = 'stylesheet'; l.href = `css/${nombre}.css`;
-      l.onload = l.onerror = () => res();
+      l.onload = () => res();
+      // Un CSS que falló no se cachea como cargado: el siguiente toque reintenta.
+      l.onerror = () => { delete cssCargado[nombre]; l.remove(); res(); };
       document.head.appendChild(l);
     });
   }
   return cssCargado[nombre];
 }
 
+// Quien llega a Pedir desde "Completa tu perfil" (Hoy, Diario o Entrenar)
+// venía a otra cosa: tras Continuar vuelve a donde estaba, no al menú del
+// restaurante. Navegar a otra pestaña por su cuenta cancela la vuelta.
+let volverTrasPerfil = null;
+window.crearPerfil = function(origen) {
+  window.goTab('pedir');
+  volverTrasPerfil = origen;
+  goStep(0);
+};
+
 window.goTab = async function(tab) {
+  if (tab !== 'pedir') volverTrasPerfil = null;
   const vistas = { hoy: 'vista-hoy', pedir: 'vista-pedir', diario: 'vista-diario', entrenar: 'vista-entrenar' };
   Object.entries(vistas).forEach(([k, id]) => {
     $(id).hidden = k !== tab;
@@ -96,6 +109,8 @@ window.goTab = async function(tab) {
 // muestra la pantalla (lineasLocales: el mismo motor que ve cocina).
 window.agregarPlatoAlDiario = function() {
   const btn = $('btn-diario-plato');
+  // Ya añadido: el mismo botón lleva al Diario (un toque, sin buscar la pestaña).
+  if (btn && btn.dataset.ok === '1') { window.goTab('diario'); return; }
   const local = lineasLocales();
   if (!local.lineas.length) return;
   const entrada = {
@@ -112,7 +127,15 @@ window.agregarPlatoAlDiario = function() {
   // Con el snapshot viejo de esta pestaña se borraba lo registrado en Diario.
   const r = almacen.actualizar(e => almacen.agregarAlDiario(e, almacen.hoyISO(), almacen.comidaPorHora(), entrada));
   estadoLocal = r.estado;
-  if (btn) { btn.textContent = '✓ En tu diario de hoy'; btn.classList.add('ok'); btn.disabled = true; }
+  if (!btn) return;
+  if (!r.guardado) {
+    // Nunca afirmar un guardado que no ocurrió (modo privado, cuota llena).
+    btn.textContent = 'No se pudo guardar en este dispositivo. Toca para reintentar';
+    return;
+  }
+  btn.textContent = '✓ En tu diario de hoy · Ver diario →';
+  btn.classList.add('ok');
+  btn.dataset.ok = '1';
 };
 
 // La pantalla Hoy: resumen del día (lo consumido del diario contra la meta) y
@@ -148,7 +171,10 @@ function renderHoy() {
       $('hoy-kcal').textContent = `${kcal} / ${metaDia.kcal} kcal`;
       [['p', 'prot'], ['c', 'carb'], ['g', 'gras']].forEach(([s, k]) => {
         $('hoy-v-' + s).textContent = `${Math.round(tot[k])}/${metaDia[k]}g`;
-        $('hoy-b-' + s).style.transform = `scaleX(${Math.min(1, metaDia[k] ? tot[k] / metaDia[k] : 0)})`;
+        const b = $('hoy-b-' + s);
+        b.style.transform = `scaleX(${Math.min(1, metaDia[k] ? tot[k] / metaDia[k] : 0)})`;
+        // El exceso se marca con la misma trama que el Diario y el tracker.
+        b.classList.toggle('bover', metaDia[k] > 0 && tot[k] > metaDia[k] + UMBRAL_G);
       });
     }
   }
@@ -323,7 +349,10 @@ function errorFormulario(idError, ids) {
     return `${nombre.trim()} ${el.min}–${el.max}${unidad ? ' ' + unidad.trim() : ''}`;
   });
   const box = $(idError);
-  if (box) box.textContent = `Revisa: ${partes.join(', ')}. Solo números dentro del rango; el 0 es válido.`;
+  // "el 0 es válido" solo aplica a los macros manuales: en la fórmula ningún
+  // campo admite 0 y la coletilla contradecía al propio mensaje.
+  const cero = idError === 'manual-error' ? '; el 0 es válido' : '';
+  if (box) box.textContent = `Revisa: ${partes.join(', ')}. Solo números dentro del rango${cero}.`;
   const primero = $(ids[0]);
   if (primero) primero.focus();
 }
@@ -381,6 +410,7 @@ window.calcular = function() {
   renderBase();
   updateGlobalTracker();
   goStep(1);
+  if (volverTrasPerfil) window.goTab(volverTrasPerfil);
 };
 
 // Los módulos elegidos, en el orden en que el usuario los fue eligiendo por
@@ -979,6 +1009,18 @@ function renderSugg() {
     return;
   }
   let items='';
+  // La tarjeta promete "para alcanzar tu meta": el tamaño que propone tiene
+  // que ser el que mejor cierra el déficit de SU macro, no siempre Estándar
+  // (con 84 g de carbos de menos, un camote Estándar dejaba 50/93 y la app
+  // ofrecía un segundo extra). Se elige entre los tamaños que vende cocina y
+  // se fija como selección, así carta = botón = resumen.
+  const MK={Proteína:['prot',gP],Carbohidrato:['carb',gC],Grasa:['gras',gG]};
+  suggs.slice(0,2).forEach(s=>{
+    if(!szExtra[s.it.id]){
+      const [mk,falta]=MK[s.m];
+      szExtra[s.it.id]=tamanosPermitidos(s.it).reduce((best,k)=>Math.abs(falta-mac(s.it,k)[mk])<Math.abs(falta-mac(s.it,best)[mk])?k:best,1);
+    }
+  });
   suggs.slice(0,2).forEach(s=>{
     const sz=szExtra[s.it.id]||1,isOn=!!selExtra[s.it.id];
     const pr=precio(s.it,sz);
@@ -1367,7 +1409,7 @@ function pintarResumen() {
   // Un plato nuevo en el resumen rearma el botón del diario (vive fuera de
   // res-content a propósito: así no se repinta con cada respuesta de cocina).
   const bd = $('btn-diario-plato');
-  if (bd) { bd.textContent = '+ Añadir a mi diario'; bd.classList.remove('ok'); bd.disabled = false; }
+  if (bd) { bd.textContent = '+ Añadir a mi diario'; bd.classList.remove('ok'); bd.disabled = false; delete bd.dataset.ok; }
   // Repintar el resumen estando ya en él (al aceptar el cierre) no debe
   // devolver al cliente al principio de la página.
   if (!$('sc2').classList.contains('active')) goStep(2);

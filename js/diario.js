@@ -262,6 +262,7 @@ function cargarBase() {
       if (vista !== 'buscar') return;
       const zona = raiz?.querySelector('[data-zona="resultados"]');
       if (zona) zona.innerHTML = htmlResultados();
+      anunciarResultados();
     });
   return basePromesa;
 }
@@ -427,7 +428,15 @@ function abrirDetalleEdicion(f, comida, indice) {
 function confirmarDetalle() {
   if (det.modo === 'nuevo') {
     const { gramos, macros } = macrosDeCantidad(det.alimento, det.cantidad, det.porcion);
-    if (gramos <= 0) return; // cantidad vacía o 0: no hay nada que registrar
+    if (gramos <= 0) {
+      // Cantidad vacía o 0: no hay nada que registrar, pero el toque no puede
+      // morir en silencio. El campo se marca y se dice por qué.
+      const campo = raiz.querySelector('#dia-cantidad');
+      if (campo) { campo.setAttribute('aria-invalid', 'true'); campo.focus(); }
+      const vivo = raiz.querySelector('[data-zona="detalle-macros"]');
+      if (vivo) vivo.insertAdjacentHTML('afterbegin', '<p class="form-error" role="alert">Escribe una cantidad mayor que 0.</p>');
+      return;
+    }
     const entrada = {
       id: det.id, nombre: det.nombre, gramos,
       porcion: det.porcion, macros, origen: 'base', ts: Date.now()
@@ -729,6 +738,22 @@ function htmlChips() {
   </div>`;
 }
 
+// Los resultados cambian sin mover el foco: sin un mensaje de estado, quien
+// usa lector de pantalla no se entera de que hay (o no hay) coincidencias
+// (WCAG 4.1.3). Se anuncia el CONTEO, con pausa, no la lista entera.
+let anuncioT = null;
+function anunciarResultados() {
+  clearTimeout(anuncioT);
+  anuncioT = setTimeout(() => {
+    const el = raiz?.querySelector('[data-zona="anuncio"]');
+    const zona = raiz?.querySelector('[data-zona="resultados"]');
+    if (!el || !zona) return;
+    if (normalizarTexto(consulta) === '') { el.textContent = ''; return; }
+    const n = zona.querySelectorAll('[data-accion="resultado"]').length;
+    el.textContent = n ? `${n} ${n === 1 ? 'resultado' : 'resultados'}` : 'Sin resultados';
+  }, 450);
+}
+
 function htmlResultados() {
   if (baseError) {
     return `<div class="dia-estado">
@@ -767,7 +792,8 @@ function htmlBuscar() {
         placeholder="Busca por nombre, sin acentos da igual" autocomplete="off">
     </div>
     ${normalizarTexto(consulta) === '' ? htmlChips() : ''}
-    <div data-zona="resultados">${htmlResultados()}</div>`;
+    <div data-zona="resultados">${htmlResultados()}</div>
+    <p class="dia-sr" role="status" aria-live="polite" data-zona="anuncio"></p>`;
 }
 
 // ── Detalle ──────────────────────────────────────────────────────────────────
@@ -925,7 +951,8 @@ function alClick(ev) {
     case 'ir-pedir':
       // La navegación es del shell: se toca SU botón en vez de llamar a un
       // global, así este módulo no asume cómo se llama la función de pestañas.
-      document.getElementById('tab-pedir')?.click();
+      if (typeof globalThis.crearPerfil === 'function') globalThis.crearPerfil('diario');
+      else document.getElementById('tab-pedir')?.click();
       break;
     case 'abrir-buscar':
       comidaDestino = COMIDAS.includes(btn.dataset.comida) ? btn.dataset.comida : almacen.comidaPorHora();
@@ -1032,6 +1059,7 @@ function alInput(ev) {
     // Solo la zona de resultados: repintar el campo mataría el foco y el cursor.
     const zona = raiz.querySelector('[data-zona="resultados"]');
     if (zona) zona.innerHTML = htmlResultados();
+    anunciarResultados();
     // Los chips viven fuera de esa zona: con texto se ocultan, sin texto vuelven.
     const chips = raiz.querySelector('.dia-chips-zona');
     if (chips && normalizarTexto(consulta) !== '') chips.hidden = true;

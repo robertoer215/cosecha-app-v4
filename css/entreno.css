@@ -199,3 +199,22 @@
 /* hidden ya gana globalmente (styles.css), pero el formulario de rutina lo
    declara también aquí por si esta hoja se carga sola en una prueba. */
 .en-rutina-form[hidden]{display:none}
+
+/* ── Rutinas plegables ───────────────────────────────────────────────────── */
+.en-rut{padding:0}
+.en-rut-sum{display:block;list-style:none;cursor:pointer;min-height:64px;padding:16px 44px 16px 16px;position:relative}
+.en-rut-sum::-webkit-details-marker{display:none}
+/* Chevron con transform (nunca width/height); reduced-motion lo apaga. */
+.en-rut-sum::after{content:'';position:absolute;right:20px;top:26px;width:8px;height:8px;border-right:1.5px solid var(--muted-ink);border-bottom:1.5px solid var(--muted-ink);transform:rotate(45deg);transition:transform .2s}
+.en-rut[open] .en-rut-sum::after{transform:rotate(225deg)}
+.en-rut-sum:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:var(--r-md)}
+.en-rut .en-card-dias{padding:0 16px 16px;margin-top:0}
+
+/* ── Ficha de ejercicio ──────────────────────────────────────────────────── */
+.en-ficha-fotos{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:4px 0 8px}
+.en-ficha-foto{display:block;aspect-ratio:4/3;border-radius:var(--r-sm);background:var(--border);overflow:hidden}
+.en-ficha-foto img{width:100%;height:100%;object-fit:cover;display:block}
+.en-ficha-txt{font-size:13px;color:var(--text);line-height:1.6;margin:0}
+.en-ficha-pasos{margin:0 0 8px;padding-left:20px;font-size:13px;color:var(--text);line-height:1.6}
+.en-ficha-pasos li{margin-bottom:8px}
+.en-ficha-cta{margin-top:20px}
