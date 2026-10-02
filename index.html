@@ -25,43 +25,84 @@
        (import dinámico): la carga inicial no crece. "Hoy" es la puerta de
        entrada: resumen del día y las tres acciones. -->
   <main id="vista-hoy">
+    <!-- Hoy: la puerta de entrada. Cálida a propósito: saludo según la hora,
+         el día en un anillo, fotos reales del menú y tu semana. Todo se pinta
+         desde el almacén en renderHoy(); este markup es solo el esqueleto. -->
     <div class="eyebrow" id="hoy-fecha"></div>
-    <h1 class="stitle">Hola</h1>
-    <div class="ssub">¿Qué quieres hacer hoy?</div>
-
-    <div class="gap-wrap hoy-resumen" id="hoy-resumen" hidden>
-      <div class="gap-hd"><span>Tu día</span><span class="hoy-kcal" id="hoy-kcal"></span></div>
-      <div class="hoy-barras" id="hoy-barras">
-        <div class="gt-bar-wrap"><div class="gt-bar-top"><span class="gt-bar-lbl">Proteína</span><span class="gt-bar-val" id="hoy-v-p">0/0g</span></div><div class="bar-bg"><div class="bar-fill bp" id="hoy-b-p" style="transform:scaleX(0)"></div></div></div>
-        <div class="gt-bar-wrap"><div class="gt-bar-top"><span class="gt-bar-lbl">Carbos</span><span class="gt-bar-val" id="hoy-v-c">0/0g</span></div><div class="bar-bg"><div class="bar-fill bc" id="hoy-b-c" style="transform:scaleX(0)"></div></div></div>
-        <div class="gt-bar-wrap"><div class="gt-bar-top"><span class="gt-bar-lbl">Grasas</span><span class="gt-bar-val" id="hoy-v-g">0/0g</span></div><div class="bar-bg"><div class="bar-fill bg2" id="hoy-b-g" style="transform:scaleX(0)"></div></div></div>
-      </div>
-      <p class="hc-s hoy-nota" id="hoy-nota" hidden></p>
-      <button type="button" class="hoy-editar" onclick="crearPerfil('hoy')">Cambiar mi meta</button>
-    </div>
+    <h1 class="stitle hoy-saludo" id="hoy-saludo">Hola</h1>
+    <p class="ssub hoy-frase" id="hoy-frase">¿Qué quieres hacer hoy?</p>
 
     <div class="hoy-ultimo" id="hoy-ultimo" hidden></div>
 
-    <div class="hoy-sin-meta" id="hoy-sin-meta" hidden>
-      <p class="hc-s">Crea tu perfil una sola vez y las tres secciones compartirán tu meta.</p>
-      <button class="btn btn-main" onclick="crearPerfil('hoy')">Crear mi perfil</button>
-    </div>
+    <!-- Primera visita: bienvenida con foto y los tres pasos -->
+    <section class="hoy-bienvenida" id="hoy-sin-meta" hidden aria-labelledby="hoy-bv-t">
+      <img class="hoy-bv-foto" src="assets/ingredientes/salmon.jpg" alt="Salmón al pastor de COSECHA" width="600" height="600" loading="lazy" decoding="async">
+      <div class="hoy-bv-cuerpo">
+        <h2 class="hoy-bv-t" id="hoy-bv-t">Tu comida, tu entreno y tu meta, en un solo lugar</h2>
+        <ol class="hoy-bv-pasos">
+          <li><b>Crea tu perfil</b> en un minuto: calculamos tu meta.</li>
+          <li><b>Pide o registra</b> lo que comes; ves cuánto te falta.</li>
+          <li><b>Entrena</b> con descansos que corren solos.</li>
+        </ol>
+        <button class="btn btn-main hoy-bv-cta" onclick="crearPerfil('hoy')">Crear mi perfil</button>
+      </div>
+    </section>
+
+    <!-- Tu día: anillo de kcal (consumido · restantes · meta) + P/C/G -->
+    <section class="hoy-dia" id="hoy-resumen" hidden aria-labelledby="hoy-dia-t">
+      <div class="hoy-dia-hd">
+        <h2 class="hoy-dia-t" id="hoy-dia-t">Tu día</h2>
+        <button type="button" class="hoy-editar" onclick="crearPerfil('hoy')">Cambiar mi meta</button>
+      </div>
+      <div class="hoy-anillo-fila" id="hoy-barras">
+        <div class="hoy-lado"><span class="hoy-lado-n" id="hoy-consumido">0</span><span class="hoy-lado-l">Consumido</span></div>
+        <div class="hoy-anillo" id="hoy-anillo" role="img" aria-label="">
+          <div class="hoy-anillo-c"><span class="hoy-anillo-n" id="hoy-restan">0</span><span class="hoy-anillo-l" id="hoy-restan-l">kcal por comer</span></div>
+        </div>
+        <div class="hoy-lado"><span class="hoy-lado-n" id="hoy-meta">0</span><span class="hoy-lado-l">Meta</span></div>
+      </div>
+      <div class="hoy-macros" id="hoy-macros">
+        <div class="hoy-mac"><span class="hoy-mac-l">Proteína</span><div class="bar-bg"><div class="bar-fill bp" id="hoy-b-p" style="transform:scaleX(0)"></div></div><span class="hoy-mac-v" id="hoy-v-p">0/0 g</span></div>
+        <div class="hoy-mac"><span class="hoy-mac-l">Carbos</span><div class="bar-bg"><div class="bar-fill bc" id="hoy-b-c" style="transform:scaleX(0)"></div></div><span class="hoy-mac-v" id="hoy-v-c">0/0 g</span></div>
+        <div class="hoy-mac"><span class="hoy-mac-l">Grasas</span><div class="bar-bg"><div class="bar-fill bg2" id="hoy-b-g" style="transform:scaleX(0)"></div></div><span class="hoy-mac-v" id="hoy-v-g">0/0 g</span></div>
+      </div>
+      <p class="hc-s hoy-nota" id="hoy-nota" hidden></p>
+      <span class="hoy-kcal" id="hoy-kcal" hidden></span>
+    </section>
 
     <div class="hoy-acciones">
       <button class="hoy-card hoy-card-accent" onclick="goTab('pedir')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 5c0 1.2 1 1.6 1 2.8M13.5 5c0 1.2 1 1.6 1 2.8"/></svg>
-        <div><div class="hc-t">Pedir a COSECHA</div><div class="hc-s">Arma un plato a tu medida y añádelo a tu diario</div></div>
+        <span class="hoy-ico hoy-ico-pedir"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 12h16a8 8 0 0 1-16 0z"/><path d="M9 5c0 1.2 1 1.6 1 2.8M13.5 5c0 1.2 1 1.6 1 2.8"/></svg></span>
+        <span class="hoy-card-txt"><span class="hc-t">Pedir a COSECHA</span><span class="hc-s">Un plato a la medida de tu meta</span></span>
+        <svg class="hoy-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg>
       </button>
       <button class="hoy-card" onclick="goTab('diario')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 2-2h12v18H7a2 2 0 0 1-2-2z"/><path d="M9 3v18"/></svg>
-        <div><div class="hc-t">Registrar comida</div><div class="hc-s">Lleva tus macros de lo que comes en casa</div></div>
+        <span class="hoy-ico hoy-ico-diario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 2-2h12v18H7a2 2 0 0 1-2-2z"/><path d="M9 3v18"/></svg></span>
+        <span class="hoy-card-txt"><span class="hc-t">Registrar comida</span><span class="hc-s" id="hoy-sub-diario">Lo que comes en casa también cuenta</span></span>
+        <svg class="hoy-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg>
       </button>
       <button class="hoy-card" onclick="goTab('entrenar')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6.5 7.5v9M3.5 9.5v5M17.5 7.5v9M20.5 9.5v5M6.5 12h11"/></svg>
-        <div><div class="hc-t">Entrenar</div><div class="hc-s">Registra tu sesión con descansos automáticos</div></div>
+        <span class="hoy-ico hoy-ico-entrenar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6.5 7.5v9M3.5 9.5v5M17.5 7.5v9M20.5 9.5v5M6.5 12h11"/></svg></span>
+        <span class="hoy-card-txt"><span class="hc-t">Entrenar</span><span class="hc-s" id="hoy-sub-entrenar">Rutinas listas y descansos automáticos</span></span>
+        <svg class="hoy-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg>
       </button>
     </div>
 
+    <!-- Tu semana: lo que registraste y entrenaste los últimos 7 días -->
+    <section class="hoy-semana" id="hoy-semana" hidden aria-labelledby="hoy-sem-t">
+      <h2 class="hoy-sec-t" id="hoy-sem-t">Tu semana</h2>
+      <ol class="hoy-sem-dias" id="hoy-sem-dias"></ol>
+      <p class="hoy-sem-ley"><span class="hoy-pt hoy-pt-comida" aria-hidden="true"></span> Registraste comida <span class="hoy-pt hoy-pt-entreno" aria-hidden="true"></span> Entrenaste</p>
+    </section>
+
+    <!-- Del menú: fotos reales de los módulos con sus macros -->
+    <section class="hoy-menu" aria-labelledby="hoy-menu-t">
+      <div class="hoy-menu-hd">
+        <h2 class="hoy-sec-t" id="hoy-menu-t">Del menú COSECHA</h2>
+        <button type="button" class="hoy-menu-ver" onclick="goTab('pedir')">Ver menú</button>
+      </div>
+      <ul class="hoy-carrusel" id="hoy-carrusel"></ul>
+    </section>
   </main>
 
   <main id="vista-pedir" hidden>

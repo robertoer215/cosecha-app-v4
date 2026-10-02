@@ -155,15 +155,26 @@ function clavePlato() {
 // La pantalla Hoy: resumen del día (lo consumido del diario contra la meta) y
 // las tres acciones. Se repinta en cada apertura releyendo el almacén, porque
 // Diario, Entrenar o Pedir pudieron escribir desde su pestaña.
+// Los módulos que se enseñan en el carrusel de Hoy (fotos ligeras en assets/hoy).
+const MENU_HOY = ['P01', 'P03', 'C02', 'P02', 'C01', 'V04', 'C03', 'G01'];
+
 function renderHoy() {
   estadoLocal = almacen.cargar();
-  const f = new Date().toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
+  const ahora = new Date();
+  const f = ahora.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long' });
   $('hoy-fecha').textContent = f.charAt(0).toUpperCase() + f.slice(1);
+  // Un saludo según la hora: la diferencia entre una pantalla y alguien que te recibe.
+  const h = ahora.getHours();
+  $('hoy-saludo').textContent = h < 12 ? 'Buenos días' : h < 19 ? 'Buenas tardes' : 'Buenas noches';
+
   const m = getMetaCompartida();
   $('hoy-resumen').hidden = !m;
   $('hoy-sin-meta').hidden = !!m;
+  const hoyIso = almacen.hoyISO();
+  const dia = estadoLocal.diario[hoyIso] || {};
+  const nAlimentos = Object.values(dia).reduce((a, l) => a + (l || []).length, 0);
+  let frase = '¿Primera vez aquí? Empecemos por tu meta.';
   if (m) {
-    const dia = estadoLocal.diario[almacen.hoyISO()] || {};
     const tot = { prot: 0, carb: 0, gras: 0 };
     Object.values(dia).forEach(lista => (lista || []).forEach(e => {
       tot.prot += e.macros?.prot || 0; tot.carb += e.macros?.carb || 0; tot.gras += e.macros?.gras || 0;
@@ -171,50 +182,127 @@ function renderHoy() {
     // kcal derivadas 4/4/9, igual que la meta: el panel siempre cuadra.
     const kcal = Math.round(4 * tot.prot + 4 * tot.carb + 9 * tot.gras);
     // Meta manual POR COMIDA sin responder cuántas comidas al día: Hoy no
-    // adivina (pintar la meta de UNA comida como meta del día engaña). El
-    // Diario hace la pregunta; aquí solo lo consumido y la invitación.
+    // adivina (pintar la meta de UNA comida como meta del día engaña).
     const nDia = m.origen === 'manual_comida' ? estadoLocal.perfil?.comidasDiario : m.comidas;
     const pendiente = !(nDia > 0);
     $('hoy-barras').hidden = pendiente;
+    $('hoy-macros').hidden = pendiente;
     $('hoy-nota').hidden = !pendiente;
     if (pendiente) {
-      $('hoy-kcal').textContent = `${kcal} kcal hoy`;
-      $('hoy-nota').textContent = 'Tu meta es por comida. Responde en el Diario cuántas comidas registras al día y aquí verás tu meta diaria.';
+      $('hoy-nota').textContent = `Llevas ${kcal} kcal hoy. Tu meta es por comida: responde en el Diario cuántas comidas haces al día y aquí verás tu día completo.`;
+      frase = 'Tu meta es por comida. Dinos cuántas comidas haces y verás tu día completo.';
     } else {
-      const metaDia = { kcal: m.kcal * nDia, prot: m.prot * nDia, carb: m.carb * nDia, gras: m.gras * nDia };
+      const metaDia = { kcal: m.kcal * nDia, prot: Math.round(m.prot * nDia), carb: Math.round(m.carb * nDia), gras: Math.round(m.gras * nDia) };
+      const frac = metaDia.kcal ? kcal / metaDia.kcal : 0;
+      const pct = Math.round(frac * 100);
+      const sobra = kcal > metaDia.kcal;
+      $('hoy-consumido').textContent = kcal;
+      $('hoy-meta').textContent = metaDia.kcal;
+      $('hoy-restan').textContent = Math.abs(metaDia.kcal - kcal);
+      $('hoy-restan-l').textContent = sobra ? 'kcal de más' : 'kcal por comer';
+      const anillo = $('hoy-anillo');
+      anillo.style.setProperty('--pd', Math.min(1, frac).toFixed(3));
+      anillo.classList.toggle('hoy-anillo-over', sobra);
+      anillo.setAttribute('aria-label', `Llevas ${kcal} de ${metaDia.kcal} kcal: ${pct} % de tu meta de hoy`);
       $('hoy-kcal').textContent = `${kcal} / ${metaDia.kcal} kcal`;
-      [['p', 'prot'], ['c', 'carb'], ['g', 'gras']].forEach(([s, k]) => {
-        $('hoy-v-' + s).textContent = `${Math.round(tot[k])}/${metaDia[k]}g`;
-        const b = $('hoy-b-' + s);
+      [['p', 'prot'], ['c', 'carb'], ['g', 'gras']].forEach(([sx, k]) => {
+        $('hoy-v-' + sx).textContent = `${Math.round(tot[k])}/${metaDia[k]} g`;
+        const b = $('hoy-b-' + sx);
         b.style.transform = `scaleX(${Math.min(1, metaDia[k] ? tot[k] / metaDia[k] : 0)})`;
         // El exceso se marca con la misma trama que el Diario y el tracker.
         b.classList.toggle('bover', metaDia[k] > 0 && tot[k] > metaDia[k] + UMBRAL_G);
       });
+      // Una frase que cambia con tu día (nunca regaña: informa y propone).
+      frase = kcal === 0
+        ? (h < 12 ? 'Tu día empieza en blanco. ¿Ya desayunaste?' : 'Aún no registras nada hoy. ¿Qué has comido?')
+        : sobra ? 'Ya cubriste tu meta de hoy.'
+        : pct >= 90 ? `Casi lo logras: vas en ${pct} % de tu meta.`
+        : `Vas en ${pct} % de tu meta de hoy.`;
     }
   }
-  // Lo último de Entrenar: una sesión a medias invita a retomarla; si no, la última hecha.
-  const ult = $('hoy-ultimo');
+  $('hoy-frase').textContent = frase;
+
+  // Subtítulos vivos de las acciones: dicen algo de TI, no del producto.
+  $('hoy-sub-diario').textContent = nAlimentos
+    ? `${nAlimentos} ${nAlimentos === 1 ? 'alimento registrado' : 'alimentos registrados'} hoy`
+    : 'Lo que comes en casa también cuenta';
   const activa = estadoLocal.entreno?.sesionActiva;
   const sesiones = estadoLocal.entreno?.sesiones || [];
-  if (activa) {
-    ult.hidden = false;
-    ult.innerHTML = `<button class="hoy-card hoy-card-accent" onclick="goTab('entrenar')"><div><div class="hc-t">Tienes una sesión en curso</div><div class="hc-s">Tócala para continuar donde la dejaste</div></div></button>`;
-  } else if (sesiones.length) {
+  const sub = $('hoy-sub-entrenar');
+  if (activa && !activa.finMs) sub.textContent = 'Tienes una sesión en curso';
+  else if (sesiones.length) {
     const s = sesiones[sesiones.length - 1];
     const series = (s.ejercicios || []).reduce((a, e) => a + (e.series || []).filter(x => x.hecha).length, 0);
-    const volKg = (s.ejercicios || []).reduce((a, e) => a + (e.series || []).filter(x => x.hecha).reduce((b, x) => b + (x.reps || 0) * (x.pesoKg || 0), 0), 0);
-    const lb = estadoLocal.perfil?.unidadPeso === 'lb';
-    const vol = Math.round(lb ? volKg / 0.45359237 : volKg);
-    ult.hidden = false;
-    // Mismas reglas que el historial de Entrenar: concordancia y el volumen solo
-    // cuando lo hay ("0 kg de volumen" en peso corporal decía que no hiciste nada).
     const fechaS = new Date(s.inicioMs).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
-    ult.innerHTML = `<div class="hc-s">Última sesión: ${fechaS} · ${series} ${series === 1 ? 'serie' : 'series'}${vol > 0 ? ` · ${vol} ${lb ? 'lb' : 'kg'} de volumen` : ''}</div>`;
-  } else {
-    ult.hidden = true;
-    ult.innerHTML = '';
-  }
+    sub.textContent = `Última sesión: ${fechaS} · ${series} ${series === 1 ? 'serie' : 'series'}`;
+  } else sub.textContent = 'Rutinas listas y descansos automáticos';
+
+  // La sesión a medias es lo único urgente: arriba de todo.
+  const ult = $('hoy-ultimo');
+  if (activa && !activa.finMs) {
+    ult.hidden = false;
+    ult.innerHTML = `<button class="hoy-retomar" onclick="goTab('entrenar')"><span class="hoy-retomar-pt" aria-hidden="true"></span><span><b>Tienes una sesión en curso</b><small>Tócala para seguir donde la dejaste</small></span></button>`;
+  } else { ult.hidden = true; ult.innerHTML = ''; }
+
+  pintarSemanaHoy(sesiones);
+  pintarMenuHoy();
 }
+
+// Los últimos 7 días: un punto por día con comida registrada, un aro por día
+// entrenado. Aparece en cuanto hay algo que contar.
+function pintarSemanaHoy(sesiones) {
+  const dias = [];
+  const hoyMs = Date.now();
+  for (let i = 6; i >= 0; i--) {
+    const ms = hoyMs - i * 86400000;
+    const iso = almacen.hoyISO(ms);
+    const d = estadoLocal.diario[iso] || {};
+    const comida = Object.values(d).some(l => (l || []).length);
+    const entreno = sesiones.some(s => s.finMs && almacen.hoyISO(s.inicioMs) === iso);
+    const fecha = new Date(ms);
+    dias.push({ comida, entreno, hoy: i === 0,
+      letra: fecha.toLocaleDateString('es-MX', { weekday: 'narrow' }),
+      largo: fecha.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric' }) });
+  }
+  const hay = dias.some(d => d.comida || d.entreno);
+  $('hoy-semana').hidden = !hay;
+  if (!hay) return;
+  $('hoy-sem-dias').innerHTML = dias.map(d => {
+    const que = [d.comida ? 'registraste comida' : null, d.entreno ? 'entrenaste' : null].filter(Boolean).join(' y ') || 'sin registro';
+    return `<li class="hoy-sem-dia${d.hoy ? ' hoy-sem-hoy' : ''}" aria-label="${d.largo}: ${que}">
+      <span class="hoy-sem-l" aria-hidden="true">${d.letra}</span>
+      <span class="hoy-sem-pt${d.comida ? ' con-comida' : ''}${d.entreno ? ' con-entreno' : ''}" aria-hidden="true"></span>
+    </li>`;
+  }).join('');
+}
+
+// Carrusel del menú: fotos reales y macros de la porción Estándar. Se pinta una
+// vez (la carta no cambia en la sesión); tocar un plato lo deja elegido en Pedir.
+function pintarMenuHoy() {
+  const ul = $('hoy-carrusel');
+  if (ul.childElementCount) return;
+  ul.innerHTML = MENU_HOY.map(id => ING.find(i => i.id === id)).filter(Boolean).map(it => {
+    const mm = mac(it, 1);
+    return `<li><button type="button" class="hoy-plato" onclick="elegirDelMenu('${it.id}','${it.cat}')" aria-label="${it.nombre}: ${mm.prot} g de proteína, ${mm.carb} g de carbohidratos, ${mm.gras} g de grasa, $${precio(it, 1)}">
+      <img src="assets/hoy/${it.img}" alt="" width="320" height="320" loading="lazy" decoding="async"${it.foco ? ` style="object-position:${it.foco}"` : ''}>
+      <span class="hoy-plato-cat">${CAT_LABEL[it.cat] || ''}</span>
+      <span class="hoy-plato-n">${it.nombre}</span>
+      <span class="hoy-plato-mac"><b class="m-p">${mm.prot}P</b><b class="m-c">${mm.carb}C</b><b class="m-g">${mm.gras}G</b><span class="hoy-plato-pr">$${precio(it, 1)}</span></span>
+    </button></li>`;
+  }).join('');
+}
+
+// Desde el carrusel: el plato queda elegido y Pedir abre en su paso.
+window.elegirDelMenu = function(id, cat) {
+  window.goTab('pedir');
+  if (!(meta && typeof meta.kcal === 'number')) return;   // sin meta, Pedir pide el perfil
+  if (!(selBase[cat] || []).includes(id) && !selExtra[id]) window.selBI(id, cat);
+  const paso = CATS_STEPS.indexOf(cat);
+  if (paso >= 0) platoCatIdx = paso;
+  renderBase();
+  updateGlobalTracker();
+  goStep(1);
+};
 
 // Al calcular la meta, el perfil y la meta quedan en el almacén para que
 // Diario y Entrenar los usen sin volver a preguntar nada. Escritura ATÓMICA
