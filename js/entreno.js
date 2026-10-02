@@ -143,6 +143,85 @@ export function siguientePendiente(ejercicios) {
   return null;
 }
 
+// ── Progreso: cálculos puros (sin DOM, testeados) ─────────────────────────────
+//
+// "Mejor serie" = la de MÁS PESO; a igual peso, la de más repeticiones. En
+// peso corporal (todo a 0 kg) manda la de más repeticiones. Es el criterio
+// con el que la gente cuenta sus récords en el gym ("¿cuánto levantaste?").
+export function mejorSerie(series) {
+  const hechas = (series || []).filter(s => s && s.hecha && (s.reps || 0) > 0);
+  if (!hechas.length) return null;
+  return hechas.reduce((a, s) => ((s.pesoKg || 0) > (a.pesoKg || 0)
+    || ((s.pesoKg || 0) === (a.pesoKg || 0) && s.reps > a.reps)) ? s : a);
+}
+
+// Un ejercicio dentro de una sesión: sus series hechas, su mejor serie,
+// cuántas repeticiones y cuánto volumen (Σ reps × kg) movió.
+export function resumenEjercicio(ej) {
+  const hechas = (ej?.series || []).filter(s => s && s.hecha);
+  return {
+    series: hechas,
+    mejor: mejorSerie(hechas),
+    totalReps: hechas.reduce((a, s) => a + (s.reps || 0), 0),
+    volumen: hechas.reduce((a, s) => a + (s.reps || 0) * (s.pesoKg || 0), 0)
+  };
+}
+
+// Todas las veces que se hizo un ejercicio, de la más vieja a la más nueva.
+export function historialEjercicio(sesiones, id) {
+  const out = [];
+  for (const s of sesiones || []) {
+    for (const ej of s?.ejercicios || []) {
+      if (ej.idEjercicio !== id) continue;
+      const r = resumenEjercicio(ej);
+      if (!r.mejor) continue;
+      out.push({ sesionId: s.id, inicioMs: s.inicioMs, nombre: ej.nombre, ...r });
+    }
+  }
+  return out.sort((a, b) => a.inicioMs - b.inicioMs);
+}
+
+// Los récords de un ejercicio: las sesiones con la mejor serie más alta
+// (peso, luego reps; a empate, la que se logró PRIMERO conserva el lugar).
+export function recordsEjercicio(sesiones, id, n = 3) {
+  return historialEjercicio(sesiones, id)
+    .sort((a, b) => (b.mejor.pesoKg || 0) - (a.mejor.pesoKg || 0) || b.mejor.reps - a.mejor.reps || a.inicioMs - b.inicioMs)
+    .slice(0, n);
+}
+
+// El récord vigente de cada ejercicio entrenado, el más reciente primero.
+export function prsPorEjercicio(sesiones) {
+  const ids = new Set();
+  for (const s of sesiones || []) for (const ej of s?.ejercicios || []) ids.add(ej.idEjercicio);
+  return [...ids].map(id => {
+    const top = recordsEjercicio(sesiones, id, 1)[0];
+    return top ? { idEjercicio: id, nombre: top.nombre, mejor: top.mejor, inicioMs: top.inicioMs } : null;
+  }).filter(Boolean).sort((a, b) => b.inicioMs - a.inicioMs);
+}
+
+// Lo entrenado en [desde, hasta): sesiones, series hechas y volumen. Con `id`,
+// solo ese ejercicio (cuenta las sesiones donde se hizo).
+export function estadisticasPeriodo(sesiones, desdeMs, hastaMs, id = null) {
+  let n = 0, series = 0, volumen = 0;
+  for (const s of sesiones || []) {
+    if (!(s?.inicioMs >= desdeMs && s.inicioMs < hastaMs)) continue;
+    const ejs = (s.ejercicios || []).filter(e => !id || e.idEjercicio === id);
+    const r = ejs.map(resumenEjercicio);
+    const ser = r.reduce((a, x) => a + x.series.length, 0);
+    if (!ser) continue;
+    n++;
+    series += ser;
+    volumen += r.reduce((a, x) => a + x.volumen, 0);
+  }
+  return { sesiones: n, series, volumen, promedio: n ? volumen / n : 0 };
+}
+
+// % de cambio frente al periodo anterior; null si antes no había nada con
+// qué comparar (decir "+∞ %" o "+100 %" a quien empieza sería mentir).
+export function cambioPct(actual, anterior) {
+  return anterior > 0 ? Math.round(((actual - anterior) / anterior) * 100) : null;
+}
+
 export function aKg(valor, unidad) {
   if (!Number.isFinite(valor) || valor < 0) return 0;
   const kg = unidad === 'lb' ? valor * 0.45359237 : valor;
@@ -198,7 +277,9 @@ let ctx = null;              // { raiz, getMeta } que entrega app.js
 let estado = null;
 let sesion = null;
 
-let subtab = 'rutinas';      // 'rutinas' | 'biblioteca' | 'historial'
+let subtab = 'rutinas';      // 'progreso' | 'rutinas' | 'biblioteca' | 'historial'
+let periodoProg = '1m';      // '1m' | '6m' (gráficas y comparaciones de Progreso)
+let detalleTab = 'progreso'; // pestaña del detalle de un ejercicio
 let modoBiblioteca = null;   // null (pestaña) | 'sesion' (overlay "agregar a la sesión")
 let verSesionId = null;      // sesión del historial abierta en modo lectura
 let verProgresoId = null;    // ejercicio abierto en "progreso"
@@ -229,6 +310,7 @@ export function initEntreno({ raiz, getMeta }) {
   ctx = { raiz, getMeta };
   estado = almacen.cargar();
   sesion = estado.entreno.sesionActiva;
+  if (estado.entreno.sesiones.length) subtab = 'progreso';
 
   // iOS solo permite crear/reanudar audio dentro de un gesto: el primer toque
   // en la sección deja el beep del fin de descanso listo para sonar solo.
@@ -644,6 +726,7 @@ function renderVista() {
     verSesionId = null;
   }
   if (fichaId) { pintarFicha(raiz, fichaId); return; }
+  if (verProgresoId) { pintarDetalleEjercicio(raiz, verProgresoId); return; }
   pintarInicio(raiz);
 }
 
@@ -660,7 +743,7 @@ function pintarInicio(raiz) {
       ${['kg', 'lb'].map(u => `<button type="button" class="en-unidad-btn${unidadPeso() === u ? ' en-unidad-on' : ''}" aria-pressed="${unidadPeso() === u}" data-unidad="${u}">${u}</button>`).join('')}
     </div>` : ''}
     <div class="en-tabs" role="group" aria-label="Secciones de Entrenar">
-      ${['rutinas', 'biblioteca', 'historial'].map(t => `
+      ${['progreso', 'rutinas', 'biblioteca', 'historial'].map(t => `
         <button type="button" class="en-tab${subtab === t ? ' en-tab-on' : ''}"
           aria-pressed="${subtab === t}" data-tab="${t}">${capital(t)}</button>`).join('')}
     </div>
@@ -684,7 +767,8 @@ function pintarInicio(raiz) {
     render();
   });
   const panel = raiz.querySelector('.en-panel');
-  if (subtab === 'rutinas') pintarPanelRutinas(panel);
+  if (subtab === 'progreso') pintarPanelProgreso(panel);
+  else if (subtab === 'rutinas') pintarPanelRutinas(panel);
   else if (subtab === 'biblioteca') pintarBiblioteca(panel, null);
   else pintarPanelHistorial(panel);
 }
@@ -967,7 +1051,6 @@ function elegirLibre(overlay) {
 
 function pintarPanelHistorial(panel) {
   const sesiones = estado.entreno.sesiones;
-  if (verProgresoId) { pintarProgreso(panel, verProgresoId); return; }
   if (!sesiones.length) {
     panel.innerHTML = '<p class="en-vacio">Aquí vivirán tus sesiones. Empieza la primera desde Rutinas.</p>';
     return;
@@ -1004,49 +1087,239 @@ function pintarPanelHistorial(panel) {
     const b = e.target.closest('[data-acc]');
     if (!b) return;
     if (b.dataset.acc === 'ver') { verSesionId = b.dataset.sid; render(); }
-    if (b.dataset.acc === 'prog') { verProgresoId = b.dataset.id; render(); }
+    if (b.dataset.acc === 'prog') { verProgresoId = b.dataset.id; detalleTab = 'progreso'; render(); window.scrollTo(0, 0); }
   });
 }
 
-// Progreso de UN ejercicio en el tiempo: mejor serie y 1RM estimado por
-// sesión, lista simple de vieja a nueva — la dirección de lectura de "¿voy
-// subiendo?". Sin gráficas en v1: la lista honesta ya responde la pregunta.
-function pintarProgreso(panel, id) {
-  const unidad = unidadPeso();
-  const filas = [];
-  let nombre = id;
-  for (const s of estado.entreno.sesiones) {
-    const ej = (s.ejercicios || []).find(e => e.idEjercicio === id);
-    if (!ej) continue;
-    nombre = ej.nombre ?? nombre;
-    const hechas = (ej.series || []).filter(x => x.hecha);
-    if (!hechas.length) continue;
-    let mejor = null, mejor1RM = null;
-    for (const x of hechas) {
-      const rm = epley1RM(x.pesoKg, x.reps);
-      if (rm !== null && (mejor1RM === null || rm > mejor1RM)) { mejor1RM = rm; mejor = x; }
-    }
-    // Si todas las series fueron de >10 reps no hay 1RM estimable: la mejor
-    // serie pasa a ser la de más volumen y el 1RM se queda en "—".
-    if (!mejor) mejor = hechas.reduce((a, x) => {
-      const va = a.reps * a.pesoKg, vx = x.reps * x.pesoKg;
-      // Sin peso (peso corporal) manda la serie con más repeticiones.
-      return vx > va || (vx === va && x.reps > a.reps) ? x : a;
-    });
-    filas.push({ fecha: fechaCorta(s.inicioMs), mejor, mejor1RM });
+// ── Progreso (pestaña) ───────────────────────────────────────────────────────
+//
+// Patrón de experiencia de WHOOP (volumen promedio con comparación, gráfica,
+// récords con medalla, historial por ejercicio) calculado con TUS datos; sin
+// métricas de sensor. Todo sale de las funciones puras de arriba.
+
+const DIA_MS = 86400000;
+
+function rangoPeriodo(periodo, ahora = Date.now()) {
+  const dias = periodo === '6m' ? 182 : 30;
+  return { desde: ahora - dias * DIA_MS, hasta: ahora + 1, antesDesde: ahora - 2 * dias * DIA_MS, antesHasta: ahora - dias * DIA_MS };
+}
+
+// Barras de la gráfica: por sesión en 1 mes; por mes (promedio por sesión) en 6.
+function barrasPeriodo(sesiones, periodo, id, metrica) {
+  const valor = s => {
+    const ejs = (s.ejercicios || []).filter(e => !id || e.idEjercicio === id).map(resumenEjercicio);
+    if (!ejs.some(r => r.series.length)) return null;
+    return ejs.reduce((a, r) => a + (metrica === 'reps' ? r.totalReps : r.volumen), 0);
+  };
+  const { desde } = rangoPeriodo(periodo);
+  if (periodo === '1m') {
+    return sesiones.filter(s => s.inicioMs >= desde).map(s => ({ s, v: valor(s) })).filter(x => x.v !== null)
+      .map(x => ({ valor: x.v, etiqueta: new Date(x.s.inicioMs).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' }) }));
   }
+  const hoy = new Date();
+  const barras = [];
+  for (let i = 5; i >= 0; i--) {
+    const ini = new Date(hoy.getFullYear(), hoy.getMonth() - i, 1).getTime();
+    const fin = new Date(hoy.getFullYear(), hoy.getMonth() - i + 1, 1).getTime();
+    const vals = sesiones.filter(s => s.inicioMs >= ini && s.inicioMs < fin).map(valor).filter(v => v !== null);
+    barras.push({ valor: vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0,
+      etiqueta: new Date(ini).toLocaleDateString('es-MX', { month: 'short' }).replace('.', '') });
+  }
+  return barras;
+}
+
+const fmtNum = (n, unidad) => Math.round(unidad === 'lb' ? n / 0.45359237 : n).toLocaleString('es-MX');
+// "13.1 mil", no "13.1 k": así se dice en español.
+const fmtCompacto = (n, unidad) => {
+  const v = unidad === 'lb' ? n / 0.45359237 : n;
+  return v >= 1000 ? `${(Math.round(v / 100) / 10).toLocaleString('es-MX')} mil` : Math.round(v).toLocaleString('es-MX');
+};
+
+// Gráfica de barras en SVG propio (sin librerías): valor encima de cada barra,
+// etiqueta debajo; resumen para lector de pantalla y lista accesible aparte.
+function htmlGrafica(barras, unidad, titulo) {
+  if (!barras.length || !barras.some(b => b.valor > 0)) {
+    return '<p class="en-vacio">Aún no hay datos en este periodo.</p>';
+  }
+  const W = 335, H = 200, ARR = 30, ABA = 30, n = barras.length;
+  const max = Math.max(...barras.map(b => b.valor)) || 1;
+  const slot = (W - 8) / n;
+  const ancho = Math.min(34, slot * 0.62);
+  const salto = n > 10 ? Math.ceil(n / 6) : 1;
+  const util = H - ARR - ABA;
+  const barrasSvg = barras.map((b, i) => {
+    const h = b.valor > 0 ? Math.max(3, (b.valor / max) * util) : 0;
+    const cx = 4 + slot * i + slot / 2;
+    const y = H - ABA - h;
+    return `${h ? `<rect class="gr-bar" x="${(cx - ancho / 2).toFixed(1)}" y="${y.toFixed(1)}" width="${ancho.toFixed(1)}" height="${h.toFixed(1)}" rx="6"/>` : ''}
+      ${b.valor > 0 && (n <= 10 || i % salto === 0 || i === n - 1) ? `<text class="gr-val" x="${cx.toFixed(1)}" y="${(y - 8).toFixed(1)}" text-anchor="middle">${esc(unidad === 'reps' ? Math.round(b.valor) : fmtCompacto(b.valor, unidad))}</text>` : ''}
+      ${i % salto === 0 || i === n - 1 ? `<text class="gr-x" x="${cx.toFixed(1)}" y="${H - 9}" text-anchor="middle">${esc(b.etiqueta)}</text>` : ''}`;
+  }).join('');
+  const resumen = `${titulo}: ${barras.map(b => `${b.etiqueta} ${unidad === 'reps' ? Math.round(b.valor) + ' reps' : fmtNum(b.valor, unidad) + ' ' + unidad}`).join(', ')}`;
+  return `<svg class="en-grafica" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(resumen)}">
+    <line class="gr-base" x1="0" x2="${W}" y1="${H - ABA}" y2="${H - ABA}"/>
+    <line class="gr-guia" x1="0" x2="${W}" y1="${ARR + util / 2}" y2="${ARR + util / 2}"/>
+    ${barrasSvg}
+  </svg>`;
+}
+
+function htmlCambio(pct, etiquetaPeriodo) {
+  if (pct === null) return `<span class="en-cambio en-cambio-nuevo">Sin periodo anterior para comparar</span>`;
+  const sube = pct > 0, baja = pct < 0;
+  const flecha = sube ? '<path d="M6 15l6-6 6 6"/>' : baja ? '<path d="M6 9l6 6 6-6"/>' : '<path d="M6 12h12"/>';
+  return `<span class="en-cambio${sube ? ' en-cambio-sube' : ''}">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${flecha}</svg>
+    ${sube ? '+' : ''}${pct} % vs. ${etiquetaPeriodo}</span>`;
+}
+
+function htmlPeriodo() {
+  return `<div class="en-periodo" role="group" aria-label="Periodo">
+    ${[['1m', '1 mes'], ['6m', '6 meses']].map(([k, l]) => `<button type="button" class="en-periodo-btn${periodoProg === k ? ' en-periodo-on' : ''}" aria-pressed="${periodoProg === k}" data-periodo="${k}">${l}</button>`).join('')}
+  </div>`;
+}
+
+function textoMejor(m, unidad) {
+  return m.pesoKg > 0 ? `${fmtPeso(m.pesoKg, unidad)} ${unidad} × ${m.reps} reps` : `${m.reps} reps`;
+}
+
+function pintarPanelProgreso(panel) {
+  const sesiones = estado.entreno.sesiones;
+  if (catEstado === 'nada') cargarCatalogo().then(() => { if (subtab === 'progreso' && !sesion) render(); });
+  if (!sesiones.length) {
+    panel.innerHTML = `<div class="en-prog-vacio">
+      <p class="en-vacio">Aquí verás cuánto levantas, tus series y tus récords. Termina tu primera sesión y empieza la cuenta.</p>
+      <button type="button" class="en-btn en-btn-main" data-acc="ir-rutinas">Elegir una rutina</button>
+    </div>`;
+    panel.querySelector('[data-acc="ir-rutinas"]').addEventListener('click', () => { subtab = 'rutinas'; render(); });
+    return;
+  }
+  const unidad = unidadPeso();
+  const r = rangoPeriodo(periodoProg);
+  const act = estadisticasPeriodo(sesiones, r.desde, r.hasta);
+  const ant = estadisticasPeriodo(sesiones, r.antesDesde, r.antesHasta);
+  const etqAnt = periodoProg === '6m' ? 'los 6 meses anteriores' : 'el mes anterior';
+  const prs = prsPorEjercicio(sesiones);
   panel.innerHTML = `
-    <button type="button" class="en-volver" data-acc="atras">${SVG_VOLVER}<span>Historial</span></button>
-    <div class="en-sec-lbl">${esc(nombre)}</div>
-    ${filas.map(f => `
-      <div class="en-prog-fila">
-        <span class="en-prog-fecha">${esc(f.fecha)}</span>
-        <span class="en-prog-serie">${f.mejor.pesoKg > 0 ? `${f.mejor.reps} × ${fmtPeso(f.mejor.pesoKg, unidad)} ${unidad}` : `${f.mejor.reps} reps`}</span>
-        <span class="en-prog-rm">${f.mejor1RM !== null ? fmtPeso(f.mejor1RM, unidad) + ' ' + unidad + ' est.' : '—'}</span>
-      </div>`).join('')}`;
-  panel.querySelector('[data-acc="atras"]').addEventListener('click', () => {
-    verProgresoId = null;
-    render();
+    <div class="en-prog-hd">
+      <h3 class="en-prog-t">Volumen promedio por sesión</h3>
+      ${htmlPeriodo()}
+    </div>
+    <div class="en-kpi"><span class="en-kpi-n">${fmtNum(act.promedio, unidad)}</span><span class="en-kpi-u">${unidad}</span></div>
+    ${htmlCambio(cambioPct(act.promedio, ant.promedio), etqAnt)}
+    <div class="en-mini-stats">
+      <span><b>${act.sesiones}</b> ${act.sesiones === 1 ? 'sesión' : 'sesiones'}</span>
+      <span><b>${act.series}</b> series</span>
+      <span><b>${fmtCompacto(act.volumen, unidad)}</b> ${unidad} en total</span>
+    </div>
+    ${htmlGrafica(barrasPeriodo(sesiones, periodoProg, null, 'vol'), unidad, 'Volumen por ' + (periodoProg === '6m' ? 'mes' : 'sesión'))}
+    <div class="en-sec-lbl">Récords personales</div>
+    ${prs.map(p => `
+      <button type="button" class="en-pr-fila" data-acc="prog" data-id="${esc(p.idEjercicio)}">
+        ${miniatura(p.idEjercicio)}
+        <span class="en-pr-txt"><span class="en-pr-n">${esc(p.nombre || p.idEjercicio)}</span><span class="en-pr-f">${esc(fechaCorta(p.inicioMs))}</span></span>
+        <span class="en-pr-v">${p.mejor.pesoKg > 0 ? `<span><b>${fmtPeso(p.mejor.pesoKg, unidad)}</b> ${unidad}</span><small>× ${p.mejor.reps} reps</small>` : `<span><b>${p.mejor.reps}</b> reps</span>`}</span>
+        <svg class="en-pr-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg>
+      </button>`).join('') || '<p class="en-vacio">Todavía no hay series hechas.</p>'}`;
+  panel.addEventListener('click', e => {
+    const b = e.target.closest('[data-periodo], [data-acc]');
+    if (!b) return;
+    if (b.dataset.periodo) { periodoProg = b.dataset.periodo; render(); return; }
+    if (b.dataset.acc === 'prog') { verProgresoId = b.dataset.id; detalleTab = 'progreso'; render(); window.scrollTo(0, 0); }
+  });
+}
+
+// ── Detalle de un ejercicio: Progreso · Historial · Instrucciones ────────────
+
+const MEDALLA = n => `<svg class="en-medalla en-medalla-${n}" viewBox="0 0 28 32" role="img" aria-label="Récord ${n}"><path d="M8 0h4l3 7-4 2zM20 0h-4l-3 7 4 2z" class="en-medalla-cinta"/><circle cx="14" cy="19" r="11"/><text x="14" y="24" text-anchor="middle">${n}</text></svg>`;
+
+function htmlSesionEjercicio(h, unidad, n) {
+  const pr = h.mejor;
+  return `<details class="en-rec">
+    <summary class="en-rec-sum">
+      ${n ? MEDALLA(n) : ''}
+      <span class="en-rec-v">${textoMejor(pr, unidad)}</span>
+      <span class="en-rec-f">${esc(fechaCorta(h.inicioMs))}</span>
+    </summary>
+    <div class="en-rec-cuerpo">
+      <div class="en-rec-fila en-rec-hd" aria-hidden="true"><span>Reps</span><span>Peso</span></div>
+      ${h.series.map(x => `<div class="en-rec-fila"><span>${x.reps}</span><span>${x.pesoKg > 0 ? `${fmtPeso(x.pesoKg, unidad)} ${unidad}` : 'peso corporal'}${x === pr ? ' <em class="en-rec-pr">mejor serie</em>' : ''}</span></div>`).join('')}
+      <div class="en-rec-fila en-rec-tot"><span><b>${h.totalReps}</b> reps</span><span>${h.volumen > 0 ? `<b>${fmtNum(h.volumen, unidad)}</b> ${unidad} de volumen` : ''}</span></div>
+      <button type="button" class="en-btn en-btn-ghost en-rec-ir" data-acc="ver-sesion" data-sid="${esc(h.sesionId)}">Ver la sesión</button>
+    </div>
+  </details>`;
+}
+
+function pintarDetalleEjercicio(raiz, id) {
+  const sesiones = estado.entreno.sesiones;
+  if (catEstado === 'nada') cargarCatalogo().then(() => { if (verProgresoId) render(); });
+  const f = porId.get(id);
+  const hist = historialEjercicio(sesiones, id);
+  const nombre = f?.nombre || hist[hist.length - 1]?.nombre || id;
+  const unidad = unidadPeso();
+  const conPeso = hist.some(h => h.mejor.pesoKg > 0);
+  const metrica = conPeso ? 'vol' : 'reps';
+  let cuerpo = '';
+  if (detalleTab === 'instrucciones') {
+    cuerpo = f ? `
+      <div class="en-sec-lbl">Músculos</div>
+      <p class="en-ficha-txt"><b>Principales:</b> ${esc((f.musculosPrimarios || []).map(capital).join(', ') || '—')}${
+        (f.musculosSecundarios || []).length ? `<br><b>Secundarios:</b> ${esc(f.musculosSecundarios.map(capital).join(', '))}` : ''}</p>
+      ${(f.instrucciones || []).length ? `<div class="en-sec-lbl">Cómo se hace</div><ol class="en-ficha-pasos">${f.instrucciones.map(p => `<li>${esc(p)}</li>`).join('')}</ol>` : ''}
+      ${(f.imagenes || [])[1] ? `<div class="en-ficha-fotos">${f.imagenes.slice(0, 2).map((im, i) => `<span class="en-ficha-foto"><img loading="lazy" src="${esc(URL_IMG + im)}" alt="${esc(nombre)}, ${i ? 'posición final' : 'posición inicial'}"></span>`).join('')}</div>` : ''}`
+      : '<p class="en-vacio">Este ejercicio lo registraste a mano: no tiene ficha en la biblioteca.</p>';
+  } else if (detalleTab === 'historial') {
+    cuerpo = hist.length ? [...hist].reverse().map(h => htmlSesionEjercicio(h, unidad, 0)).join('')
+      : '<p class="en-vacio">Aún no hay series hechas de este ejercicio.</p>';
+  } else {
+    const r = rangoPeriodo(periodoProg);
+    const valorPeriodo = (d, h) => {
+      const xs = hist.filter(x => x.inicioMs >= d && x.inicioMs < h);
+      return xs.length ? xs.reduce((a, x) => a + (metrica === 'reps' ? x.totalReps : x.volumen), 0) / xs.length : 0;
+    };
+    const act = valorPeriodo(r.desde, r.hasta), ant = valorPeriodo(r.antesDesde, r.antesHasta);
+    const nAct = estadisticasPeriodo(sesiones, r.desde, r.hasta, id);
+    const top = recordsEjercicio(sesiones, id, 3);
+    const rm = hist.reduce((m, h) => {
+      const v = Math.max(...h.series.map(x => epley1RM(x.pesoKg, x.reps) ?? 0));
+      return v > m ? v : m;
+    }, 0);
+    const uMet = metrica === 'reps' ? 'reps' : unidad;
+    cuerpo = hist.length ? `
+      <div class="en-prog-hd">
+        <h3 class="en-prog-t">${metrica === 'reps' ? 'Repeticiones promedio por sesión' : 'Volumen promedio por sesión'}</h3>
+        ${htmlPeriodo()}
+      </div>
+      <div class="en-kpi"><span class="en-kpi-n">${metrica === 'reps' ? Math.round(act) : fmtNum(act, unidad)}</span><span class="en-kpi-u">${uMet}</span></div>
+      ${htmlCambio(cambioPct(act, ant), periodoProg === '6m' ? 'los 6 meses anteriores' : 'el mes anterior')}
+      <div class="en-mini-stats">
+        <span><b>${nAct.sesiones}</b> ${nAct.sesiones === 1 ? 'sesión' : 'sesiones'}</span>
+        <span><b>${nAct.series}</b> series</span>
+        ${rm > 0 ? `<span><b>${fmtPeso(rm, unidad)}</b> ${unidad} 1RM <em>estimado</em></span>` : ''}
+      </div>
+      ${htmlGrafica(barrasPeriodo(sesiones, periodoProg, id, metrica), uMet, (metrica === 'reps' ? 'Repeticiones' : 'Volumen') + ' por ' + (periodoProg === '6m' ? 'mes' : 'sesión'))}
+      <div class="en-sec-lbl">Récords personales</div>
+      ${top.map((h, i) => htmlSesionEjercicio(h, unidad, i + 1)).join('')}`
+      : '<p class="en-vacio">Aún no hay series hechas de este ejercicio. Cuando lo entrenes, aquí verás tu progreso y tus récords.</p>';
+  }
+  raiz.innerHTML = `
+  <div class="en-wrap en-detalle">
+    <button type="button" class="en-volver" data-acc="det-volver">${SVG_VOLVER}<span>${subtab === 'historial' ? 'Historial' : 'Progreso'}</span></button>
+    ${f?.imagenes?.[0] ? `<div class="en-det-foto"><img src="${esc(URL_IMG + f.imagenes[0])}" alt="" decoding="async"></div>` : ''}
+    <h2 class="en-titulo">${esc(nombre)}</h2>
+    ${f ? `<p class="en-sub">${esc([capital(f.musculosPrimarios?.[0]), capital(f.equipo)].filter(Boolean).join(' · '))}</p>` : ''}
+    <div class="en-tabs en-det-tabs" role="group" aria-label="Secciones del ejercicio">
+      ${[['progreso', 'Progreso'], ['historial', 'Historial'], ['instrucciones', 'Instrucciones']].map(([k, l]) =>
+        `<button type="button" class="en-tab${detalleTab === k ? ' en-tab-on' : ''}" aria-pressed="${detalleTab === k}" data-dtab="${k}">${l}</button>`).join('')}
+    </div>
+    ${cuerpo}
+  </div>`;
+  raiz.querySelector('.en-detalle').addEventListener('click', e => {
+    const b = e.target.closest('[data-acc], [data-dtab], [data-periodo]');
+    if (!b) return;
+    if (b.dataset.dtab) { detalleTab = b.dataset.dtab; render(); return; }
+    if (b.dataset.periodo) { periodoProg = b.dataset.periodo; render(); return; }
+    if (b.dataset.acc === 'det-volver') { verProgresoId = null; render(); return; }
+    if (b.dataset.acc === 'ver-sesion') { verSesionId = b.dataset.sid; render(); window.scrollTo(0, 0); }
   });
 }
 
