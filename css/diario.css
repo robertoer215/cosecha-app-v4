@@ -175,3 +175,7 @@
 #dia-buscar-input::placeholder{color:var(--muted)}
 /* Solo lectores de pantalla: el conteo de resultados del buscador. */
 .dia-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+/* Registro a mano: el atajo discreto al final de los resultados y la cifra viva. */
+.dia-manual-link{display:block;width:100%;min-height:44px;margin-top:8px;background:none;border:0;color:var(--accent-ink);font-family:var(--sans);font-size:13px;text-align:left;cursor:pointer}
+.dia-manual-link:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dia-manual-kcal{font-size:20px;font-weight:300;color:var(--text);font-variant-numeric:tabular-nums;margin:12px 0 4px}

@@ -207,7 +207,6 @@ let vistaVivo = 'foco';      // 'foco' (Sesión en vivo) | 'ejercicios' (lista e
 let filtroMusculo = '';      // filtros de la Biblioteca (combinables con la búsqueda)
 let filtroEquipo = '';
 let consultaBib = '';        // texto del buscador (sobrevive repintados)
-let confirmando = null;      // botón destructivo esperando segundo toque
 
 let descansoObj = null;      // objeto de crearDescanso() del descanso vivo
 let avisadoFin = false;      // para avisar UNA vez al llegar a cero
@@ -258,6 +257,7 @@ export function refrescar() {
   if (!ctx) return;
   estado = almacen.cargar();
   sesion = estado.entreno.sesionActiva;
+  if (!sesion || sesion.finMs || !sesion.descanso) { descansoObj = null; avisadoFin = true; }
   if (sesion && !sesion.finMs && !descansoObj) restaurarDescanso();
   render();
 }
@@ -289,6 +289,7 @@ function restaurarDescanso() {
   const restanteS = (d.finMs - Date.now()) / 1000;
   if (restanteS <= 0) {
     delete sesion.descanso;
+    sesion.listoDesdeMs = d.finMs;
     persistir();
     return;
   }
@@ -355,12 +356,16 @@ async function empezarDesdeRutina(rutina, dia) {
     for (const b of bloque) {
       const f = porId.get(b.idEjercicio);
       sesion.ejercicios.push(ejercicioDeSesion(
-        b.idEjercicio, f?.nombre ?? b.idEjercicio, b.descansoS ?? 90, g, b.series ?? 3, b.repsMin ?? null));
+        b.idEjercicio, f?.nombre ?? b.nombre ?? b.idEjercicio, b.descansoS ?? 90, g, b.series ?? 3, b.repsMin ?? null));
     }
   }
   persistir();
   pedirWakeLock();
+  vistaVivo = 'foco';
   render();
+  // Empezar desde una rutina de abajo de la lista dejaba la sesión a media
+  // pantalla (el ejercicio 3 parecía el primero): siempre arriba.
+  window.scrollTo(0, 0);
 }
 
 function agregarEjercicioASesion(id, nombre) {
@@ -417,10 +422,12 @@ function leerFila(fila, serie) {
 function terminarSesion() {
   sesion.finMs = Date.now();
   delete sesion.descanso;
+  sesion.serieEnCurso = null;
   descansoObj = null;
   liberarWakeLock();
   persistir();
   render();
+  window.scrollTo(0, 0);
 }
 
 function guardarSesionFinal() {
@@ -464,6 +471,7 @@ function sesionARutina(ses, nombre) {
     const reps = ej.series.filter(s => s.hecha).map(s => s.reps).filter(r => r > 0);
     const item = {
       idEjercicio: ej.idEjercicio,
+      nombre: ej.nombre,
       series: ej.series.filter(s => s.hecha).length || ej.series.length,
       repsMin: reps.length ? Math.min(...reps) : null,
       repsMax: reps.length ? Math.max(...reps) : null,
@@ -511,6 +519,7 @@ function saltarDescanso() {
   // Persistir el salto: sin esto el descanso saltado resucitaba (con alarma)
   // al volver a la pestaña o recargar, porque el disco guardaba su fin viejo.
   if (sesion) { delete sesion.descanso; sesion.listoDesdeMs = Date.now(); persistir(); }
+  cerrarBarraDescanso();
   tic();
 }
 
@@ -553,8 +562,13 @@ async function cargarJSON(ruta, clave) {
   return [];
 }
 
-async function cargarCatalogo() {
-  if (catEstado === 'listo' || catEstado === 'cargando') return;
+let catPromesa = null, rutPromesa = null;
+function cargarCatalogo() {
+  if (catEstado === 'listo') return Promise.resolve();
+  if (!catPromesa) catPromesa = cargarCatalogoReal().finally(() => { catPromesa = null; });
+  return catPromesa;
+}
+async function cargarCatalogoReal() {
   catEstado = 'cargando';
   try {
     catalogo = await cargarJSON('data/ejercicios.json', 'ejercicios');
@@ -567,8 +581,12 @@ async function cargarCatalogo() {
   }
 }
 
-async function cargarRutinas() {
-  if (rutEstado === 'listo' || rutEstado === 'cargando') return;
+function cargarRutinas() {
+  if (rutEstado === 'listo') return Promise.resolve();
+  if (!rutPromesa) rutPromesa = cargarRutinasReal().finally(() => { rutPromesa = null; });
+  return rutPromesa;
+}
+async function cargarRutinasReal() {
   rutEstado = 'cargando';
   try {
     rutinasBase = await cargarJSON('data/rutinas.json', 'rutinas');
@@ -610,11 +628,6 @@ function renderVista() {
   // repinta al llegar. Los flags de carga evitan pedirlos dos veces.
   if ((sesion || verSesionId) && catEstado === 'nada') cargarCatalogo().then(() => render());
   if ((sesion?.rutinaId || verSesionId) && rutEstado === 'nada') cargarRutinas().then(() => render());
-  if (!ctx.getMeta()) {
-    cerrarBarraDescanso();
-    pintarSinMeta(raiz);
-    return;
-  }
   if (sesion && !sesion.finMs) {
     if (fichaId) { pintarFicha(raiz, fichaId); return; }
     if (modoBiblioteca === 'sesion') { pintarBiblioteca(raiz, 'sesion'); return; }
@@ -634,25 +647,6 @@ function renderVista() {
   pintarInicio(raiz);
 }
 
-// Sin meta no hay perfil, y sin perfil no hay unidad de peso ni meta que
-// compartir: el mismo paso único de Pedir desbloquea las tres secciones.
-function pintarSinMeta(raiz) {
-  raiz.innerHTML = `
-  <div class="en-wrap">
-    <div class="en-ey">Entrenar</div>
-    <h2 class="en-titulo">Primero, tu perfil</h2>
-    <p class="en-sub">Con tu perfil sabemos tu unidad de peso y tu meta. Se llena una sola vez y sirve para toda la app.</p>
-    <button type="button" class="en-btn en-btn-main en-cta-perfil">Completa tu perfil en Pedir</button>
-  </div>`;
-  raiz.querySelector('.en-cta-perfil').addEventListener('click', () => {
-    // goTab lo expone el shell (app.js); si no está, el botón de la tabbar
-    // hace el mismo viaje sin acoplar nada más.
-    if (typeof globalThis.crearPerfil === 'function') globalThis.crearPerfil('entrenar');
-    else if (typeof globalThis.goTab === 'function') globalThis.goTab('pedir');
-    else document.getElementById('tab-pedir')?.click();
-  });
-}
-
 // ── Inicio: Rutinas · Biblioteca · Historial ─────────────────────────────────
 
 function pintarInicio(raiz) {
@@ -660,7 +654,11 @@ function pintarInicio(raiz) {
   <div class="en-wrap">
     <div class="en-ey">Entrenar</div>
     <h2 class="en-titulo">Tu fuerza</h2>
-    <p class="en-sub">Palomea cada serie y el descanso corre solo.</p>
+    <p class="en-sub">Empieza una serie, termínala y el descanso corre solo.</p>
+    ${estado.perfil ? `<div class="en-unidad" role="group" aria-label="Unidad de peso">
+      <span>Unidad de peso</span>
+      ${['kg', 'lb'].map(u => `<button type="button" class="en-unidad-btn${unidadPeso() === u ? ' en-unidad-on' : ''}" aria-pressed="${unidadPeso() === u}" data-unidad="${u}">${u}</button>`).join('')}
+    </div>` : ''}
     <div class="en-tabs" role="group" aria-label="Secciones de Entrenar">
       ${['rutinas', 'biblioteca', 'historial'].map(t => `
         <button type="button" class="en-tab${subtab === t ? ' en-tab-on' : ''}"
@@ -670,6 +668,14 @@ function pintarInicio(raiz) {
     <p class="en-aviso-storage" hidden>No se pudo guardar en este dispositivo. Exporta un respaldo desde Diario antes de cerrar.</p>
     <p class="en-fuentes">Ejercicios e imágenes: free-exercise-db (dominio público). Tus entrenamientos viven solo en este dispositivo.</p>
   </div>`;
+  raiz.querySelector('.en-unidad')?.addEventListener('click', e => {
+    const b = e.target.closest('[data-unidad]');
+    if (!b) return;
+    // En México los discos y mancuernas suelen venir en libras: se guarda en
+    // el perfil (los pesos se siguen guardando en kg; solo cambia la vista).
+    escribir(est => est.perfil ? almacen.guardarPerfil(est, { ...est.perfil, unidadPeso: b.dataset.unidad }) : est);
+    render();
+  });
   raiz.querySelector('.en-tabs').addEventListener('click', e => {
     const b = e.target.closest('[data-tab]');
     if (!b) return;
@@ -690,7 +696,13 @@ function pintarPanelRutinas(panel) {
     const dias = Array.isArray(r.dias) ? r.dias : [];
     const nEj = dias.reduce((a, d) => a + (d.bloques || []).reduce((b, bl) => b + bl.length, 0), 0);
     const nSuper = dias.reduce((a, d) => a + (d.bloques || []).filter(bl => bl.length > 1).length, 0);
-    const sub = [nEj + (nEj === 1 ? ' ejercicio' : ' ejercicios'),
+    // Lo que decide un principiante: nivel y cuántos días; y ejercicios POR
+    // DÍA (la suma de todos los días, "38 ejercicios", asustaba y engañaba).
+    const nDias = r.diasSemana || dias.length;
+    const porDia = dias.length ? Math.round(nEj / dias.length) : 0;
+    const sub = [capital(r.nivel),
+                 nDias ? `${nDias} ${nDias === 1 ? 'día' : 'días'} por semana` : null,
+                 porDia ? `${porDia} ejercicios por día` : null,
                  nSuper ? nSuper + (nSuper === 1 ? ' superserie' : ' superseries') : null,
                  // El objetivo del JSON es un slug estable ('recomposicion'):
                  // al usuario se le muestra con su tilde, nunca el slug crudo.
@@ -705,10 +717,12 @@ function pintarPanelRutinas(panel) {
         <span class="en-card-nombre">${esc(r.nombre)}</span>
         <span class="en-card-sub">${esc(sub)}</span>
       </summary>
+      ${r.notas ? `<p class="en-rut-notas">${esc(r.notas)}</p>` : ''}
       <div class="en-card-dias">
         ${dias.map((d, i) => `<button type="button" class="en-btn en-btn-ghost" data-acc="rutina"
           data-origen="${origen}" data-rid="${esc(r.id)}" data-dia="${i}">Empezar${dias.length > 1 ? ' · ' + esc(d.nombre) : ''}</button>`).join('')}
       </div>
+      ${origen === 'mia' ? `<div class="en-rut-borrar"><button type="button" class="en-peligro" data-acc="borrar-rutina" data-rid="${esc(r.id)}">Borrar rutina</button></div>` : ''}
     </details>`;
   };
   panel.innerHTML = `
@@ -724,6 +738,13 @@ function pintarPanelRutinas(panel) {
     const b = e.target.closest('[data-acc]');
     if (!b) return;
     if (b.dataset.acc === 'vacia') { empezarVacia(); return; }
+    if (b.dataset.acc === 'borrar-rutina') {
+      if (!armarDosToques(b, 'Toca otra vez para borrarla')) return;
+      const rid = b.dataset.rid;
+      escribir(e => ({ ...e, entreno: { ...e.entreno, rutinas: e.entreno.rutinas.filter(x => String(x.id) !== rid) } }));
+      render();
+      return;
+    }
     if (b.dataset.acc === 'rutina') {
       const lista = b.dataset.origen === 'mia' ? estado.entreno.rutinas : rutinasBase;
       const r = lista.find(x => String(x.id) === b.dataset.rid);
@@ -1007,7 +1028,11 @@ function pintarProgreso(panel, id) {
     }
     // Si todas las series fueron de >10 reps no hay 1RM estimable: la mejor
     // serie pasa a ser la de más volumen y el 1RM se queda en "—".
-    if (!mejor) mejor = hechas.reduce((a, x) => (x.reps * x.pesoKg > a.reps * a.pesoKg ? x : a));
+    if (!mejor) mejor = hechas.reduce((a, x) => {
+      const va = a.reps * a.pesoKg, vx = x.reps * x.pesoKg;
+      // Sin peso (peso corporal) manda la serie con más repeticiones.
+      return vx > va || (vx === va && x.reps > a.reps) ? x : a;
+    });
     filas.push({ fecha: fechaCorta(s.inicioMs), mejor, mejor1RM });
   }
   panel.innerHTML = `
@@ -1016,7 +1041,7 @@ function pintarProgreso(panel, id) {
     ${filas.map(f => `
       <div class="en-prog-fila">
         <span class="en-prog-fecha">${esc(f.fecha)}</span>
-        <span class="en-prog-serie">${f.mejor.reps} × ${fmtPeso(f.mejor.pesoKg, unidad)} ${unidad}</span>
+        <span class="en-prog-serie">${f.mejor.pesoKg > 0 ? `${f.mejor.reps} × ${fmtPeso(f.mejor.pesoKg, unidad)} ${unidad}` : `${f.mejor.reps} reps`}</span>
         <span class="en-prog-rm">${f.mejor1RM !== null ? fmtPeso(f.mejor1RM, unidad) + ' ' + unidad + ' est.' : '—'}</span>
       </div>`).join('')}`;
   panel.querySelector('[data-acc="atras"]').addEventListener('click', () => {
@@ -1169,18 +1194,10 @@ function pintarVivo(raiz) {
       render();
     } else if (acc === 'terminar') {
       const sinHacer = sesion.ejercicios.some(ej => ej.series.some(s => !s.hecha));
-      if (sinHacer && confirmando !== 'terminar') {
-        confirmarDosToques(b, 'terminar', 'Hay series sin hacer · toca otra vez');
-        return;
-      }
-      confirmando = null;
+      if (sinHacer && !armarDosToques(b, 'Hay series sin hacer · toca otra vez')) return;
       terminarSesion();
     } else if (acc === 'descartar') {
-      if (confirmando !== 'descartar') {
-        confirmarDosToques(b, 'descartar', 'Se pierde la sesión · toca otra vez');
-        return;
-      }
-      confirmando = null;
+      if (!armarDosToques(b, 'Se pierde la sesión · toca otra vez')) return;
       descartarSesion();
     }
   });
@@ -1288,11 +1305,13 @@ function htmlListaVivo(unidad) {
         ${enFicha
           ? `<button type="button" class="en-ej-tit" data-acc="ficha" data-id="${esc(ej.idEjercicio)}" aria-label="Ver cómo se hace ${esc(ej.nombre)}">${miniatura(ej.idEjercicio)}<span class="en-ej-nombre">${esc(ej.nombre)}</span></button>`
           : `<div class="en-ej-tit">${miniatura(ej.idEjercicio)}<span class="en-ej-nombre">${esc(ej.nombre)}</span></div>`}
-        <div class="en-ej-desc" aria-label="Descanso de este ejercicio">
+        ${ej.superGrupo != null && idx !== ultimoDelGrupo(ej.superGrupo)
+          ? '<span class="en-ej-desc-nota">Descansas al cerrar la ronda</span>'
+          : `<div class="en-ej-desc" role="group" aria-label="Descanso de este ejercicio">
           <button type="button" class="en-mini" data-acc="desc" data-idx="${idx}" data-d="-15" aria-label="Quitar 15 segundos al descanso">−15</button>
           <span class="en-ej-desc-val">${formatear(ej.descansoS)}</span>
           <button type="button" class="en-mini" data-acc="desc" data-idx="${idx}" data-d="15" aria-label="Sumar 15 segundos al descanso">+15</button>
-        </div>
+        </div>`}
       </div>
       <div class="en-tabla" role="group" aria-label="Series de ${esc(ej.nombre)}">
         <div class="en-fila en-fila-hd" aria-hidden="true">
@@ -1347,16 +1366,18 @@ function htmlListaVivo(unidad) {
 // Confirmación destructiva sin confirm(): el mismo botón pide el segundo
 // toque y vuelve solo a los 4 s. Un diálogo nativo en medio del gym es más
 // fricción que protección.
-function confirmarDosToques(btn, clave, texto) {
-  confirmando = clave;
+// Devuelve true si ESTE botón ya estaba armado (segundo toque dentro de 4 s);
+// si no, lo arma con su texto de aviso y devuelve false. El estado vive en el
+// propio botón: dos botones destructivos no se pisan entre sí.
+function armarDosToques(btn, texto) {
+  if (btn.dataset.armado === '1') return true;
   const original = btn.textContent;
+  btn.dataset.armado = '1';
   btn.textContent = texto;
   setTimeout(() => {
-    if (confirmando === clave) {
-      confirmando = null;
-      if (btn.isConnected) btn.textContent = original;
-    }
+    if (btn.isConnected && btn.dataset.armado === '1') { delete btn.dataset.armado; btn.textContent = original; }
   }, 4000);
+  return false;
 }
 
 // ── Barra de descanso (fija, encima de la tabbar) ────────────────────────────
@@ -1510,7 +1531,8 @@ function pintarResumen(raiz, ses, { editable }) {
     </div>
     <button type="button" class="en-btn en-btn-main en-guardar" data-acc="guardar">Guardar sesión</button>
     <div class="en-vivo-acciones"><button type="button" class="en-peligro" data-acc="descartar-fin">Descartar esta sesión</button></div>`
-    : (ses.notas ? `<div class="en-sec-lbl">Notas</div><p class="en-notas-ro">${esc(ses.notas)}</p>` : '')}
+    : `${ses.notas ? `<div class="en-sec-lbl">Notas</div><p class="en-notas-ro">${esc(ses.notas)}</p>` : ''}
+       <div class="en-vivo-acciones"><button type="button" class="en-peligro" data-acc="borrar-sesion">Borrar del historial</button></div>`}
     <p class="en-aviso-storage" hidden>No se pudo guardar en este dispositivo. Exporta un respaldo desde Diario antes de cerrar.</p>
   </div>`;
 
@@ -1519,6 +1541,15 @@ function pintarResumen(raiz, ses, { editable }) {
     if (!b) return;
     const acc = b.dataset.acc;
     if (acc === 'cerrar') { verSesionId = null; render(); }
+    else if (acc === 'borrar-sesion') {
+      // Una sesión registrada por error contaminaba "la última vez" y el
+      // progreso para siempre: se puede borrar (doble toque).
+      if (!armarDosToques(b, 'Toca otra vez para borrarla')) return;
+      const sid = ses.id;
+      escribir(e => ({ ...e, entreno: { ...e.entreno, sesiones: e.entreno.sesiones.filter(x => x.id !== sid) } }));
+      verSesionId = null;
+      render();
+    }
     else if (acc === 'reanudar') {
       delete sesion.finMs;
       persistir();

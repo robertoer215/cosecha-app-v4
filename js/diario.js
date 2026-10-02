@@ -80,13 +80,21 @@ export function construirIndice(alimentos) {
 // nombre que EMPIEZA por la consulta, luego al que la contiene, y al final
 // los aciertos solo por sinónimo; dentro de cada grupo, alfabético, para que
 // el mismo tecleo pinte siempre la misma lista.
+// Un principiante escribe en plural ("frijoles", "huevos", "tomates"): la
+// palabra también vale sin su -s o -es final.
+export function incluyePalabra(texto, p) {
+  if (texto.includes(p)) return true;
+  if (p.length <= 3) return false;
+  return (p.endsWith('es') && texto.includes(p.slice(0, -2))) || (p.endsWith('s') && texto.includes(p.slice(0, -1)));
+}
+
 export function buscar(indice, consulta, limite = 20) {
   const q = normalizarTexto(consulta);
   if (q === '') return [];
   const palabras = q.split(' ');
   const aciertos = [];
   for (const item of indice) {
-    if (!palabras.every(p => item.texto.includes(p))) continue;
+    if (!palabras.every(p => incluyePalabra(item.texto, p))) continue;
     const rango = item.nombre.startsWith(q) ? 0 : item.nombre.includes(palabras[0]) ? 1 : 2;
     aciertos.push({ item, rango });
   }
@@ -323,19 +331,20 @@ function chipsSugeridos() {
 // ── Mutaciones del diario (todas pasan por el almacén y persisten) ───────────
 
 function agregarEntradas(f, comida, entradas, textoToast) {
-  for (const e of entradas) {
-    estado = almacen.agregarAlDiario(estado, f, comida, e);
-  }
+  // Cada entrada lleva un ts único: el deshacer quita EXACTAMENTE lo que se
+  // añadió aquí (por ts + id), no "las N últimas de la franja": mover otra
+  // entrada a esa comida, o un plato llegado desde Pedir, la ponía al final
+  // y el deshacer viejo borraba la equivocada.
+  const base = Date.now();
+  const marcadas = entradas.map((e, i) => ({ ...e, ts: base + i }));
+  for (const e of marcadas) estado = almacen.agregarAlDiario(estado, f, comida, e);
   persistir();
   irVista('dia');
-  // El deshacer quita las N últimas de esa franja. Es seguro porque el toast
-  // nuevo pisa al anterior: solo la ÚLTIMA acción es deshacible, así que las
-  // entradas a quitar siguen siendo las últimas de la lista.
-  const n = entradas.length;
+  const claves = new Set(marcadas.map(e => e.ts + '|' + e.id));
   mostrarToast(textoToast, () => {
-    for (let i = 0; i < n; i++) {
-      const lista = estado.diario[f]?.[comida] || [];
-      estado = almacen.quitarDelDiario(estado, f, comida, lista.length - 1);
+    const lista = estado.diario[f]?.[comida] || [];
+    for (let i = lista.length - 1; i >= 0; i--) {
+      if (claves.has(lista[i].ts + '|' + lista[i].id)) estado = almacen.quitarDelDiario(estado, f, comida, i);
     }
     persistir();
     if (vista === 'dia') render();
@@ -360,8 +369,18 @@ function repetirAyer(comida) {
 
 // ── Detalle: alta desde la base, o edición de una entrada existente ──────────
 
+// La porción por defecto es la unidad NATURAL del alimento si la tiene: con
+// porciones[0] el huevo arrancaba en "1 taza picada" (136 g ≈ 2,7 huevos).
+const UNIDAD_NATURAL = /\b(pieza|unidad|rebanada|huevo|filete|tortilla|bolillo|telera|taco|tamal|chico|chica|mediano|mediana|grande|vaso|botella)\b/i;
+// Las bebidas de la carta COSECHA solo declaran ml: su fila es por 100 ml y
+// así se rotula (1 ml cuenta como 1 unidad de cantidad; la proporción es exacta).
+function unidadDe(al) {
+  return /^(BE\d|ADD-)/.test(al?.id_fuente || '') ? 'ml' : 'g';
+}
+
 function porcionDe(al) {
-  const p = Array.isArray(al.porciones) ? al.porciones[0] : null;
+  const lista = Array.isArray(al.porciones) ? al.porciones.filter(p => p && Number.isFinite(p.g) && p.g > 0) : [];
+  const p = lista.find(x => UNIDAD_NATURAL.test(x.nombre || '')) || lista[0] || null;
   return p && typeof p.nombre === 'string' && Number.isFinite(p.g) && p.g > 0
     ? { nombre: p.nombre, g: p.g }
     : null;
@@ -428,15 +447,7 @@ function abrirDetalleEdicion(f, comida, indice) {
 function confirmarDetalle() {
   if (det.modo === 'nuevo') {
     const { gramos, macros } = macrosDeCantidad(det.alimento, det.cantidad, det.porcion);
-    if (gramos <= 0) {
-      // Cantidad vacía o 0: no hay nada que registrar, pero el toque no puede
-      // morir en silencio. El campo se marca y se dice por qué.
-      const campo = raiz.querySelector('#dia-cantidad');
-      if (campo) { campo.setAttribute('aria-invalid', 'true'); campo.focus(); }
-      const vivo = raiz.querySelector('[data-zona="detalle-macros"]');
-      if (vivo) vivo.insertAdjacentHTML('afterbegin', '<p class="form-error" role="alert">Escribe una cantidad mayor que 0.</p>');
-      return;
-    }
+    if (gramos <= 0) { avisarCantidad(); return; }
     const entrada = {
       id: det.id, nombre: det.nombre, gramos,
       porcion: det.porcion, macros, origen: 'base', ts: Date.now()
@@ -449,7 +460,7 @@ function confirmarDetalle() {
   let gramos, porcion, macros;
   if (det.editable) {
     ({ gramos, macros } = macrosDeCantidad(det.alimento, det.cantidad, det.porcion));
-    if (gramos <= 0) return;
+    if (gramos <= 0) { avisarCantidad(); return; }
     porcion = det.porcion;
   } else {
     ({ gramos, porcion, macros } = det.entrada);
@@ -465,6 +476,62 @@ function confirmarDetalle() {
   }
   persistir();
   irVista('dia');
+}
+
+// Cantidad vacía o 0: no hay nada que guardar, pero el toque no puede morir en
+// silencio. Un solo mensaje (no uno por toque), ligado al campo.
+// ── Registro a mano: lo que no está en la base también se puede anotar ────────
+let manual = { nombre: '', prot: '', carb: '', gras: '' };
+
+function htmlManual() {
+  const n = v => (Number.isFinite(parseFloat(v)) && parseFloat(v) >= 0 ? parseFloat(v) : 0);
+  const kcal = Math.round(kcalDerivada({ prot: n(manual.prot), carb: n(manual.carb), gras: n(manual.gras) }));
+  const campo = (id, lbl, val) => `<div class="fg"><label for="dia-m-${id}">${lbl}</label>
+      <input type="number" inputmode="decimal" min="0" max="500" id="dia-m-${id}" data-rol="manual-campo" data-campo="${id}" value="${esc(val)}"></div>`;
+  return `<div class="dia-sub-hd">
+      <button type="button" class="dia-volver" data-accion="manual-volver">${CHEV}<span>Buscar</span></button>
+    </div>
+    <h2 class="stitle dia-sub-titulo">Registrar a mano</h2>
+    <p class="dia-vacio-s">Escribe lo que comiste y sus macros (de la etiqueta o tu app de confianza). Las calorías se calculan solas.</p>
+    <div class="fg"><label for="dia-m-nombre">Alimento</label>
+      <input type="text" id="dia-m-nombre" data-rol="manual-campo" data-campo="nombre" maxlength="60" value="${esc(manual.nombre)}"></div>
+    <div class="form-grid">
+      ${campo('prot', 'Proteína — g', manual.prot)}
+      ${campo('carb', 'Carbohidratos — g', manual.carb)}
+      ${campo('gras', 'Grasas — g', manual.gras)}
+    </div>
+    <p class="dia-manual-kcal" data-zona="manual-kcal" aria-live="polite">${kcal} kcal</p>
+    <p class="form-error" data-zona="manual-error" role="alert"></p>
+    <button type="button" class="btn btn-main dia-cta" data-accion="manual-confirmar">Agregar a ${COMIDA_LBL[comidaDestino].toLowerCase()}</button>`;
+}
+
+function confirmarManual() {
+  const nombre = manual.nombre.trim();
+  const n = v => parseFloat(v);
+  const vals = { prot: n(manual.prot), carb: n(manual.carb), gras: n(manual.gras) };
+  const err = raiz.querySelector('[data-zona="manual-error"]');
+  const malos = Object.entries(vals).filter(([, v]) => !(Number.isFinite(v) && v >= 0 && v <= 500));
+  if (!nombre || malos.length || vals.prot + vals.carb + vals.gras <= 0) {
+    if (err) err.textContent = !nombre ? 'Escribe qué comiste.' : 'Revisa los macros: números de 0 a 500 g, al menos uno mayor que 0.';
+    return;
+  }
+  const entrada = {
+    id: 'MANUAL-' + normalizarTexto(nombre).replace(/\s+/g, '-'),
+    nombre, gramos: 0, porcion: null,
+    macros: { ...vals, kcalFuente: kcalDerivada(vals) },
+    origen: 'base', ts: Date.now()
+  };
+  manual = { nombre: '', prot: '', carb: '', gras: '' };
+  agregarEntradas(fecha, comidaDestino, [entrada], `${nombre} en ${COMIDA_LBL[comidaDestino].toLowerCase()}`);
+}
+
+function avisarCantidad() {
+  const campo = raiz.querySelector('#dia-cantidad');
+  if (campo) { campo.setAttribute('aria-invalid', 'true'); campo.setAttribute('aria-describedby', 'dia-cant-error'); campo.focus(); }
+  const vivo = raiz.querySelector('[data-zona="detalle-macros"]');
+  if (vivo && !raiz.querySelector('#dia-cant-error')) {
+    vivo.insertAdjacentHTML('afterbegin', '<p class="form-error" id="dia-cant-error" role="alert">Escribe una cantidad mayor que 0.</p>');
+  }
 }
 
 function quitarDesdeDetalle() {
@@ -501,6 +568,14 @@ function mostrarToast(texto, fn) {
   const t = zona.firstElementChild;
   requestAnimationFrame(() => requestAnimationFrame(() => t.classList.add('dia-toast-on')));
   toastTimer = setTimeout(ocultarToast, TOAST_MS);
+  // WCAG 2.2.1: con el foco o el puntero encima el tiempo se pausa; al salir
+  // vuelve a correr entero. Con teclado ya se alcanza "Deshacer" a tiempo.
+  const pausar = () => clearTimeout(toastTimer);
+  const seguir = () => { clearTimeout(toastTimer); toastTimer = setTimeout(ocultarToast, TOAST_MS); };
+  t.addEventListener('focusin', pausar);
+  t.addEventListener('mouseenter', pausar);
+  t.addEventListener('focusout', seguir);
+  t.addEventListener('mouseleave', seguir);
 }
 
 function ocultarToast() {
@@ -553,6 +628,7 @@ function confirmarImportacion() {
   const r = almacen.actualizar(() => estado);
   estado = r.estado;
   if (!r.guardado) fallaGuardado = true;
+  window.dispatchEvent(new CustomEvent('cosecha:importado'));
   fecha = almacen.hoyISO();
   datosAbierto = true;
   render();
@@ -766,7 +842,10 @@ function htmlResultados() {
   if (normalizarTexto(consulta) === '') return '';
   const lista = buscar(indice, consulta);
   if (!lista.length) {
-    return `<p class="dia-estado dia-vacio-s">Nada con «${esc(consulta)}». Prueba con otro nombre.</p>`;
+    return `<div class="dia-estado">
+      <p class="dia-vacio-s">Nada con «${esc(consulta)}». Prueba con otro nombre o regístralo tú.</p>
+      <button type="button" class="btn btn-ghost" data-accion="manual">Registrar «${esc(consulta)}» a mano</button>
+    </div>`;
   }
   return `<ul class="dia-lista dia-resultados">${lista.map(a => {
     const kcal = Math.round(kcalDerivada({ prot: a.proteina_g, carb: a.carbohidratos_g, gras: a.grasa_g }));
@@ -774,18 +853,19 @@ function htmlResultados() {
     return `<li><button type="button" class="dia-entrada" data-accion="resultado" data-id="${esc(a.id)}">
       <span class="dia-e-main">
         <span class="dia-e-nm">${esc(a.nombre)}</span>
-        <span class="dia-e-sub">P${fmt1(a.proteina_g)} C${fmt1(a.carbohidratos_g)} G${fmt1(a.grasa_g)} · por 100 g${p ? ` · ${esc(p.nombre)}` : ''}</span>
+        <span class="dia-e-sub">P${fmt1(a.proteina_g)} C${fmt1(a.carbohidratos_g)} G${fmt1(a.grasa_g)} · por 100 ${unidadDe(a)}${p ? ` · ${esc(p.nombre)}` : ''}</span>
       </span>
       <span class="dia-e-kcal">${kcal} kcal</span>
     </button></li>`;
-  }).join('')}</ul>`;
+  }).join('')}</ul>
+  <button type="button" class="dia-manual-link" data-accion="manual">¿No está? Regístralo a mano</button>`;
 }
 
 function htmlBuscar() {
   return `<div class="dia-sub-hd">
       <button type="button" class="dia-volver" data-accion="volver-dia">${CHEV}<span>Diario</span></button>
     </div>
-    <div class="stitle dia-sub-titulo">Agregar a ${COMIDA_LBL[comidaDestino].toLowerCase()}</div>
+    <h2 class="stitle dia-sub-titulo">Agregar a ${COMIDA_LBL[comidaDestino].toLowerCase()}</h2>
     <div class="dia-buscar-campo">
       <label class="dia-lbl" for="dia-buscar-input">Alimento</label>
       <input type="search" id="dia-buscar-input" data-rol="buscar-input" value="${esc(consulta)}"
@@ -829,7 +909,7 @@ function htmlDetalle() {
       <div class="dia-cant-fila">
         <input type="number" id="dia-cantidad" data-rol="detalle-cantidad" inputmode="decimal"
           min="0" step="${det.porcion ? '0.5' : '1'}" value="${det.cantidad}">
-        <span class="dia-cant-unidad">${det.porcion ? 'porciones' : 'g'}</span>
+        <span class="dia-cant-unidad">${det.porcion ? 'porciones' : unidadDe(det.alimento)}</span>
       </div>
       ${pills}
     </div>` : '<p class="dia-vacio-s">Esta entrada no trae gramos: puedes moverla de comida o quitarla.</p>';
@@ -837,7 +917,7 @@ function htmlDetalle() {
   return `<div class="dia-sub-hd">
       <button type="button" class="dia-volver" data-accion="detalle-volver">${CHEV}<span>${det.modo === 'nuevo' ? 'Buscar' : 'Diario'}</span></button>
     </div>
-    <div class="stitle dia-sub-titulo">${esc(det.nombre)}</div>
+    <h2 class="stitle dia-sub-titulo">${esc(det.nombre)}</h2>
     ${campo}
     <div class="dia-vivo" data-zona="detalle-macros" aria-live="polite">${htmlVivo()}</div>
     <div class="dia-campo">
@@ -870,7 +950,7 @@ function htmlSemana() {
   const volver = `<div class="dia-sub-hd">
       <button type="button" class="dia-volver" data-accion="volver-dia">${CHEV}<span>Diario</span></button>
     </div>
-    <div class="stitle dia-sub-titulo">Tu semana</div>
+    <h2 class="stitle dia-sub-titulo">Tu semana</h2>
     <div class="ssub">${etiquetaFecha(dias[0]).replace('Hoy · ', '').replace('Ayer · ', '')} — ${etiquetaFecha(hoy).replace('Hoy · ', '')}</div>`;
   if (!conRegistro) {
     return `${volver}<p class="dia-estado dia-vacio-s">Aún no registras nada en los últimos 7 días. Lo que agregues al diario aparecerá aquí como promedio.</p>`;
@@ -922,6 +1002,7 @@ function render() {
   if (vista === 'buscar') zona.innerHTML = htmlBuscar();
   else if (vista === 'detalle') zona.innerHTML = htmlDetalle();
   else if (vista === 'semana') zona.innerHTML = htmlSemana();
+  else if (vista === 'manual') zona.innerHTML = htmlManual();
   else zona.innerHTML = htmlDia();
   if (vista === 'buscar' && enfocarBuscador) {
     enfocarBuscador = false;
@@ -1014,6 +1095,16 @@ function alClick(ev) {
       det.comida = btn.dataset.comida;
       render();
       break;
+    case 'manual':
+      manual = { nombre: consulta.trim(), prot: '', carb: '', gras: '' };
+      irVista('manual');
+      break;
+    case 'manual-volver':
+      irVista('buscar');
+      break;
+    case 'manual-confirmar':
+      confirmarManual();
+      break;
     case 'detalle-volver':
       irVista(det.modo === 'nuevo' ? 'buscar' : 'dia');
       break;
@@ -1064,7 +1155,14 @@ function alInput(ev) {
     const chips = raiz.querySelector('.dia-chips-zona');
     if (chips && normalizarTexto(consulta) !== '') chips.hidden = true;
     else if (chips) chips.hidden = false;
+  } else if (rol === 'manual-campo') {
+    manual[ev.target.dataset.campo] = ev.target.value;
+    const z = raiz.querySelector('[data-zona="manual-kcal"]');
+    const n = v => (Number.isFinite(parseFloat(v)) && parseFloat(v) >= 0 ? parseFloat(v) : 0);
+    if (z) z.textContent = `${Math.round(kcalDerivada({ prot: n(manual.prot), carb: n(manual.carb), gras: n(manual.gras) }))} kcal`;
   } else if (rol === 'detalle-cantidad') {
+    const c = raiz.querySelector('#dia-cantidad');
+    if (c && c.getAttribute('aria-invalid') === 'true') { c.removeAttribute('aria-invalid'); raiz.querySelector('#dia-cant-error')?.remove(); }
     det.cantidad = parseFloat(ev.target.value);
     const zona = raiz.querySelector('[data-zona="detalle-macros"]');
     if (zona) zona.innerHTML = htmlVivo();
@@ -1093,6 +1191,9 @@ export function initDiario(opts) {
     raiz.addEventListener('click', alClick);
     raiz.addEventListener('input', alInput);
     raiz.addEventListener('change', alChange);
+    // Con la app abierta en dos pestañas, lo registrado en una no se pierde
+    // por un persistir() de la otra con memoria vieja: se relee al instante.
+    window.addEventListener('storage', e => { if (e.key === almacen.CLAVE) refrescar(); });
     raizCableada = raiz;
   }
   render();

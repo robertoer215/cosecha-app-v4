@@ -73,6 +73,24 @@ window.crearPerfil = function(origen) {
   goStep(0);
 };
 
+async function montarModulo(tab) {
+  if (modulosMontados[tab]) return;
+  const raiz = $(tab === 'diario' ? 'vista-diario' : 'vista-entrenar');
+  // El flag se pone ANTES del await: un doble toque rápido en la pestaña
+  // montaba el módulo dos veces (listeners y render duplicados).
+  modulosMontados[tab] = 'montando';
+  try {
+    await cargarCSS(tab === 'diario' ? 'diario' : 'entreno');
+    const mod = await import(tab === 'diario' ? './diario.js' : './entreno.js');
+    (tab === 'diario' ? mod.initDiario : mod.initEntreno)({ raiz, getMeta: getMetaCompartida });
+    modulosMontados[tab] = mod;
+  } catch (e) {
+    delete modulosMontados[tab];   // reintentable en el siguiente toque
+    raiz.innerHTML = '<p class="modulo-error">Esta sección no se pudo cargar. Recarga la página e intenta de nuevo.</p>';
+    console.warn('modulo ' + tab + ':', e.message);
+  }
+}
+
 window.goTab = async function(tab) {
   if (tab !== 'pedir') volverTrasPerfil = null;
   const vistas = { hoy: 'vista-hoy', pedir: 'vista-pedir', diario: 'vista-diario', entrenar: 'vista-entrenar' };
@@ -83,21 +101,8 @@ window.goTab = async function(tab) {
   });
   if (tab === 'hoy') { renderHoy(); window.scrollTo(0, 0); return; }
   if (tab !== 'pedir' && !modulosMontados[tab]) {
-    const raiz = $(vistas[tab]);
-    // El flag se pone ANTES del await: un doble toque rápido en la pestaña
-    // montaba el módulo dos veces (listeners y render duplicados).
-    modulosMontados[tab] = 'montando';
-    try {
-      await cargarCSS(tab === 'diario' ? 'diario' : 'entreno');
-      const mod = await import(tab === 'diario' ? './diario.js' : './entreno.js');
-      (tab === 'diario' ? mod.initDiario : mod.initEntreno)({ raiz, getMeta: getMetaCompartida });
-      modulosMontados[tab] = mod;
-    } catch (e) {
-      delete modulosMontados[tab];   // reintentable en el siguiente toque
-      raiz.innerHTML = '<p class="modulo-error">Esta sección no se pudo cargar. Recarga la página e intenta de nuevo.</p>';
-      console.warn('modulo ' + tab + ':', e.message);
-    }
-  } else if (modulosMontados[tab]) {
+    await montarModulo(tab);
+  } else if (modulosMontados[tab] && modulosMontados[tab] !== 'montando') {
     // El almacén pudo cambiar desde otra pestaña (un plato añadido al diario
     // desde Pedir, por ejemplo): el módulo decide qué refrescar.
     modulosMontados[tab].refrescar?.();
@@ -115,7 +120,8 @@ window.agregarPlatoAlDiario = function() {
   if (!local.lineas.length) return;
   const entrada = {
     id: 'PLATO-' + Date.now(),
-    nombre: 'Plato COSECHA',
+    // El nombre dice QUÉ plato fue: dos platos del mismo día no se confunden.
+    nombre: 'Plato COSECHA · ' + local.lineas.map(l => l.nombre.split(' ')[0]).join(', '),
     detalle: local.lineas.map(l => l.nombre).join(', '),
     gramos: local.lineas.reduce((a, l) => a + l.g, 0),
     porcion: null,
@@ -136,7 +142,15 @@ window.agregarPlatoAlDiario = function() {
   btn.textContent = '✓ En tu diario de hoy · Ver diario →';
   btn.classList.add('ok');
   btn.dataset.ok = '1';
+  platoEnDiario = clavePlato();
 };
+
+// Clave del plato en pantalla (meta + líneas con tamaño): volver al resumen
+// del MISMO plato no reactiva el botón; solo un plato distinto lo rearma.
+let platoEnDiario = null;
+function clavePlato() {
+  return JSON.stringify(lineasLocales().lineas.map(l => [l.id, l.tamano]));
+}
 
 // La pantalla Hoy: resumen del día (lo consumido del diario contra la meta) y
 // las tres acciones. Se repinta en cada apertura releyendo el almacén, porque
@@ -188,9 +202,14 @@ function renderHoy() {
   } else if (sesiones.length) {
     const s = sesiones[sesiones.length - 1];
     const series = (s.ejercicios || []).reduce((a, e) => a + (e.series || []).filter(x => x.hecha).length, 0);
-    const vol = Math.round((s.ejercicios || []).reduce((a, e) => a + (e.series || []).filter(x => x.hecha).reduce((b, x) => b + (x.reps || 0) * (x.pesoKg || 0), 0), 0));
+    const volKg = (s.ejercicios || []).reduce((a, e) => a + (e.series || []).filter(x => x.hecha).reduce((b, x) => b + (x.reps || 0) * (x.pesoKg || 0), 0), 0);
+    const lb = estadoLocal.perfil?.unidadPeso === 'lb';
+    const vol = Math.round(lb ? volKg / 0.45359237 : volKg);
     ult.hidden = false;
-    ult.innerHTML = `<div class="hc-s">Última sesión: ${new Date(s.inicioMs).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })} · ${series} series · ${vol} kg de volumen</div>`;
+    // Mismas reglas que el historial de Entrenar: concordancia y el volumen solo
+    // cuando lo hay ("0 kg de volumen" en peso corporal decía que no hiciste nada).
+    const fechaS = new Date(s.inicioMs).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
+    ult.innerHTML = `<div class="hc-s">Última sesión: ${fechaS} · ${series} ${series === 1 ? 'serie' : 'series'}${vol > 0 ? ` · ${vol} ${lb ? 'lb' : 'kg'} de volumen` : ''}</div>`;
   } else {
     ult.hidden = true;
     ult.innerHTML = '';
@@ -232,6 +251,38 @@ function persistirPerfilYMeta() {
   });
   estadoLocal = r.estado;
 }
+
+// Con perfil y términos guardados, la meta se recalcula en silencio con la
+// misma calcularMeta() (nada de fórmulas paralelas) y Pedir abre en "Arma tu
+// plato". El perfil sigue a un toque en el stepper para cambiarlo.
+function prepararMetaGuardada() {
+  const p = estadoLocal.perfil;
+  if (!p || !p.terminos || !estadoLocal.metaCache) return;
+  const vuelta = volverTrasPerfil;
+  volverTrasPerfil = null;
+  window.calcular();
+  volverTrasPerfil = vuelta;
+}
+
+// Una sesión de pesas a medias monta Entrenar en segundo plano al abrir la app:
+// así el aviso de fin de descanso suena aunque estés en Hoy (tras un reload,
+// iOS descarta pestañas en el gym), en vez de perderse en silencio.
+function montarSesionActiva() {
+  const a = estadoLocal.entreno?.sesionActiva;
+  if (a && !a.finMs) montarModulo('entrenar');
+}
+
+// Tras importar un respaldo desde el Diario: la meta viva de esta visita ya no
+// vale (gana la del respaldo), el formulario se rellena con el perfil importado
+// y cada módulo montado relee el almacén.
+window.addEventListener('cosecha:importado', () => {
+  meta = {};
+  estadoLocal = almacen.cargar();
+  restaurarPerfil();
+  prepararMetaGuardada();
+  Object.values(modulosMontados).forEach(m => m?.refrescar?.());
+  renderHoy();
+});
 
 // Un perfil ya guardado rellena el formulario al abrir, y los términos
 // aceptados no se vuelven a pedir: Continuar queda a un toque.
@@ -1409,7 +1460,7 @@ function pintarResumen() {
   // Un plato nuevo en el resumen rearma el botón del diario (vive fuera de
   // res-content a propósito: así no se repinta con cada respuesta de cocina).
   const bd = $('btn-diario-plato');
-  if (bd) { bd.textContent = '+ Añadir a mi diario'; bd.classList.remove('ok'); bd.disabled = false; delete bd.dataset.ok; }
+  if (bd && clavePlato() !== platoEnDiario) { bd.textContent = '+ Añadir a mi diario'; bd.classList.remove('ok'); bd.disabled = false; delete bd.dataset.ok; }
   // Repintar el resumen estando ya en él (al aceptar el cierre) no debe
   // devolver al cliente al principio de la página.
   if (!$('sc2').classList.contains('active')) goStep(2);
@@ -1464,4 +1515,6 @@ document.querySelectorAll('.s-node').forEach(n => {
 // Arranque: el perfil guardado rellena el formulario (corre al final, cuando
 // setMode y compañía ya existen en window) y la app abre en Hoy.
 restaurarPerfil();
+prepararMetaGuardada();
 renderHoy();
+montarSesionActiva();

@@ -26,7 +26,7 @@
        entrada: resumen del día y las tres acciones. -->
   <main id="vista-hoy">
     <div class="eyebrow" id="hoy-fecha"></div>
-    <div class="stitle">Hola</div>
+    <h1 class="stitle">Hola</h1>
     <div class="ssub">¿Qué quieres hacer hoy?</div>
 
     <div class="gap-wrap hoy-resumen" id="hoy-resumen" hidden>
@@ -37,7 +37,10 @@
         <div class="gt-bar-wrap"><div class="gt-bar-top"><span class="gt-bar-lbl">Grasas</span><span class="gt-bar-val" id="hoy-v-g">0/0g</span></div><div class="bar-bg"><div class="bar-fill bg2" id="hoy-b-g" style="transform:scaleX(0)"></div></div></div>
       </div>
       <p class="hc-s hoy-nota" id="hoy-nota" hidden></p>
+      <button type="button" class="hoy-editar" onclick="crearPerfil('hoy')">Cambiar mi meta</button>
     </div>
+
+    <div class="hoy-ultimo" id="hoy-ultimo" hidden></div>
 
     <div class="hoy-sin-meta" id="hoy-sin-meta" hidden>
       <p class="hc-s">Crea tu perfil una sola vez y las tres secciones compartirán tu meta.</p>
@@ -59,7 +62,6 @@
       </button>
     </div>
 
-    <div class="hoy-ultimo" id="hoy-ultimo" hidden></div>
   </main>
 
   <main id="vista-pedir" hidden>
@@ -186,8 +188,8 @@
     <div class="eyebrow">Paso 03</div>
     <div class="stitle">Tu plato</div>
     <div class="ssub">Composición nutricional, precio final y código para cocina.</div>
-    <div id="res-content"></div>
     <button class="btn-diario" id="btn-diario-plato" onclick="agregarPlatoAlDiario()">+ Añadir a mi diario</button>
+    <div id="res-content"></div>
     <div class="btn-row"><button class="btn btn-ghost" onclick="goStep(1)">← Editar plato</button><button class="btn btn-main" onclick="goStep(0)">Nueva consulta</button></div>
   </div>
 
