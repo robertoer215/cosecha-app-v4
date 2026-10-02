@@ -27,7 +27,7 @@
 .dia-fecha-btn:disabled:hover{background:var(--bg)}
 .dia-fecha-centro{flex:1;display:flex;align-items:center;justify-content:center;gap:10px;min-width:0}
 .dia-fecha-lbl{font-size:14px;font-weight:500;letter-spacing:-.3px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.dia-hoy-btn{min-height:32px;padding:4px 12px;background:var(--accent-soft);border:1px solid var(--accent);
+.dia-hoy-btn{min-height:44px;padding:4px 12px;background:var(--accent-soft);border:1px solid var(--accent);
   border-radius:var(--r-pill);color:var(--accent-ink);font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer;flex-shrink:0}
 .dia-hoy-btn:hover{background:var(--surface)}
 
@@ -167,3 +167,6 @@
 /* Sobre el relleno de tinta el aro naranja se pierde: va en claro, como los
    toggles activos de Pedir. */
 .dia-pill-on:focus-visible,.dia-toast-btn:focus-visible{outline:2px solid var(--bg);outline-offset:-3px}
+
+/* Atribución de fuentes dentro de "Tus datos": discreta, nunca invisible. */
+.dia-fuentes{font-size:11px;color:var(--muted-ink);line-height:1.6}

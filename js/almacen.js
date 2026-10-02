@@ -58,19 +58,26 @@ function diaVacio() {
 
 function migrarPerfil(p) {
   if (!esObjeto(p)) return null;
-  // Sin estos campos calcularMeta() no puede correr: un perfil a medias no
-  // sirve de nada y es mejor volver a preguntar que calcular con basura.
-  const validos = typeof p.sexo === 'string'
-    && esNumero(p.edad) && p.edad > 0
-    && esNumero(p.peso) && p.peso > 0
-    && esNumero(p.altura) && p.altura > 0
+  const num = v => esNumero(v) && v > 0;
+  // Sin estos campos calcularMeta() no puede correr: un perfil de fórmula a
+  // medias no sirve. Pero un perfil MANUAL válido no necesita la fórmula:
+  // se conserva (con los campos de fórmula que falten en null) para no
+  // perder términos, unidad, comidasDiario y los macros tecleados.
+  const formulaValida = typeof p.sexo === 'string'
+    && num(p.edad) && num(p.peso) && num(p.altura)
     && typeof p.actividad === 'string'
     && typeof p.objetivo === 'string'
-    && esNumero(p.comidas) && p.comidas > 0;
-  if (!validos) return null;
+    && num(p.comidas);
+  const manualValido = p.modo === 'manual' && esObjeto(p.manual);
+  if (!formulaValida && !manualValido) return null;
   return {
-    sexo: p.sexo, edad: p.edad, peso: p.peso, altura: p.altura,
-    actividad: p.actividad, objetivo: p.objetivo, comidas: p.comidas,
+    sexo: typeof p.sexo === 'string' ? p.sexo : null,
+    edad: num(p.edad) ? p.edad : null,
+    peso: num(p.peso) ? p.peso : null,
+    altura: num(p.altura) ? p.altura : null,
+    actividad: typeof p.actividad === 'string' ? p.actividad : null,
+    objetivo: typeof p.objetivo === 'string' ? p.objetivo : null,
+    comidas: num(p.comidas) ? p.comidas : null,
     unidadPeso: p.unidadPeso === 'lb' ? 'lb' : 'kg',
     comidasDiario: esNumero(p.comidasDiario) && p.comidasDiario > 0 ? p.comidasDiario : null,
     // Preferencias de la UI que viajan con el perfil: aceptar términos y el
@@ -79,6 +86,10 @@ function migrarPerfil(p) {
     terminos: p.terminos === true,
     modo: p.modo === 'manual' ? 'manual' : 'calc',
     subModo: p.subModo === 'total' ? 'total' : 'comida',
+    // Los valores tecleados en "Ingresar mis macros": sin ellos, recargar
+    // devolvía los campos a los de referencia y Continuar sustituía la meta
+    // real del usuario sin avisar.
+    manual: esObjeto(p.manual) ? { ...p.manual } : null,
     // 0 = "no sabemos cuándo": determinista, y la UI lo trata como "hace tiempo".
     actualizado: esNumero(p.actualizado) ? p.actualizado : 0
   };
@@ -141,15 +152,31 @@ function migrarDiario(d) {
   return limpio;
 }
 
+// Una sesión importada de un respaldo editado o truncado no puede tirar la
+// app: los consumidores (renderHoy, pintarVivo) recorren ejercicios y series
+// sin red de seguridad, así que la red vive aquí. Lo irreconocible se
+// normaliza a listas vacías, nunca pasa crudo.
+function sesionSegura(s) {
+  if (!esObjeto(s)) return null;
+  return {
+    ...s,
+    ejercicios: Array.isArray(s.ejercicios)
+      ? s.ejercicios.filter(esObjeto).map(ej => ({
+          ...ej,
+          series: Array.isArray(ej.series) ? ej.series.filter(esObjeto) : []
+        }))
+      : []
+  };
+}
+
 function migrarEntreno(e) {
   if (!esObjeto(e)) return { rutinas: [], sesiones: [], sesionActiva: null };
   return {
     // Rutinas sin id no se pueden editar ni borrar (guardarRutina reemplaza
-    // por id): fuera. Sesiones y sesión activa pasan tal cual si son objetos;
-    // su forma interna la define Entrenar y aquí no se recorta.
+    // por id): fuera. Sesiones y sesión activa pasan por sesionSegura().
     rutinas: Array.isArray(e.rutinas) ? e.rutinas.filter(r => esObjeto(r) && r.id !== undefined) : [],
-    sesiones: Array.isArray(e.sesiones) ? e.sesiones.filter(esObjeto) : [],
-    sesionActiva: esObjeto(e.sesionActiva) ? e.sesionActiva : null
+    sesiones: Array.isArray(e.sesiones) ? e.sesiones.map(sesionSegura).filter(Boolean) : [],
+    sesionActiva: sesionSegura(e.sesionActiva)
   };
 }
 
@@ -222,7 +249,28 @@ export function importarJSON(texto) {
   }
   // Se acepta el sobre de exportarJSON ({ v, exportado, estado }) y también un
   // estado pelado: si alguien guarda solo la parte interna, igual se rescata.
-  return migrar(esObjeto(crudo.estado) ? crudo.estado : crudo);
+  // Pero un objeto CUALQUIERA no cuela: migrar() lo convertiría en un estado
+  // vacío y confirmarlo borraría todos los datos "con éxito". Para importar
+  // tiene que parecer un respaldo: declarar versión o traer alguna sección.
+  const interno = esObjeto(crudo.estado) ? crudo.estado : crudo;
+  const RAMAS = ['perfil', 'metaCache', 'diario', 'entreno', 'recientes'];
+  if (typeof interno.v !== 'number' && !RAMAS.some(k => k in interno)) {
+    throw new Error('El archivo no parece un respaldo de COSECHA: no trae ninguna de sus secciones (perfil, diario, entrenamiento). Exporta de nuevo desde "Tus datos".');
+  }
+  return migrar(interno);
+}
+
+// ── Escritura atómica ────────────────────────────────────────────────────────
+//
+// La única forma segura de ESCRIBIR cuando conviven varios escritores (Pedir,
+// Diario, Entrenar y el temporizador en segundo plano): recargar el estado
+// fresco del disco, aplicar la mutación sobre ÉL y guardar el resultado.
+// Guardar un snapshot viejo entero pisa lo que otro escribió mientras tanto.
+// `fn` recibe el estado fresco ya migrado y devuelve el estado a guardar.
+export function actualizar(fn, storage) {
+  const nuevo = fn(cargar(storage));
+  const guardado = guardar(nuevo, storage);
+  return { estado: nuevo, guardado };
 }
 
 // ── Fecha y franja en hora LOCAL ─────────────────────────────────────────────

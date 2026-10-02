@@ -747,7 +747,7 @@ input.invalid{border-bottom-color:var(--danger)}
 .btn:focus-visible,.btn-add:focus-visible,.sz-pill:focus-visible,.terms-accept-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .btn-main:focus-visible{outline-color:var(--text);outline-offset:3px}
 .mt-btn.mt-active:focus-visible,.st-btn.st-active:focus-visible,.ss-pill.ss-on:focus-visible{outline-color:#fff}
-input:focus-visible,select:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
 input.invalid:focus-visible{outline-color:var(--danger)}
 
 /* Estado pulsado: no existía ninguno. .sz-pill y .btn-ajustar NO llevan scale a
@@ -789,7 +789,9 @@ body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:100;display:flex;background:var(--surface);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom)}
 .tab-btn{flex:1;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:0;cursor:pointer;color:var(--muted-ink);font-family:var(--sans);font-size:11px;letter-spacing:.4px}
 .tab-btn svg{width:22px;height:22px}
-.tab-btn[aria-current="page"]{color:var(--accent-ink)}
+/* --accent-deep: --accent-ink sobre --surface se queda en 4,43 y AA pide 4,5
+   (mismo arreglo que .gt-kcal, documentado arriba en la hoja). */
+.tab-btn[aria-current="page"]{color:var(--accent-deep)}
 .tab-btn:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
 .btn-diario{display:block;width:100%;min-height:48px;margin-top:10px;background:none;border:1px solid var(--accent);color:var(--accent-ink);border-radius:var(--r-md);font-family:var(--sans);font-size:13px;cursor:pointer}
 .btn-diario:disabled{opacity:.6;cursor:default}
@@ -803,6 +805,13 @@ main[hidden]{display:none}
 .hoy-kcal{font-family:var(--mono, 'IBM Plex Mono', monospace);font-size:12px;color:var(--text);font-variant-numeric:tabular-nums}
 .hoy-barras{padding:14px 20px 18px;display:grid;gap:12px}
 .hoy-sin-meta{margin-top:14px;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);display:grid;gap:12px;justify-items:start}
+/* display:grid le gana al [hidden] del navegador: sin esta regla la caja
+   "Crear mi perfil" se pintaba SIEMPRE, también con el perfil ya creado. */
+.hoy-sin-meta[hidden]{display:none}
+/* El encabezado del panel de Hoy reusa .gap-hd, que solo es flex en cocina:
+   sin esto la cifra se pegaba al rótulo ("TU DÍA0 / 2256 KCAL"). */
+.hoy-resumen .gap-hd{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.hoy-nota{margin:0;padding:0 20px 16px}
 .hoy-acciones{margin-top:14px;display:grid;gap:10px}
 .hoy-card{display:flex;gap:14px;align-items:center;min-height:64px;padding:14px 16px;width:100%;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md);cursor:pointer;text-align:left;font-family:var(--sans)}
 .hoy-card svg{width:26px;height:26px;color:var(--accent-ink);flex-shrink:0}

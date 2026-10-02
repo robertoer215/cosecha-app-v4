@@ -186,3 +186,13 @@
 @media (min-width:561px){
   .en-fila{grid-template-columns:20px minmax(0,1fr) 84px 64px 48px 44px;gap:12px}
 }
+
+/* ── Barrido final de marca (patrón styles.css:688): TODOS los micro-rótulos
+   del módulo al papel unificado — IBM Plex Mono 12px, tracking .04em. Las
+   declaraciones de arriba quedan solo como layout, igual que en la hoja base. */
+.en-ey,.en-sec-lbl,.en-super-tag,.en-fila-hd span,.en-stat-lbl,.en-rec-tag,.en-notas-lbl,
+.en-d-lbl{font-family:var(--mono);font-size:12px;font-weight:400;letter-spacing:.04em;line-height:1.35}
+/* El foco del textarea de notas era invisible (outline:none + borde 1px):
+   mismo anillo que el resto de la app. */
+.en-notas:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.en-fuentes{font-size:11px;color:var(--muted-ink);line-height:1.6;margin:28px 0 0}

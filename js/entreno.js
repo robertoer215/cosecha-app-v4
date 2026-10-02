@@ -233,9 +233,24 @@ export function refrescar() {
 
 // ── Persistencia ─────────────────────────────────────────────────────────────
 
+// Escritura por INJERTO sobre el estado fresco del disco: este módulo solo
+// es dueño de entreno.* y de recientes.ejercicios. El tic del descanso
+// persiste en segundo plano aunque el usuario esté en otra pestaña, y con
+// el snapshot entero ese tic pisaba lo recién guardado por Diario o Pedir.
+// TODA escritura de este módulo pasa por aquí.
+function escribirRamas() {
+  const r = almacen.actualizar(e => ({
+    ...e,
+    entreno: estado.entreno,
+    recientes: { ...e.recientes, ejercicios: estado.recientes.ejercicios }
+  }));
+  estado = r.estado;
+  return r.guardado;
+}
+
 function persistir() {
   estado = almacen.guardarSesionActiva(estado, sesion);
-  almacen.guardar(estado);
+  escribirRamas();
 }
 
 // Un descanso guardado se restaura recreándolo con el tiempo que le queda:
@@ -387,7 +402,7 @@ function guardarSesionFinal() {
     notas
   };
   estado = almacen.cerrarSesion(estado, limpia);
-  const ok = almacen.guardar(estado);
+  const ok = escribirRamas();
   sesion = null;
   subtab = 'historial';
   render();
@@ -404,7 +419,7 @@ function descartarSesion() {
   descansoObj = null;
   liberarWakeLock();
   estado = almacen.guardarSesionActiva(estado, null);
-  almacen.guardar(estado);
+  escribirRamas();
   render();
 }
 
@@ -593,6 +608,7 @@ function pintarInicio(raiz) {
     </div>
     <div class="en-panel"></div>
     <p class="en-aviso-storage" hidden>No se pudo guardar en este dispositivo. Exporta un respaldo desde Diario antes de cerrar.</p>
+    <p class="en-fuentes">Ejercicios e imágenes: free-exercise-db (dominio público). Tus entrenamientos viven solo en este dispositivo.</p>
   </div>`;
   raiz.querySelector('.en-tabs').addEventListener('click', e => {
     const b = e.target.closest('[data-tab]');
@@ -616,7 +632,10 @@ function pintarPanelRutinas(panel) {
     const nSuper = dias.reduce((a, d) => a + (d.bloques || []).filter(bl => bl.length > 1).length, 0);
     const sub = [nEj + (nEj === 1 ? ' ejercicio' : ' ejercicios'),
                  nSuper ? nSuper + (nSuper === 1 ? ' superserie' : ' superseries') : null,
-                 r.objetivo, r.equipo].filter(Boolean).join(' · ');
+                 // El objetivo del JSON es un slug estable ('recomposicion'):
+                 // al usuario se le muestra con su tilde, nunca el slug crudo.
+                 ({ recomposicion: 'recomposición' })[r.objetivo] || r.objetivo,
+                 r.equipo].filter(Boolean).join(' · ');
     return `
     <article class="en-card">
       <div class="en-card-nombre">${esc(r.nombre)}</div>
@@ -679,16 +698,25 @@ function pintarBiblioteca(cont, destino) {
       (e.musculosSecundarios || []).join(' '), e.equipo].filter(Boolean).join(' '));
     return q.split(/\s+/).every(t => pajar.includes(t));
   };
-  const lista = catEstado === 'listo' ? catalogo.filter(filtra) : [];
+  const todas = catEstado === 'listo' ? catalogo.filter(filtra) : [];
+  // Tope de filas: pintar 876 botones por tecla congelaba teléfonos medios
+  // (long tasks de 65–117 ms medidos) y, con foto por fila, bajaba los JPG
+  // completos del CDN (~64 KB cada uno). La lista corta + "sigue escribiendo"
+  // es más rápida Y más usable que un rollo infinito.
+  const CAP = 60;
+  const lista = todas.slice(0, CAP);
+  const recortadas = todas.length - lista.length;
   const recientes = !q && catEstado === 'listo'
     ? estado.recientes.ejercicios.map(id => porId.get(id)).filter(Boolean).slice(0, 5)
     : [];
   const accion = overlay ? 'Agregar' : 'Entrenar';
 
-  const fila = e => `
+  // La foto solo en Recientes (máx. 5): el CDN sirve los JPG a tamaño
+  // completo y ponerla en cada fila costaba ~55 MB por recorrer la lista.
+  const fila = (e, conThumb) => `
     <button type="button" class="en-ej-row" data-acc="ej" data-id="${esc(e.id)}">
-      <span class="en-thumb">${e.imagenes?.[0]
-        ? `<img loading="lazy" src="${esc(URL_IMG + e.imagenes[0])}" alt="${esc(e.nombre)}">` : ''}</span>
+      ${conThumb ? `<span class="en-thumb">${e.imagenes?.[0]
+        ? `<img loading="lazy" src="${esc(URL_IMG + e.imagenes[0])}" alt="">` : ''}</span>` : ''}
       <span class="en-ej-row-txt">
         <span class="en-ej-row-nombre">${esc(e.nombre)}</span>
         <span class="en-ej-row-sub">${esc([capital(e.musculosPrimarios?.[0]), e.equipo].filter(Boolean).join(' · '))}</span>
@@ -706,17 +734,21 @@ function pintarBiblioteca(cont, destino) {
     ${catEstado === 'cargando' || catEstado === 'nada' ? '<p class="en-vacio">Cargando ejercicios…</p>'
       : catEstado === 'fallo' || !catalogo.length
         ? `<p class="en-vacio">La biblioteca no está disponible por ahora. Puedes escribir el nombre de tu ejercicio y registrarlo igual.</p>${htmlLibre(q)}`
-        : `${recientes.length ? `<div class="en-sec-lbl">Recientes</div>${recientes.map(fila).join('')}` : ''}
+        : `${recientes.length ? `<div class="en-sec-lbl">Recientes</div>${recientes.map(e => fila(e, true)).join('')}` : ''}
            ${q ? '' : '<div class="en-sec-lbl">Todos</div>'}
-           ${lista.length ? lista.map(fila).join('')
-             : `<p class="en-vacio">Nada con «${esc(consultaBib.trim())}».</p>${htmlLibre(q)}`}`}
+           ${lista.length ? lista.map(e => fila(e, false)).join('')
+             : `<p class="en-vacio">Nada con «${esc(consultaBib.trim())}».</p>${htmlLibre(q)}`}
+           ${recortadas > 0 ? `<p class="en-vacio">Mostrando ${CAP} de ${todas.length}. Sigue escribiendo para afinar.</p>` : ''}`}
     </div>`;
 
   const input = cont.querySelector('.en-busca-in');
   input.addEventListener('input', () => {
     consultaBib = input.value;
-    // Solo se repinta la lista: repintar todo robaría el foco del buscador.
-    pintarListaBiblioteca(cont, overlay);
+    // Debounce de 160 ms: re-filtrar y re-pintar 876 filas POR TECLA daba
+    // long tasks de >100 ms en CPU de teléfono. Solo se repinta la lista:
+    // repintar todo robaría el foco del buscador.
+    clearTimeout(input._t);
+    input._t = setTimeout(() => pintarListaBiblioteca(cont, overlay), 160);
   });
   cont.addEventListener('click', e => {
     const b = e.target.closest('[data-acc]');
@@ -1162,7 +1194,7 @@ function pintarResumen(raiz, ses, { editable }) {
     } else if (acc === 'rutina-ok') {
       const nombre = raiz.querySelector('.en-rutina-nombre').value.trim() || 'Mi rutina';
       estado = almacen.guardarRutina(estado, sesionARutina(ses, nombre));
-      almacen.guardar(estado);
+      escribirRamas();
       const form = raiz.querySelector('.en-rutina-form');
       form.innerHTML = `<span class="en-rutina-ok">Guardada: ${esc(nombre)}</span>`;
     }

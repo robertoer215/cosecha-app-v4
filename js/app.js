@@ -40,7 +40,25 @@ function getMetaCompartida() {
   if (meta && typeof meta.kcal === 'number') {
     return { kcal: meta.kcal, prot: meta.prot, carb: meta.carb, gras: meta.gras, comidas: meta.comidas, origen: origenMeta(meta) };
   }
+  // Sin meta viva se lee el disco FRESCO: un respaldo recién importado desde
+  // el Diario debe verse aquí sin obligar a pasar por Hoy primero.
+  estadoLocal = almacen.cargar();
   return estadoLocal.metaCache;
+}
+
+// CSS de los módulos bajo demanda, junto con su JS: cargarlos eager costaba
+// ~18 KB a la carga inicial de Pedir y rompía la promesa de que no crece.
+const cssCargado = {};
+function cargarCSS(nombre) {
+  if (!cssCargado[nombre]) {
+    cssCargado[nombre] = new Promise(res => {
+      const l = document.createElement('link');
+      l.rel = 'stylesheet'; l.href = `css/${nombre}.css`;
+      l.onload = l.onerror = () => res();
+      document.head.appendChild(l);
+    });
+  }
+  return cssCargado[nombre];
 }
 
 window.goTab = async function(tab) {
@@ -54,6 +72,7 @@ window.goTab = async function(tab) {
   if (tab !== 'pedir' && !modulosMontados[tab]) {
     const raiz = $(vistas[tab]);
     try {
+      await cargarCSS(tab === 'diario' ? 'diario' : 'entreno');
       const mod = await import(tab === 'diario' ? './diario.js' : './entreno.js');
       (tab === 'diario' ? mod.initDiario : mod.initEntreno)({ raiz, getMeta: getMetaCompartida });
       modulosMontados[tab] = mod;
@@ -85,8 +104,10 @@ window.agregarPlatoAlDiario = function() {
     origen: 'plato',
     ts: Date.now()
   };
-  estadoLocal = almacen.agregarAlDiario(estadoLocal, almacen.hoyISO(), almacen.comidaPorHora(), entrada);
-  almacen.guardar(estadoLocal);
+  // Escritura ATÓMICA: la entrada se añade sobre el estado fresco del disco.
+  // Con el snapshot viejo de esta pestaña se borraba lo registrado en Diario.
+  const r = almacen.actualizar(e => almacen.agregarAlDiario(e, almacen.hoyISO(), almacen.comidaPorHora(), entrada));
+  estadoLocal = r.estado;
   if (btn) { btn.textContent = '✓ En tu diario de hoy'; btn.classList.add('ok'); btn.disabled = true; }
 };
 
@@ -104,29 +125,40 @@ function renderHoy() {
     const dia = estadoLocal.diario[almacen.hoyISO()] || {};
     const tot = { prot: 0, carb: 0, gras: 0 };
     Object.values(dia).forEach(lista => (lista || []).forEach(e => {
-      tot.prot += e.macros.prot; tot.carb += e.macros.carb; tot.gras += e.macros.gras;
+      tot.prot += e.macros?.prot || 0; tot.carb += e.macros?.carb || 0; tot.gras += e.macros?.gras || 0;
     }));
     // kcal derivadas 4/4/9, igual que la meta: el panel siempre cuadra.
     const kcal = Math.round(4 * tot.prot + 4 * tot.carb + 9 * tot.gras);
-    const n = (m.origen === 'manual_comida' ? (estadoLocal.perfil?.comidasDiario || 1) : m.comidas) || 1;
-    const metaDia = { kcal: m.kcal * n, prot: m.prot * n, carb: m.carb * n, gras: m.gras * n };
-    $('hoy-kcal').textContent = `${kcal} / ${metaDia.kcal} kcal`;
-    [['p', 'prot'], ['c', 'carb'], ['g', 'gras']].forEach(([s, k]) => {
-      $('hoy-v-' + s).textContent = `${Math.round(tot[k])}/${metaDia[k]}g`;
-      $('hoy-b-' + s).style.transform = `scaleX(${Math.min(1, metaDia[k] ? tot[k] / metaDia[k] : 0)})`;
-    });
+    // Meta manual POR COMIDA sin responder cuántas comidas al día: Hoy no
+    // adivina (pintar la meta de UNA comida como meta del día engaña). El
+    // Diario hace la pregunta; aquí solo lo consumido y la invitación.
+    const nDia = m.origen === 'manual_comida' ? estadoLocal.perfil?.comidasDiario : m.comidas;
+    const pendiente = !(nDia > 0);
+    $('hoy-barras').hidden = pendiente;
+    $('hoy-nota').hidden = !pendiente;
+    if (pendiente) {
+      $('hoy-kcal').textContent = `${kcal} kcal hoy`;
+      $('hoy-nota').textContent = 'Tu meta es por comida. Responde en el Diario cuántas comidas registras al día y aquí verás tu meta diaria.';
+    } else {
+      const metaDia = { kcal: m.kcal * nDia, prot: m.prot * nDia, carb: m.carb * nDia, gras: m.gras * nDia };
+      $('hoy-kcal').textContent = `${kcal} / ${metaDia.kcal} kcal`;
+      [['p', 'prot'], ['c', 'carb'], ['g', 'gras']].forEach(([s, k]) => {
+        $('hoy-v-' + s).textContent = `${Math.round(tot[k])}/${metaDia[k]}g`;
+        $('hoy-b-' + s).style.transform = `scaleX(${Math.min(1, metaDia[k] ? tot[k] / metaDia[k] : 0)})`;
+      });
+    }
   }
   // Lo último de Entrenar: una sesión a medias invita a retomarla; si no, la última hecha.
   const ult = $('hoy-ultimo');
-  const activa = estadoLocal.entreno.sesionActiva;
-  const sesiones = estadoLocal.entreno.sesiones;
+  const activa = estadoLocal.entreno?.sesionActiva;
+  const sesiones = estadoLocal.entreno?.sesiones || [];
   if (activa) {
     ult.hidden = false;
     ult.innerHTML = `<button class="hoy-card hoy-card-accent" onclick="goTab('entrenar')"><div><div class="hc-t">Tienes una sesión en curso</div><div class="hc-s">Tócala para continuar donde la dejaste</div></div></button>`;
   } else if (sesiones.length) {
     const s = sesiones[sesiones.length - 1];
-    const series = s.ejercicios.reduce((a, e) => a + e.series.filter(x => x.hecha).length, 0);
-    const vol = Math.round(s.ejercicios.reduce((a, e) => a + e.series.filter(x => x.hecha).reduce((b, x) => b + x.reps * x.pesoKg, 0), 0));
+    const series = (s.ejercicios || []).reduce((a, e) => a + (e.series || []).filter(x => x.hecha).length, 0);
+    const vol = Math.round((s.ejercicios || []).reduce((a, e) => a + (e.series || []).filter(x => x.hecha).reduce((b, x) => b + (x.reps || 0) * (x.pesoKg || 0), 0), 0));
     ult.hidden = false;
     ult.innerHTML = `<div class="hc-s">Última sesión: ${new Date(s.inicioMs).toLocaleDateString('es-MX', { day: 'numeric', month: 'short' })} · ${series} series · ${vol} kg de volumen</div>`;
   } else {
@@ -136,23 +168,39 @@ function renderHoy() {
 }
 
 // Al calcular la meta, el perfil y la meta quedan en el almacén para que
-// Diario y Entrenar los usen sin volver a preguntar nada.
+// Diario y Entrenar los usen sin volver a preguntar nada. Escritura ATÓMICA
+// sobre el estado fresco del disco (el snapshot viejo pisaba comidasDiario y
+// lo que Diario o Entrenar hubieran guardado desde su pestaña).
 function persistirPerfilYMeta() {
-  const previo = estadoLocal.perfil || {};
-  estadoLocal = almacen.guardarPerfil(estadoLocal, {
-    ...previo,
-    sexo: $('sexo').value, edad: numCampo('edad'), peso: numCampo('peso'), altura: numCampo('altura'),
-    comidas: +$('comidas').value,
-    objetivo: document.querySelector('.obj-card.selected')?.dataset.o,
-    actividad: document.querySelector('.act-card.selected')?.dataset.a,
-    modo: modoActual, subModo: subModoActual,
-    unidadPeso: previo.unidadPeso || 'kg',
-    comidasDiario: previo.comidasDiario ?? null,
-    terminos: modoActual === 'calc' ? true : (previo.terminos ?? false),
-    actualizado: Date.now()
+  const metaNueva = { kcal: meta.kcal, prot: meta.prot, carb: meta.carb, gras: meta.gras, comidas: meta.comidas, origen: origenMeta(meta) };
+  const r = almacen.actualizar(e => {
+    const previo = e.perfil || {};
+    // En modo manual los campos de la fórmula están ocultos y pueden traer
+    // basura olvidada: se conservan los del perfil previo, nunca se pisan
+    // (un null ahí tiraba el perfil ENTERO al migrar en la siguiente carga).
+    const formula = modoActual === 'calc'
+      ? { sexo: $('sexo').value, edad: numCampo('edad'), peso: numCampo('peso'), altura: numCampo('altura'),
+          comidas: +$('comidas').value,
+          objetivo: document.querySelector('.obj-card.selected')?.dataset.o,
+          actividad: document.querySelector('.act-card.selected')?.dataset.a }
+      : { sexo: previo.sexo ?? null, edad: previo.edad ?? null, peso: previo.peso ?? null, altura: previo.altura ?? null,
+          comidas: previo.comidas ?? +$('comidas').value, objetivo: previo.objetivo ?? null, actividad: previo.actividad ?? null };
+    let nuevo = almacen.guardarPerfil(e, {
+      ...previo,
+      ...formula,
+      modo: modoActual, subModo: subModoActual,
+      // Lo tecleado en "Ingresar mis macros" se conserva: sin esto, recargar
+      // devolvía los valores de referencia y Continuar sustituía la meta real.
+      manual: { mcProt: numCampo('mc-prot'), mcCarb: numCampo('mc-carb'), mcGras: numCampo('mc-gras'),
+                mComidas: +$('m-comidas').value, mProt: numCampo('m-prot'), mCarb: numCampo('m-carb'), mGras: numCampo('m-gras') },
+      unidadPeso: previo.unidadPeso || 'kg',
+      comidasDiario: previo.comidasDiario ?? null,
+      terminos: modoActual === 'calc' ? true : (previo.terminos ?? false),
+      actualizado: Date.now()
+    });
+    return almacen.guardarMetaCache(nuevo, metaNueva);
   });
-  estadoLocal = almacen.guardarMetaCache(estadoLocal, getMetaCompartida());
-  almacen.guardar(estadoLocal);
+  estadoLocal = r.estado;
 }
 
 // Un perfil ya guardado rellena el formulario al abrir, y los términos
@@ -168,7 +216,21 @@ function restaurarPerfil() {
     if (p.comidas) $('comidas').value = String(p.comidas);
     if (p.objetivo) document.querySelectorAll('.obj-card').forEach(c => c.classList.toggle('selected', c.dataset.o === p.objetivo));
     if (p.actividad) document.querySelectorAll('.act-card').forEach(c => c.classList.toggle('selected', c.dataset.a === p.actividad));
-    if (p.modo === 'manual') window.setMode('manual');
+    if (p.manual) {
+      // Los valores manuales guardados sustituyen a los de referencia.
+      const m = p.manual;
+      if (m.mcProt != null) $('mc-prot').value = m.mcProt;
+      if (m.mcCarb != null) $('mc-carb').value = m.mcCarb;
+      if (m.mcGras != null) $('mc-gras').value = m.mcGras;
+      if (m.mComidas != null) $('m-comidas').value = String(m.mComidas);
+      if (m.mProt != null) $('m-prot').value = m.mProt;
+      if (m.mCarb != null) $('m-carb').value = m.mCarb;
+      if (m.mGras != null) $('m-gras').value = m.mGras;
+    }
+    if (p.modo === 'manual') {
+      window.setMode('manual');
+      if (p.subModo === 'total') window.setSubMode('total');
+    }
     if (p.terminos) {
       $('terms-btn').classList.add('accepted');
       $('terms-icon').textContent = '●';
@@ -266,8 +328,8 @@ function limpiarErrores() {
   ['formula-error', 'manual-error'].forEach(idc => { const b = $(idc); if (b) b.textContent = ''; });
 }
 
-window.selObj = el => { document.querySelectorAll('.obj-card').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); };
-window.selAct = el => { document.querySelectorAll('.act-card').forEach(c=>c.classList.remove('selected')); el.classList.add('selected'); };
+window.selObj = el => { document.querySelectorAll('.obj-card').forEach(c=>{c.classList.remove('selected');c.setAttribute('aria-pressed','false');}); el.classList.add('selected'); el.setAttribute('aria-pressed','true'); };
+window.selAct = el => { document.querySelectorAll('.act-card').forEach(c=>{c.classList.remove('selected');c.setAttribute('aria-pressed','false');}); el.classList.add('selected'); el.setAttribute('aria-pressed','true'); };
 
 // Lee un input numérico validando contra los min/max declarados en el HTML.
 // Devuelve null si está vacío, no es número o está fuera de rango (el 0 sí es válido si min lo permite).
@@ -562,6 +624,10 @@ function renderCierre() {
   if (!p) { wrap.innerHTML = ''; return; }
 
   const actual = ultimoPorc ? ultimoPorc.desviacion : null;
+  // Si el macro que el candidato aporta ya SOBRA, ofrecer "cerrar la meta"
+  // añadiendo más comida se contradice (y el reequilibrio que haría el motor
+  // confunde): la caja solo aparece cuando de verdad FALTA ese macro.
+  if (actual && actual[p.macro] > 0) { wrap.innerHTML = ''; return; }
   const falta = actual ? Math.abs(Math.round(actual[p.macro] * 10) / 10) : null;
   const verbo = actual && actual[p.macro] > 0 ? 'Te sobran' : 'Te faltan';
   const lbl = SIZES.find(s => s.k === p.tamano)?.l || 'Estándar';
@@ -1215,7 +1281,19 @@ function dibujarQR() {
 }
 
 window.goResumen = function() {
-  if(!Object.keys(selBase).length){alert('Selecciona al menos un ingrediente');return;}
+  if(!Object.keys(selBase).length){
+    // Error EN la interfaz, nunca alert() (regla del proyecto). Si ni
+    // siquiera hay perfil, la guarda de goStep ya acomoda el mensaje ahí.
+    if (!(meta && typeof meta.kcal === 'number')) { goStep(2); return; }
+    goStep(1);
+    const aviso = $('plato-aviso');
+    if (aviso) {
+      aviso.textContent = 'Elige al menos un módulo para ver tu resumen.';
+      clearTimeout(aviso._t);
+      aviso._t = setTimeout(() => { aviso.textContent = ''; }, 5000);
+    }
+    return;
+  }
   pintarResumen();
   confirmarConCocina();
 };
@@ -1249,7 +1327,10 @@ function pintarResumen() {
   const clsMacro=v=>Math.abs(v)<=TOLG?'ok':v>0?'over':'under';
   const fmtMacro=(v,unit)=>{ if(Math.abs(v)<=TOLG) return 'En tu meta'; return v>0?`${v}${unit} de más`:`${Math.abs(v)}${unit} de menos`; };
   const insts=buildQRInstructions();
-  const instHTML=insts.map((it,i)=>`<div class="qr-inst-item"><div class="qr-inst-num">${i+1}</div><div><div class="qr-inst-text">${it.name}${it.isExtra?' <span style="font-size:10px;color:var(--accent);font-family:Inter,sans-serif">(extra)</span>':''}</div><div class="qr-inst-detail">Porción ${it.sz} · <strong>${it.g}g</strong> · ${it.cat}</div></div></div>`).join('');
+  // "Porción 3 porciones (3 Estándar)" era redundante: si el tamaño ya habla
+  // de porciones, va tal cual; solo las piezas simples llevan el prefijo.
+  const szTxt=sz=>/porci/i.test(sz)?sz:`Porción ${sz.toLowerCase()}`;
+  const instHTML=insts.map((it,i)=>`<div class="qr-inst-item"><div class="qr-inst-num">${i+1}</div><div><div class="qr-inst-text">${it.name}${it.isExtra?' <span style="font-size:10px;color:var(--accent);font-family:Inter,sans-serif">(extra)</span>':''}</div><div class="qr-inst-detail">${szTxt(it.sz)} · <strong>${it.g}g</strong> · ${it.cat}</div></div></div>`).join('');
   const prediccion = predecirPropuesta();
   $('res-content').innerHTML=`
     <div class="res-wrap">${rows}<div class="res-total"><div class="res-total-lbl" id="res-total-lbl">Total a pagar</div><div class="res-total-val" id="res-total-val">$${total} MXN</div></div></div>
@@ -1278,6 +1359,17 @@ function pintarResumen() {
 }
 
 window.goStep = function(n) {
+  // Sin meta calculada no hay plato que armar: saltar ahí por el stepper
+  // dejaba una pantalla muerta con el Perfil marcado "✓" sin estarlo.
+  if (n > 0 && !(meta && typeof meta.kcal === 'number')) {
+    n = 0;
+    const err = $(modoActual === 'manual' ? 'manual-error' : 'formula-error');
+    if (err) {
+      err.textContent = 'Completa tu perfil y toca Continuar para armar tu plato.';
+      clearTimeout(err._t);
+      err._t = setTimeout(() => { err.textContent = ''; }, 5000);
+    }
+  }
   olvidarPorque();
   renderPorque();
   document.querySelectorAll('.screen').forEach((s,i)=>s.classList.toggle('active',i===n));
@@ -1289,6 +1381,19 @@ window.goStep = function(n) {
   }
   window.scrollTo({top:0,behavior:'smooth'});
 };
+
+// Las tarjetas de objetivo y actividad fijan la meta de TODA la app: tienen
+// que operarse con teclado igual que las tarjetas del plato (role, tabindex,
+// aria-pressed, Enter/Espacio). El keydown solo actúa con el foco en la
+// propia tarjeta, mismo patrón que el resto del proyecto.
+document.querySelectorAll('.obj-card, .act-card').forEach(c => {
+  c.setAttribute('role', 'button');
+  c.setAttribute('tabindex', '0');
+  c.setAttribute('aria-pressed', String(c.classList.contains('selected')));
+  c.addEventListener('keydown', e => {
+    if ((e.key === 'Enter' || e.key === ' ') && e.target === c) { e.preventDefault(); c.click(); }
+  });
+});
 
 // Arranque: el perfil guardado rellena el formulario (corre al final, cuando
 // setMode y compañía ya existen en window) y la app abre en Hoy.

@@ -216,9 +216,22 @@ const CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-
 const MAS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
 
 function persistir() {
+  // Escritura por INJERTO sobre el estado fresco del disco: este módulo solo
+  // es dueño del diario, de recientes.alimentos y de perfil.comidasDiario.
+  // Guardar el snapshot entero pisaría lo que Pedir o Entrenar escribieron
+  // desde su pestaña (la pérdida de datos que cazó la auditoría).
+  const r = almacen.actualizar(e => ({
+    ...e,
+    diario: estado.diario,
+    recientes: { ...e.recientes, alimentos: estado.recientes.alimentos },
+    perfil: e.perfil
+      ? { ...e.perfil, comidasDiario: estado.perfil?.comidasDiario ?? e.perfil.comidasDiario }
+      : estado.perfil
+  }));
+  estado = r.estado;
   // Si localStorage falla (modo privado, cuota), la sesión sigue en memoria y
   // el día lo avisa una vez: perder datos en silencio sería peor que avisar.
-  if (!almacen.guardar(estado)) fallaGuardado = true;
+  if (!r.guardado) fallaGuardado = true;
 }
 
 function irVista(v) {
@@ -643,6 +656,7 @@ function htmlDatos() {
     </summary>
     <div class="dia-datos-body">
       <p>Tu diario vive solo en este dispositivo: nada sale a ningún servidor. Llévate un respaldo en JSON o restaura uno.</p>
+      <p class="dia-fuentes">Datos nutricionales: USDA FoodData Central (dominio público, CC0 1.0) y carta COSECHA. Los desvíos de etiqueta van marcados, no corregidos.</p>
       <div class="dia-datos-botones">
         <button type="button" class="btn btn-ghost" data-accion="exportar">Exportar respaldo</button>
         <button type="button" class="btn btn-ghost" data-accion="importar-elegir">Importar respaldo</button>

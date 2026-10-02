@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Cosecha — Armador de Plato Modular</title>
 <link rel="stylesheet" href="css/styles.css">
-<link rel="stylesheet" href="css/diario.css">
-<link rel="stylesheet" href="css/entreno.css">
+<!-- diario.css y entreno.css se cargan bajo demanda junto con su módulo
+     (cargarCSS en app.js): la carga inicial de Pedir no crece. -->
 <link rel="icon" href="data:,">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 </head>
@@ -31,11 +31,12 @@
 
     <div class="gap-wrap hoy-resumen" id="hoy-resumen" hidden>
       <div class="gap-hd"><span>Tu día</span><span class="hoy-kcal" id="hoy-kcal"></span></div>
-      <div class="hoy-barras">
+      <div class="hoy-barras" id="hoy-barras">
         <div class="gt-bar-wrap"><div class="gt-bar-top"><span class="gt-bar-lbl">Proteína</span><span class="gt-bar-val" id="hoy-v-p">0/0g</span></div><div class="bar-bg"><div class="bar-fill bp" id="hoy-b-p" style="transform:scaleX(0)"></div></div></div>
         <div class="gt-bar-wrap"><div class="gt-bar-top"><span class="gt-bar-lbl">Carbos</span><span class="gt-bar-val" id="hoy-v-c">0/0g</span></div><div class="bar-bg"><div class="bar-fill bc" id="hoy-b-c" style="transform:scaleX(0)"></div></div></div>
         <div class="gt-bar-wrap"><div class="gt-bar-top"><span class="gt-bar-lbl">Grasas</span><span class="gt-bar-val" id="hoy-v-g">0/0g</span></div><div class="bar-bg"><div class="bar-fill bg2" id="hoy-b-g" style="transform:scaleX(0)"></div></div></div>
       </div>
+      <p class="hc-s hoy-nota" id="hoy-nota" hidden></p>
     </div>
 
     <div class="hoy-sin-meta" id="hoy-sin-meta" hidden>
@@ -177,6 +178,7 @@
     <div id="meta-panel"></div>
     <div id="base-mods"></div>
     <div id="sugg-wrap"></div>
+    <div class="form-error" id="plato-aviso" role="alert" aria-live="polite"></div>
     <div id="plato-btn-row" class="btn-row"></div>
   </div>
 

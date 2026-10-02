@@ -34,7 +34,7 @@ const PERFIL = {
   actividad: 'moderado', objetivo: 'mantener', comidas: 3,
   unidadPeso: 'kg', comidasDiario: null,
   // Preferencias de UI que migrar() conserva con defaults deterministas.
-  terminos: false, modo: 'calc', subModo: 'comida',
+  terminos: false, modo: 'calc', subModo: 'comida', manual: null,
   actualizado: 1700000000000
 };
 
@@ -95,7 +95,8 @@ test('migrar: una versión FUTURA degrada rescatando lo que siga en forma v1', (
   assert.equal(m.v, 1);
   assert.deepEqual(m.perfil, PERFIL);
   assert.deepEqual(m.entreno.rutinas, [{ id: 'r1', nombre: 'Empuje' }]); // sin id no se puede reemplazar: fuera
-  assert.deepEqual(m.entreno.sesiones, [{ id: 's1' }]);
+  // sesionSegura() normaliza: una sesión sin ejercicios reconocibles queda con lista vacía.
+  assert.deepEqual(m.entreno.sesiones, [{ id: 's1', ejercicios: [] }]);
   assert.equal('campoDelFuturo' in m, false);
 });
 
