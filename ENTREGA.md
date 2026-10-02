@@ -31,8 +31,8 @@ Los datos del usuario viven SOLO en el dispositivo (`localStorage`, esquema vers
 | Ejercicios (876, es-MX) + 10 rutinas | ✅ 1:1 con free-exercise-db, revisión de entrenador (9 correcciones); rutinas con 97 ids verificados, 0 rotos |
 | Excel maestro | ✅ Versionado en `data/COSECHA_Base_Alimentos.xlsx` + [puntero en Drive](https://drive.google.com/file/d/1yqI7HJIjF7yItdDHdxsSMyHLXyV0GtQI/view). ⚠️ Bloqueo documentado: el conector de Drive exige el binario inline en base64 (258 K caracteres) — transcribirlo garantiza corrupción, así que el maestro queda en GitHub (versionado) y en Drive el puntero; arrastrarlo a Drive toma 10 s si se quiere la copia física |
 | Cobertura WHOOP | ✅ `docs/cobertura-whoop.md`: 286 nombres públicos contrastados |
-| Auditoría multi-rol | Ronda 1: 35 confirmados (3 S0) → arreglados. Ronda 2: 15 confirmados (0 S0, 3 S1) → arreglados. Ronda 3: 0 S0/S1, 14 S2 sin refutar (los refutadores cayeron por créditos) → en arreglo, verificados por el orquestador |
-| **Publicación** | ✅ **`main` publicado en Pages el 2-oct 10:37** (`3acd0ec`) y verificado en la URL pública con recorrido CDP a 375 px: Hoy → perfil → Diario (alta) → Entrenar → Hoy refleja lo comido; 0 peticiones a n8n |
+| Auditoría multi-rol | Ronda 1: 35 confirmados (3 S0) → arreglados. Ronda 2: 15 confirmados (0 S0, 3 S1) → arreglados. Ronda 3: **0 S0, 0 S1**, 14 S2 → arreglados (los 42 refutadores cayeron por falta de créditos: cada S2 lo verifiqué yo contra el código antes de arreglarlo; ninguno resultó falso). Ronda 4: en curso |
+| **Publicación** | ✅ **`main` publicado en Pages** (`ced3dce`, 2-oct 10:45) y verificado en la URL pública con recorridos CDP a 375 px: Hoy → perfil → Diario (alta) → Hoy refleja lo comido; Entrenar: CTA de perfil devuelve a Entrenar, rutinas plegables, ficha de ejercicio, palomear arranca el descanso, saltar se persiste, terminar → volver a la sesión; **0 peticiones a n8n** |
 
 ## Decisiones tomadas y por qué
 
