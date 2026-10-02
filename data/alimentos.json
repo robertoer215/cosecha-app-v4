@@ -2491,36 +2491,6 @@
   "kcalDesvia": false
  },
  {
-  "id": "ALI-0089",
-  "nombre": "michelada",
-  "sinonimos": [
-   "cerveza preparada"
-  ],
-  "grupo": "Bebidas, azúcares y otros",
-  "estado": "listo para comer",
-  "kcal": 33,
-  "proteina_g": 0.66,
-  "carbohidratos_g": 4.05,
-  "grasa_g": 0.15,
-  "fibra_g": 0.2,
-  "fuente": "USDA FDC (FNDDS)",
-  "id_fuente": 2710641,
-  "licencia": "CC0 1.0",
-  "porciones": [
-   {
-    "nombre": "1 bebida",
-    "g": 225,
-    "fuente": "USDA FDC"
-   },
-   {
-    "nombre": "1 onza líquida",
-    "g": 30,
-    "fuente": "USDA FDC"
-   }
-  ],
-  "kcalDesvia": true
- },
- {
   "id": "ALI-0090",
   "nombre": "miel de abeja",
   "sinonimos": [
@@ -2734,36 +2704,6 @@
    }
   ],
   "kcalDesvia": false
- },
- {
-  "id": "ALI-0097",
-  "nombre": "piña colada",
-  "sinonimos": [
-   "coctel piña colada"
-  ],
-  "grupo": "Bebidas, azúcares y otros",
-  "estado": "listo para comer",
-  "kcal": 151,
-  "proteina_g": 0.36,
-  "carbohidratos_g": 19.48,
-  "grasa_g": 2.14,
-  "fibra_g": 0.1,
-  "fuente": "USDA FDC (FNDDS)",
-  "id_fuente": 2710662,
-  "licencia": "CC0 1.0",
-  "porciones": [
-   {
-    "nombre": "1 bebida",
-    "g": 225,
-    "fuente": "USDA FDC"
-   },
-   {
-    "nombre": "1 onza líquida",
-    "g": 30,
-    "fuente": "USDA FDC"
-   }
-  ],
-  "kcalDesvia": true
  },
  {
   "id": "ALI-0098",
@@ -8440,8 +8380,11 @@
  },
  {
   "id": "ALI-0323",
-  "nombre": "Arándano y romero",
-  "sinonimos": [],
+  "nombre": "Agua de arándano y romero (COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Arándano y romero"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 13.6,
@@ -8452,13 +8395,21 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE01",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (500 ml)",
+    "g": 500,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0324",
-  "nombre": "Arroz con edamame y granada",
-  "sinonimos": [],
+  "nombre": "Arroz con edamame y granada (COSECHA)",
+  "sinonimos": [
+   "cosecha"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 122.5,
@@ -8480,8 +8431,11 @@
  },
  {
   "id": "ALI-0325",
-  "nombre": "Banana Bread",
-  "sinonimos": [],
+  "nombre": "Banana Bread (postre COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Banana Bread"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 336.84,
@@ -8503,8 +8457,11 @@
  },
  {
   "id": "ALI-0326",
-  "nombre": "Berry Protein",
-  "sinonimos": [],
+  "nombre": "Smoothie Berry Protein (COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Berry Protein"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 61.49,
@@ -8515,13 +8472,21 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE15",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (470 ml)",
+    "g": 470,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0327",
-  "nombre": "Brócoli al carbón sobre tzatziki",
-  "sinonimos": [],
+  "nombre": "Brócoli al carbón sobre tzatziki (COSECHA)",
+  "sinonimos": [
+   "cosecha"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 62.5,
@@ -8543,8 +8508,11 @@
  },
  {
   "id": "ALI-0328",
-  "nombre": "Cacao Peanut",
-  "sinonimos": [],
+  "nombre": "Smoothie Cacao Peanut (COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Cacao Peanut"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 149.09,
@@ -8555,13 +8523,21 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE16",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (440 ml)",
+    "g": 440,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0329",
-  "nombre": "Camote asado con chile ancho",
-  "sinonimos": [],
+  "nombre": "Camote asado con chile ancho (COSECHA)",
+  "sinonimos": [
+   "cosecha"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 160,
@@ -8583,8 +8559,11 @@
  },
  {
   "id": "ALI-0330",
-  "nombre": "Cappuccino",
-  "sinonimos": [],
+  "nombre": "Cappuccino (café COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Cappuccino"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 50,
@@ -8595,13 +8574,22 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE09",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (146 ml)",
+    "g": 146,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0331",
-  "nombre": "Carrot Chai Cake",
-  "sinonimos": [],
+  "nombre": "Carrot Chai Cake (postre COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Carrot Chai Cake"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 388.18,
@@ -8623,8 +8611,11 @@
  },
  {
   "id": "ALI-0332",
-  "nombre": "Chocolate Chip Cookie",
-  "sinonimos": [],
+  "nombre": "Chocolate Chip Cookie (postre COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Chocolate Chip Cookie"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 532.31,
@@ -8646,8 +8637,11 @@
  },
  {
   "id": "ALI-0333",
-  "nombre": "Cold Brew",
-  "sinonimos": [],
+  "nombre": "Cold Brew (café COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Cold Brew"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 1.79,
@@ -8658,13 +8652,22 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE10",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (280 ml)",
+    "g": 280,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0334",
-  "nombre": "Dirty Chai Latte",
-  "sinonimos": [],
+  "nombre": "Dirty Chai Latte (café COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Dirty Chai Latte"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 45.61,
@@ -8675,13 +8678,21 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE13",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (296 ml)",
+    "g": 296,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0335",
-  "nombre": "Ensalada de nopal con jitomate",
-  "sinonimos": [],
+  "nombre": "Ensalada de nopal con jitomate (COSECHA)",
+  "sinonimos": [
+   "cosecha"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 40.91,
@@ -8703,8 +8714,10 @@
  },
  {
   "id": "ALI-0336",
-  "nombre": "Espárragos asados con limón",
-  "sinonimos": [],
+  "nombre": "Espárragos asados con limón (COSECHA)",
+  "sinonimos": [
+   "cosecha"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 35,
@@ -8726,8 +8739,11 @@
  },
  {
   "id": "ALI-0337",
-  "nombre": "Espresso Coconut Cloud",
-  "sinonimos": [],
+  "nombre": "Espresso Coconut Cloud (café COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Espresso Coconut Cloud"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 84.66,
@@ -8738,13 +8754,22 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE11",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (176 ml)",
+    "g": 176,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0338",
-  "nombre": "Espresso Doble",
-  "sinonimos": [],
+  "nombre": "Espresso Doble (café COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Espresso Doble"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 8.33,
@@ -8755,13 +8780,21 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE07",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 porción (36 ml)",
+    "g": 36,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": true
  },
  {
   "id": "ALI-0339",
-  "nombre": "Esquites con yogur y feta",
-  "sinonimos": [],
+  "nombre": "Esquites con yogur y feta (COSECHA)",
+  "sinonimos": [
+   "cosecha"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 124,
@@ -8783,8 +8816,11 @@
  },
  {
   "id": "ALI-0340",
-  "nombre": "Fresa y jengibre",
-  "sinonimos": [],
+  "nombre": "Agua de fresa y jengibre (COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Fresa y jengibre"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 13.8,
@@ -8795,13 +8831,21 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE03",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (500 ml)",
+    "g": 500,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0341",
-  "nombre": "Guacamole artesanal",
-  "sinonimos": [],
+  "nombre": "Guacamole artesanal (COSECHA)",
+  "sinonimos": [
+   "cosecha"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 160,
@@ -8823,8 +8867,11 @@
  },
  {
   "id": "ALI-0342",
-  "nombre": "Horchata Cold Brew",
-  "sinonimos": [],
+  "nombre": "Horchata Cold Brew (café COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Horchata Cold Brew"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 31.03,
@@ -8835,13 +8882,22 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE14",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (290 ml)",
+    "g": 290,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0343",
-  "nombre": "Jamaica en frío",
-  "sinonimos": [],
+  "nombre": "Agua de jamaica en frío (COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Jamaica en frío"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 13.6,
@@ -8852,13 +8908,22 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE06",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (500 ml)",
+    "g": 500,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0344",
-  "nombre": "Latte",
-  "sinonimos": [],
+  "nombre": "Latte (café COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Latte"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 55.86,
@@ -8869,13 +8934,22 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE08",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (256 ml)",
+    "g": 256,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0345",
   "nombre": "Smoothie de mamey (COSECHA)",
-  "sinonimos": [],
+  "sinonimos": [
+   "cosecha",
+   "Mamey"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 95.33,
@@ -8886,13 +8960,22 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE19",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (450 ml)",
+    "g": 450,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0346",
-  "nombre": "Mango Coconut",
-  "sinonimos": [],
+  "nombre": "Smoothie Mango Coconut (COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Mango Coconut"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 81.67,
@@ -8903,13 +8986,22 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE17",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (480 ml)",
+    "g": 480,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0347",
-  "nombre": "Marbled Chocolate & Tahini Cake",
-  "sinonimos": [],
+  "nombre": "Marbled Chocolate & Tahini Cake (postre COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Marbled Chocolate & Tahini Cake"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 408.57,
@@ -8931,8 +9023,11 @@
  },
  {
   "id": "ALI-0348",
-  "nombre": "Matcha Latte",
-  "sinonimos": [],
+  "nombre": "Matcha Latte (café COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Matcha Latte"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 61.05,
@@ -8943,13 +9038,21 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE12",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (285 ml)",
+    "g": 285,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0349",
-  "nombre": "Nueces con chile piquín",
-  "sinonimos": [],
+  "nombre": "Nueces con chile piquín (COSECHA)",
+  "sinonimos": [
+   "cosecha"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 660,
@@ -8971,8 +9074,11 @@
  },
  {
   "id": "ALI-0350",
-  "nombre": "Pepino y hierbabuena",
-  "sinonimos": [],
+  "nombre": "Agua de pepino y hierbabuena (COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Pepino y hierbabuena"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 12.4,
@@ -8983,13 +9089,22 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE02",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (500 ml)",
+    "g": 500,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0351",
-  "nombre": "Piña, chía y hierbabuena",
-  "sinonimos": [],
+  "nombre": "Agua de piña, chía y hierbabuena (COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Piña, chía y hierbabuena"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 23.2,
@@ -9000,13 +9115,21 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE05",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (500 ml)",
+    "g": 500,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0352",
-  "nombre": "Pollo al cilantro y limón",
-  "sinonimos": [],
+  "nombre": "Pollo al cilantro y limón (COSECHA)",
+  "sinonimos": [
+   "cosecha"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 110,
@@ -9028,8 +9151,11 @@
  },
  {
   "id": "ALI-0353",
-  "nombre": "PROTEIN +25",
-  "sinonimos": [],
+  "nombre": "PROTEIN +25, proteína extra para bebida (COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "PROTEIN +25"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 346.67,
@@ -9040,13 +9166,22 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "ADD-PROT",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 porción (30 ml)",
+    "g": 30,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0354",
-  "nombre": "Raspberry & Pistachio Cookie",
-  "sinonimos": [],
+  "nombre": "Raspberry & Pistachio Cookie (postre COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Raspberry & Pistachio Cookie"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 501.54,
@@ -9068,8 +9203,10 @@
  },
  {
   "id": "ALI-0355",
-  "nombre": "Salmón al pastor con achiote",
-  "sinonimos": [],
+  "nombre": "Salmón al pastor con achiote (COSECHA)",
+  "sinonimos": [
+   "cosecha"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 184.62,
@@ -9091,8 +9228,10 @@
  },
  {
   "id": "ALI-0356",
-  "nombre": "Semillas de girasol tostadas",
-  "sinonimos": [],
+  "nombre": "Semillas de girasol tostadas (COSECHA)",
+  "sinonimos": [
+   "cosecha"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 575,
@@ -9114,8 +9253,10 @@
  },
  {
   "id": "ALI-0357",
-  "nombre": "Tenderloin al mole verde",
-  "sinonimos": [],
+  "nombre": "Tenderloin al mole verde (COSECHA)",
+  "sinonimos": [
+   "cosecha"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 140,
@@ -9137,8 +9278,11 @@
  },
  {
   "id": "ALI-0358",
-  "nombre": "Toronja, albahaca y sal de mar",
-  "sinonimos": [],
+  "nombre": "Agua de toronja, albahaca y sal de mar (COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Toronja, albahaca y sal de mar"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 10.8,
@@ -9149,13 +9293,22 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE04",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (500 ml)",
+    "g": 500,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0359",
-  "nombre": "Vanilla Matcha",
-  "sinonimos": [],
+  "nombre": "Smoothie Vanilla Matcha (COSECHA)",
+  "sinonimos": [
+   "cosecha",
+   "Vanilla Matcha"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 69.52,
@@ -9166,13 +9319,21 @@
   "fuente": "Carta COSECHA (js/data.js)",
   "id_fuente": "BE18",
   "licencia": "Propia",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 vaso COSECHA (420 ml)",
+    "g": 420,
+    "fuente": "Carta COSECHA (js/bebidas.js)"
+   }
+  ],
   "kcalDesvia": false
  },
  {
   "id": "ALI-0360",
-  "nombre": "Verduras tatemadas con cacahuate",
-  "sinonimos": [],
+  "nombre": "Verduras tatemadas con cacahuate (COSECHA)",
+  "sinonimos": [
+   "cosecha"
+  ],
   "grupo": "Carta COSECHA",
   "estado": "listo para comer",
   "kcal": 75,

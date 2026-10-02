@@ -27,10 +27,11 @@ Los datos del usuario viven SOLO en el dispositivo (`localStorage`, esquema vers
 | Shell 4 pestañas + Hoy | ✅ En `integracion` |
 | js/almacen.js + js/temporizador.js | ✅ Integrados con sus tests |
 | js/diario.js + js/entreno.js | ✅ Integrados; humo CDP del camino feliz completo en verde; **167 tests** |
-| Base de alimentos (1.510: USDA CC0 + carta) | ✅ 100 % con fuente/id/licencia, 0 duplicados, 187 desvíos 4/4/9 marcados, 2.133 porciones; **3 verificadores adversariales: 0 discrepancias**; round-trip Excel→JSON idéntico |
+| Base de alimentos (**1.495**: USDA CC0 + carta) | ✅ 100 % con fuente/id/licencia, 0 duplicados, 172 desvíos 4/4/9 marcados, ~2.130 porciones (las bebidas de la carta con su vaso real); **3 verificadores adversariales: 0 discrepancias**; round-trip Excel→JSON idéntico. Fuera: 15 bebidas con alcohol (la kcal 4/4/9 no cuenta el etanol) |
 | Ejercicios (876, es-MX) + 10 rutinas | ✅ 1:1 con free-exercise-db, revisión de entrenador (9 correcciones); rutinas con 97 ids verificados, 0 rotos |
 | Excel maestro | ✅ Versionado en `data/COSECHA_Base_Alimentos.xlsx` + [puntero en Drive](https://drive.google.com/file/d/1yqI7HJIjF7yItdDHdxsSMyHLXyV0GtQI/view). ⚠️ Bloqueo documentado: el conector de Drive exige el binario inline en base64 (258 K caracteres) — transcribirlo garantiza corrupción, así que el maestro queda en GitHub (versionado) y en Drive el puntero; arrastrarlo a Drive toma 10 s si se quiere la copia física |
 | Cobertura WHOOP | ✅ `docs/cobertura-whoop.md`: 286 nombres públicos contrastados |
+| **Sesión de Entrenar de dos ventanas** (pedido de Roberto, 2-oct 11:06) | ✅ Publicada (`f247fb1`, 11:20) y verificada en la URL pública: «Sesión en vivo» con círculo de estado (Calentamiento → Activo → Descansar → Listo), un botón grande Empezar serie / Fin de la serie, tarjeta del ejercicio con foto, Serie X/N, reps y kg; «Ejercicios» con la lista editable y miniaturas; ficha técnica desde la sesión sin perder el descanso; filtros por músculo y equipo en la Biblioteca. Recargar en «Activo» conserva el tiempo (6 s medidos tras recargar). Patrón de experiencia de WHOOP **sin** frecuencia cardiaca ni zonas (dependen de su sensor: regla 4 del encargo) |
 | Auditoría multi-rol | Ronda 1: 35 confirmados (3 S0) → arreglados. Ronda 2: 15 confirmados (0 S0, 3 S1) → arreglados. Ronda 3: **0 S0, 0 S1**, 14 S2 → arreglados (los 42 refutadores cayeron por falta de créditos: cada S2 lo verifiqué yo contra el código antes de arreglarlo; ninguno resultó falso). Ronda 4: en curso |
 | **Publicación** | ✅ **`main` publicado en Pages** (`ced3dce`, 2-oct 10:45) y verificado en la URL pública con recorridos CDP a 375 px: Hoy → perfil → Diario (alta) → Hoy refleja lo comido; Entrenar: CTA de perfil devuelve a Entrenar, rutinas plegables, ficha de ejercicio, palomear arranca el descanso, saltar se persiste, terminar → volver a la sesión; **0 peticiones a n8n** |
 
@@ -54,6 +55,11 @@ Los datos del usuario viven SOLO en el dispositivo (`localStorage`, esquema vers
 - Verificación continua de esta noche: tests (116 ✓), plato de punta a punta en la URL pública con registro de red (0 peticiones a n8n), línea base de rendimiento de Pedir (124 KB, DCL mediana 106 ms, `scratchpad/base-rendimiento-pedir.json`).
 - Las flotas de datos llevan verificación adversarial integrada (muestras contra fuente, revisión de entrenador).
 - Auditoría multi-rol completa (cumplimiento, nutrición, fuerza, UX, AA, marca, código, rendimiento, QA, licencias, producto): **pendiente de ejecutar como primer paso al retomar** — el corte de servicio de esta noche no da tiempo de correrla entera y arreglar lo confirmado. No se da por auditado lo que no lo está.
+
+## Recomendaciones que NO apliqué (fuera de mi permiso)
+
+- **Webhook de producción sin autenticación** (auditoría r4, licencias-2): `COCINA_URL` está en el JS público del repo original y el nodo Webhook de n8n no pide credencial; cualquiera puede mandar POST y gastar créditos del agente. En esta copia no hay riesgo (MODO_DEMO corta antes del fetch), pero en producción conviene añadir una cabecera secreta o validación de origen en n8n. El encargo prohíbe tocar n8n: lo dejo propuesto.
+- **Pedir (flujo original)**: la auditoría pide acortar el paso 2 (la primera tarjeta queda una pantalla abajo), quitar "Te deja −93 g carbos" de las tarjetas y renombrar "Nueva consulta". No lo toqué porque el encargo pide Pedir intacto salvo el modo demo.
 
 ## Qué falta para lanzar
 

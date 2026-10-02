@@ -28,3 +28,12 @@ Este documento registra el origen y la licencia de cada fuente de datos usada en
   desde cdnjs. Licencia MIT.
 - **Inter** e **IBM Plex Mono** — tipografías servidas por Google Fonts.
   Licencia SIL Open Font License 1.1.
+
+## Nota sobre los postres de la carta
+
+Los 5 postres de la carta (`js/postres.js`) son recetas de COSECHA adaptadas de
+una línea comercial de referencia del mercado (así consta en
+`docs/CARTA_POSTRES_Y_COSTEO.md`). Sus valores nutricionales y su costeo son
+cálculo propio de COSECHA; los nombres y la inspiración de receta no se
+declaran como creación original. Antes de publicar la carta, revisar nombres
+comerciales con el área legal.

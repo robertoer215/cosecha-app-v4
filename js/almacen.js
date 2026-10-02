@@ -154,6 +154,24 @@ function migrarDiario(d) {
   return limpio;
 }
 
+// Tipado de lo que Entrenar pinta: un respaldo manipulado podía meter HTML en
+// reps, rir o el nombre y llegaba crudo a innerHTML. Solo se tocan los campos
+// PRESENTES (un respaldo bien formado vuelve idéntico); el tipo incorrecto se
+// sustituye por su valor neutro.
+const TIPOS_SERIE = { reps: 'n0', pesoKg: 'n0', rir: 'nnull', tsHecha: 'nnull', durS: 'nnull', hecha: 'bool' };
+const TIPOS_EJERCICIO = { idEjercicio: 'str', nombre: 'str', descansoS: 'n90', superGrupo: 'nnull' };
+function tipar(o, tipos) {
+  const r = { ...o };
+  for (const [k, t] of Object.entries(tipos)) {
+    if (!(k in r)) continue;
+    const v = r[k];
+    if (t === 'str') r[k] = typeof v === 'string' ? v : String(v ?? '');
+    else if (t === 'bool') r[k] = v === true;
+    else if (!esNumero(v)) r[k] = t === 'n0' ? 0 : t === 'n90' ? 90 : null;
+  }
+  return r;
+}
+
 // Una sesión importada de un respaldo editado o truncado no puede tirar la
 // app: los consumidores (renderHoy, pintarVivo) recorren ejercicios y series
 // sin red de seguridad, así que la red vive aquí. Lo irreconocible se
@@ -163,10 +181,10 @@ function sesionSegura(s) {
   return {
     ...s,
     ejercicios: Array.isArray(s.ejercicios)
-      ? s.ejercicios.filter(esObjeto).map(ej => ({
+      ? s.ejercicios.filter(esObjeto).map(ej => tipar({
           ...ej,
-          series: Array.isArray(ej.series) ? ej.series.filter(esObjeto) : []
-        }))
+          series: Array.isArray(ej.series) ? ej.series.filter(esObjeto).map(x => tipar(x, TIPOS_SERIE)) : []
+        }, TIPOS_EJERCICIO))
       : []
   };
 }
@@ -259,7 +277,16 @@ export function importarJSON(texto) {
   if (typeof interno.v !== 'number' && !RAMAS.some(k => k in interno)) {
     throw new Error('El archivo no parece un respaldo de COSECHA: no trae ninguna de sus secciones (perfil, diario, entrenamiento). Exporta de nuevo desde "Tus datos".');
   }
-  return migrar(interno);
+  const m = migrar(interno);
+  // Que tenga la FORMA no basta ({"v":1} o {"diario":"basura"} pasaban): si
+  // tras migrar no queda nada que restaurar, confirmar borraría todos los
+  // datos con un mensaje de éxito. Se rechaza antes de ofrecerlo.
+  const vacio = !m.perfil && !m.metaCache && !Object.keys(m.diario).length
+    && !m.entreno.sesiones.length && !m.entreno.rutinas.length && !m.entreno.sesionActiva;
+  if (vacio) {
+    throw new Error('El archivo no trae datos que restaurar: ni perfil, ni diario, ni entrenamientos. Revisa que sea un respaldo exportado desde COSECHA.');
+  }
+  return m;
 }
 
 // ── Escritura atómica ────────────────────────────────────────────────────────
