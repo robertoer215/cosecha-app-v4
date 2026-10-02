@@ -1,0 +1,201 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   ENTRENAR — hoja del módulo de fuerza. Prefijo en- en TODO selector propio
+   para no chocar con styles.css ni con el módulo del diario.
+   Solo tokens del :root de styles.css: cero colores nuevos, cero radios
+   nuevos. Mobile-first a 375 px; --gutter ya baja a 20px en ≤560 desde la
+   hoja base, así que aquí no se redeclara.
+   Animaciones: únicamente transform/opacity (y fundidos de background-color
+   de los controles, el mismo patrón de la hoja base); el barrido global de
+   prefers-reduced-motion de styles.css apaga TODAS las transiciones de esta
+   hoja, por eso aquí no hace falta repetirlo.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.en-wrap{padding:24px var(--gutter) 48px;font-family:var(--sans)}
+/* La sesión viva reserva sitio para la barra de descanso fija + la tabbar:
+   sin esto "Terminar sesión" queda debajo de las dos. */
+.en-vivo{padding-bottom:200px}
+
+/* ── Cabeceras: mismos papeles tipográficos que .eyebrow/.stitle/.ssub ────── */
+.en-ey{font-size:9px;letter-spacing:3px;text-transform:uppercase;color:var(--muted-ink);margin-bottom:12px}
+.en-titulo{font-size:24px;font-weight:300;letter-spacing:-.9px;line-height:1.1;margin:0 0 8px;color:var(--text)}
+.en-sub{font-size:14px;font-weight:350;letter-spacing:-.3px;color:var(--muted-ink);line-height:1.55;margin:0 0 24px}
+/* El mono es SOLO rótulo en mayúscula con tracking (regla de la hoja base);
+   las cifras vivas van en Inter con tabular-nums, como en toda la app. */
+.en-sec-lbl{font-family:var(--mono);font-size:9px;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted-ink);margin:28px 0 10px;padding-bottom:8px;border-bottom:1px solid var(--border)}
+.en-vacio{font-size:13px;color:var(--muted-ink);line-height:1.6;padding:14px 0}
+.en-aviso-storage{margin-top:14px;padding:12px 16px;border:1px solid var(--danger);border-radius:var(--r-sm);color:var(--danger);font-size:12px;line-height:1.5}
+
+/* ── Botones del módulo (pareja .btn-main/.btn-ghost de la hoja base) ─────── */
+.en-btn{font-family:var(--sans);font-size:13px;font-weight:500;letter-spacing:-.3px;padding:12px 24px;min-height:44px;border-radius:var(--r-pill);cursor:pointer;border:none;transition:background-color .25s,color .25s,border-color .25s,transform .18s}
+.en-btn-main{background:var(--accent-ink);color:#fff;box-shadow:var(--lift-cta);width:100%}
+.en-btn-main:hover{background:var(--accent-deep)}
+.en-btn-main:active{transform:scale(.985)}
+.en-btn-ghost{background:transparent;color:var(--muted-ink);border:1px solid var(--border-strong)}
+.en-btn-ghost:hover{color:var(--text)}
+.en-btn:focus-visible,.en-mini:focus-visible,.en-check:focus-visible,.en-tab:focus-visible,
+.en-chip:focus-visible,.en-ej-row:focus-visible,.en-card-btn:focus-visible,.en-volver:focus-visible,
+.en-d-aj:focus-visible,.en-d-saltar:focus-visible,.en-mas-serie:focus-visible,.en-peligro:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* Descartar en --danger y como texto: destruir no debe parecer un CTA. */
+.en-peligro{background:none;border:none;min-height:44px;padding:12px;color:var(--danger);font-family:var(--sans);font-size:12px;cursor:pointer}
+.en-volver{display:inline-flex;align-items:center;gap:6px;background:none;border:none;min-height:44px;padding:10px 12px 10px 0;margin-bottom:8px;color:var(--muted-ink);font-family:var(--sans);font-size:13px;cursor:pointer}
+.en-volver svg{width:18px;height:18px}
+.en-volver:hover{color:var(--text)}
+
+/* ── Subpestañas Rutinas · Biblioteca · Historial (patrón .sub-toggle) ────── */
+.en-tabs{display:flex;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r-pill);margin-bottom:20px}
+.en-tab{flex:1;min-height:44px;padding:9px 8px;text-align:center;background:var(--bg);border:0;cursor:pointer;font-family:var(--sans);font-size:13px;font-weight:500;letter-spacing:-.3px;color:var(--muted-ink);transition:background-color .2s}
+.en-tab:hover{background:var(--surface)}
+.en-tab-on{background:var(--accent-ink);color:#fff}
+.en-tab:first-child{border-radius:var(--r-pill) 0 0 var(--r-pill)}
+.en-tab:last-child{border-radius:0 var(--r-pill) var(--r-pill) 0}
+
+/* ── Tarjetas de rutina e historial ──────────────────────────────────────── */
+.en-card{display:block;width:100%;border:1px solid var(--border);border-radius:var(--r-md);padding:16px;margin-bottom:10px;background:var(--bg);text-align:left}
+.en-card-btn{cursor:pointer;min-height:64px;font-family:var(--sans);transition:background-color .2s}
+.en-card-btn:hover{background:var(--surface)}
+.en-card-nombre{display:block;font-size:14px;font-weight:500;color:var(--text)}
+.en-card-sub{display:block;font-size:11px;color:var(--muted-ink);margin-top:3px;line-height:1.5;font-variant-numeric:tabular-nums}
+.en-card-dias{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.en-empezar-vacia{margin-bottom:4px}
+.en-prog-chips{display:flex;flex-wrap:wrap;gap:8px}
+.en-chip{min-height:44px;padding:10px 16px;border:1px solid var(--border-strong);border-radius:var(--r-pill);background:var(--bg);color:var(--muted-ink);font-family:var(--sans);font-size:12px;cursor:pointer;transition:background-color .2s}
+.en-chip:hover{background:var(--surface);color:var(--text)}
+
+/* ── Buscador de la biblioteca ───────────────────────────────────────────── */
+.en-busca{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border-strong);margin-bottom:14px}
+.en-busca svg{width:18px;height:18px;color:var(--muted-ink);flex-shrink:0}
+/* 16px obligatorios: por debajo, Safari iOS hace zoom al enfocar y no vuelve. */
+.en-busca-in{flex:1;min-height:44px;background:transparent;border:none;outline:none;font-family:var(--sans);font-size:16px;color:var(--text)}
+.en-busca-in::placeholder{color:var(--muted)}
+.en-ej-row{display:flex;align-items:center;gap:12px;width:100%;min-height:56px;padding:8px 0;background:none;border:none;border-bottom:1px solid var(--border);cursor:pointer;text-align:left;font-family:var(--sans);transition:background-color .2s}
+.en-ej-row:hover{background:var(--surface)}
+/* Placeholder del color --border debajo de la foto: si la imagen del CDN no
+   llega (o aún no llega), el hueco ya tiene cuerpo y la fila no salta. */
+.en-thumb{width:44px;height:44px;border-radius:var(--r-sm);background:var(--border);overflow:hidden;flex-shrink:0}
+.en-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.en-ej-row-txt{flex:1;min-width:0}
+.en-ej-row-nombre{display:block;font-size:13px;color:var(--text)}
+.en-ej-row-sub{display:block;font-size:10px;color:var(--muted-ink);margin-top:2px}
+.en-ej-row-acc{font-size:12px;font-weight:500;color:var(--accent-ink);flex-shrink:0}
+.en-libre{margin-top:12px;width:100%}
+
+/* ── Sesión en vivo ──────────────────────────────────────────────────────── */
+.en-vivo-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:20px}
+.en-crono{font-size:20px;font-weight:300;letter-spacing:-.5px;color:var(--text);font-variant-numeric:tabular-nums;padding-top:22px;white-space:nowrap}
+.en-ej{border:1px solid var(--border);border-radius:var(--r-md);padding:14px 14px 10px;margin-bottom:12px;background:var(--bg)}
+.en-ej-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
+.en-ej-nombre{font-size:14px;font-weight:500;color:var(--text);min-width:0}
+.en-ej-desc{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.en-ej-desc-val{font-size:12px;color:var(--muted-ink);font-variant-numeric:tabular-nums;min-width:34px;text-align:center}
+.en-mini{min-width:44px;min-height:44px;background:none;border:none;border-radius:var(--r-pill);color:var(--muted-ink);font-family:var(--sans);font-size:11px;cursor:pointer;transition:background-color .2s}
+.en-mini:hover{background:var(--surface);color:var(--text)}
+
+/* Superserie: marco común + rótulo en --ember (patrón .meta-tag). Dentro,
+   las tarjetas pierden su marco propio: el bloque es UNA unidad. */
+.en-super{border:1px solid var(--border-strong);border-radius:var(--r-md);padding:10px;margin-bottom:12px}
+.en-super-tag{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:4px 10px;background:var(--ember);border-radius:var(--r-pill);color:var(--text);margin-bottom:8px}
+.en-super .en-ej{border:none;border-bottom:1px solid var(--border);border-radius:0;margin-bottom:0;padding-left:4px;padding-right:4px}
+.en-super .en-ej:last-child{border-bottom:none}
+
+/* La tabla de series: rejilla fija para que las columnas no bailen entre
+   filas. A 375 px (335 de contenido) la previa se queda ~70 px: "12×110" cabe. */
+.en-fila{display:grid;grid-template-columns:16px minmax(0,1fr) 60px 46px 36px 44px;gap:8px;align-items:center;min-height:48px;border-bottom:1px solid var(--border)}
+.en-fila:last-of-type{border-bottom:none}
+.en-fila-hd{min-height:24px;border-bottom:1px solid var(--border)}
+.en-fila-hd span{font-family:var(--mono);font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--muted-ink)}
+.en-num{font-size:11px;color:var(--muted-ink);font-variant-numeric:tabular-nums}
+/* La previa es referencia, no dato de hoy: tinta secundaria a propósito. */
+.en-prev{font-size:11px;color:var(--muted-ink);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
+.en-in{width:100%;min-height:44px;background:transparent;border:none;border-bottom:1px solid var(--border-strong);color:var(--text);font-family:var(--sans);font-size:16px;font-variant-numeric:tabular-nums;text-align:center;outline:none;transition:border-color .2s}
+.en-in:focus{border-bottom-color:var(--accent)}
+.en-in::placeholder{color:var(--muted)}
+/* Palomear: 44×44 reales, contorno de control; hecha = relleno --green con
+   la palomita blanca (6,6:1). Es el único verde de la pantalla: inconfundible. */
+.en-check{width:44px;height:44px;border-radius:50%;border:1px solid var(--border-strong);background:var(--bg);color:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0;transition:background-color .2s,border-color .2s;justify-self:end}
+.en-check svg{width:22px;height:22px}
+.en-check:hover{border-color:var(--green)}
+.en-check-on{background:var(--green);border-color:var(--green);color:#fff}
+.en-hecha .en-num,.en-hecha .en-prev{color:var(--green)}
+.en-mas-serie{width:100%;min-height:44px;background:none;border:none;color:var(--accent-ink);font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer;text-align:left;padding:10px 0 6px;transition:color .2s}
+.en-mas-serie:hover{color:var(--accent-deep)}
+.en-add-ej{width:100%;margin:4px 0 24px}
+.en-vivo-acciones{display:grid;gap:8px;justify-items:center}
+.en-vivo-acciones .en-btn-main{width:100%}
+
+/* ── Barra de descanso: fija encima de la tabbar (z 120 > 100) ───────────────
+   Nace al palomear y cambia de contenido, nunca de caja: el estado "¡A darle!"
+   mide lo mismo que la cuenta (regla anti-salto de toda la app). */
+.en-descanso{position:fixed;left:0;right:0;bottom:calc(56px + env(safe-area-inset-bottom));z-index:120;max-width:720px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:14px;min-height:96px;padding:10px var(--gutter);background:var(--surface);border-top:1px solid var(--border-strong);box-shadow:var(--lift-sticky)}
+.en-descanso[hidden]{display:none}
+.en-d-circulo{width:76px;height:76px;border-radius:50%;background:var(--accent-ink);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.en-d-tiempo{font-size:20px;font-weight:600;letter-spacing:-.5px;font-variant-numeric:tabular-nums;line-height:1.1}
+.en-d-lbl{font-size:8px;letter-spacing:1px;text-transform:uppercase;line-height:1.4}
+.en-d-aj{min-width:48px;min-height:48px;border:1px solid var(--border-strong);border-radius:var(--r-pill);background:var(--bg);color:var(--text);font-family:var(--sans);font-size:12px;font-weight:500;font-variant-numeric:tabular-nums;cursor:pointer;transition:background-color .2s}
+.en-d-aj:hover{background:var(--accent-soft)}
+.en-d-saltar{min-height:48px;padding:0 18px;border:none;border-radius:var(--r-pill);background:var(--text);color:var(--bg);font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer;transition:background-color .2s}
+.en-d-saltar:hover{background:var(--accent-ink)}
+/* Fin del descanso: el único fondo verde de la app = aviso inconfundible,
+   el cambio visual es el aviso primario (beep y vibración son refuerzo). */
+.en-d-fin .en-d-circulo{background:var(--green)}
+
+/* ── Resumen de sesión ───────────────────────────────────────────────────── */
+.en-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--border);border-radius:var(--r-md);margin-top:16px}
+.en-stat{text-align:center;padding:16px 4px;border-right:1px solid var(--border)}
+.en-stat:last-child{border-right:none}
+.en-stat-val{display:block;font-size:26px;font-weight:300;letter-spacing:-1px;color:var(--text);font-variant-numeric:tabular-nums}
+.en-stat-lbl{display:block;font-size:9px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted-ink);margin-top:5px;font-family:var(--mono)}
+.en-g-fila{display:grid;grid-template-columns:minmax(72px,auto) 1fr 28px;gap:12px;align-items:center;min-height:30px}
+.en-g-nombre{font-size:12px;color:var(--text)}
+/* Mismo patrón que .bar-bg/.bar-fill: el riel recorta, el relleno escala con
+   transform (nunca width) y el radio vive en el riel. */
+.en-g-rail{display:block;height:8px;background:var(--border);border-radius:var(--r-pill);overflow:hidden;-webkit-mask-image:radial-gradient(#fff,#000)}
+.en-g-fill{display:block;height:100%;width:100%;background:var(--accent-ink);transform-origin:left center}
+.en-g-n{font-size:12px;color:var(--text);text-align:right;font-variant-numeric:tabular-nums}
+.en-rec-fila{display:flex;align-items:center;gap:10px;min-height:36px;flex-wrap:wrap}
+.en-rec-nombre{font-size:12px;color:var(--text);flex:1;min-width:0}
+.en-rec-val{font-size:12px;color:var(--text);font-variant-numeric:tabular-nums}
+/* "estimado" pegado a la cifra: un 1RM de fórmula jamás se presenta como hecho. */
+.en-rec-val em{font-style:normal;font-size:10px;color:var(--muted-ink)}
+.en-rec-tag{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:3px 10px;background:var(--ember);border-radius:var(--r-pill);color:var(--text)}
+.en-res-ej{display:flex;justify-content:space-between;gap:12px;min-height:32px;align-items:baseline;border-bottom:1px solid var(--border);padding:6px 0}
+.en-res-ej:last-of-type{border-bottom:none}
+.en-res-ej-nombre{font-size:12px;color:var(--text)}
+.en-res-ej-series{font-size:12px;color:var(--muted-ink);font-variant-numeric:tabular-nums;text-align:right}
+.en-notas-lbl{display:block;margin:24px 0 16px;font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--muted-ink)}
+.en-notas{display:block;width:100%;margin-top:8px;background:transparent;border:none;border-bottom:1px solid var(--border-strong);color:var(--text);font-family:var(--sans);font-size:16px;line-height:1.5;padding:8px 0;outline:none;resize:vertical;transition:border-color .2s}
+.en-notas:focus{border-bottom-color:var(--accent)}
+.en-notas-ro{font-size:13px;color:var(--text);line-height:1.6}
+.en-rutina-de-sesion{margin-bottom:16px}
+.en-rutina-form{display:flex;gap:10px;align-items:flex-end}
+.en-rutina-nombre{flex:1;min-height:44px;background:transparent;border:none;border-bottom:1px solid var(--border-strong);color:var(--text);font-family:var(--sans);font-size:16px;outline:none;transition:border-color .2s}
+.en-rutina-nombre:focus{border-bottom-color:var(--accent)}
+.en-rutina-ok{font-size:12px;color:var(--green)}
+.en-guardar{margin-top:8px}
+
+/* ── Progreso por ejercicio ──────────────────────────────────────────────── */
+.en-prog-fila{display:grid;grid-template-columns:minmax(84px,auto) 1fr auto;gap:12px;align-items:baseline;min-height:34px;border-bottom:1px solid var(--border);padding:6px 0}
+.en-prog-fila:last-of-type{border-bottom:none}
+.en-prog-fecha{font-size:11px;color:var(--muted-ink)}
+.en-prog-serie{font-size:12px;color:var(--text);font-variant-numeric:tabular-nums}
+.en-prog-rm{font-size:12px;color:var(--muted-ink);font-variant-numeric:tabular-nums;text-align:right}
+
+/* ── Solo lectores de pantalla: el aviso de fin de descanso ──────────────── */
+.en-sr{position:absolute;width:1px;height:1px;margin:-1px;padding:0;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+
+/* En pantallas anchas la tabla de series respira más; nada cambia de sitio. */
+@media (min-width:561px){
+  .en-fila{grid-template-columns:20px minmax(0,1fr) 84px 64px 48px 44px;gap:12px}
+}
+
+/* ── Barrido final de marca (patrón styles.css:688): TODOS los micro-rótulos
+   del módulo al papel unificado — IBM Plex Mono 12px, tracking .04em. Las
+   declaraciones de arriba quedan solo como layout, igual que en la hoja base. */
+.en-ey,.en-sec-lbl,.en-super-tag,.en-fila-hd span,.en-stat-lbl,.en-rec-tag,.en-notas-lbl,
+.en-d-lbl{font-family:var(--mono);font-size:12px;font-weight:400;letter-spacing:.04em;line-height:1.35}
+/* El foco del textarea de notas era invisible (outline:none + borde 1px):
+   mismo anillo que el resto de la app. */
+.en-notas:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.en-fuentes{font-size:11px;color:var(--muted-ink);line-height:1.6;margin:28px 0 0}
+/* hidden ya gana globalmente (styles.css), pero el formulario de rutina lo
+   declara también aquí por si esta hoja se carga sola en una prueba. */
+.en-rutina-form[hidden]{display:none}

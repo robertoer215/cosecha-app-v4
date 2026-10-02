@@ -1,0 +1,2156 @@
+[
+  {
+    "id": "RUT-01",
+    "nombre": "Cuerpo completo en gimnasio",
+    "nivel": "principiante",
+    "objetivo": "hipertrofia",
+    "equipo": "gimnasio",
+    "diasSemana": 3,
+    "dias": [
+      {
+        "nombre": "Día 1 · Cuerpo completo A",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Barbell_Squat",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 10,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Barbell_Bench_Press_-_Medium_Grip",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 10,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Seated_Cable_Rows",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Machine_Shoulder_Military_Press",
+              "series": 2,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Crunches",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 2 · Cuerpo completo B",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Leg_Press",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Close-Grip_Front_Lat_Pulldown",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Machine_Bench_Press",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Lying_Leg_Curls",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 90
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Dumbbell_Bicep_Curl",
+              "series": 2,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 75
+            },
+            {
+              "idEjercicio": "Triceps_Pushdown",
+              "series": 2,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 75
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 3 · Cuerpo completo C",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Goblet_Squat",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Stiff-Legged_Dumbbell_Deadlift",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "One-Arm_Dumbbell_Row",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Seated_Dumbbell_Press",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Standing_Calf_Raises",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Air_Bike",
+              "series": 3,
+              "repsMin": 15,
+              "repsMax": 20,
+              "descansoS": 60
+            }
+          ]
+        ]
+      }
+    ],
+    "notas": "Deja 1–2 repeticiones en reserva en cada serie y sube el peso cuando completes el rango alto con buena técnica. Descansa al menos un día entre sesiones."
+  },
+  {
+    "id": "RUT-02",
+    "nombre": "Peso corporal en casa",
+    "nivel": "principiante",
+    "objetivo": "recomposicion",
+    "equipo": "peso corporal",
+    "diasSemana": 3,
+    "dias": [
+      {
+        "nombre": "Día 1 · Cuerpo completo A",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Bodyweight_Squat",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Pushups",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Inverted_Row",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Butt_Lift_Bridge",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 90
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Dead_Bug",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 60
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 2 · Cuerpo completo B",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Bodyweight_Walking_Lunge",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Push-Up_Wide",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Bench_Dips",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Superman",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Mountain_Climbers",
+              "series": 3,
+              "repsMin": 15,
+              "repsMax": 20,
+              "descansoS": 60
+            },
+            {
+              "idEjercicio": "Crunches",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 3 · Cuerpo completo C",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Step-up_with_Knee_Raise",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Decline_Push-Up",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Single_Leg_Glute_Bridge",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 90
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Oblique_Crunches",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Bent-Knee_Hip_Raise",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ]
+        ]
+      }
+    ],
+    "notas": "Los ejercicios unilaterales (desplantes, subidas, puente a una pierna) se cuentan por pierna. Para el remo invertido usa una mesa firme o una barra baja."
+  },
+  {
+    "id": "RUT-03",
+    "nombre": "Hipertrofia con mancuernas",
+    "nivel": "intermedio",
+    "objetivo": "hipertrofia",
+    "equipo": "mancuernas",
+    "diasSemana": 4,
+    "dias": [
+      {
+        "nombre": "Día 1 · Torso A",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Dumbbell_Bench_Press",
+              "series": 4,
+              "repsMin": 8,
+              "repsMax": 10,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Bent_Over_Two-Dumbbell_Row",
+              "series": 4,
+              "repsMin": 8,
+              "repsMax": 10,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Dumbbell_Shoulder_Press",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Dumbbell_Flyes",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            },
+            {
+              "idEjercicio": "Reverse_Flyes",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Hammer_Curls",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 75
+            },
+            {
+              "idEjercicio": "Seated_Triceps_Press",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 75
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 2 · Pierna A",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Dumbbell_Squat",
+              "series": 4,
+              "repsMin": 8,
+              "repsMax": 10,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Stiff-Legged_Dumbbell_Deadlift",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Dumbbell_Lunges",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Standing_Dumbbell_Calf_Raise",
+              "series": 4,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Russian_Twist",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 3 · Torso B",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Incline_Dumbbell_Press",
+              "series": 4,
+              "repsMin": 8,
+              "repsMax": 10,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "One-Arm_Dumbbell_Row",
+              "series": 4,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Seated_Dumbbell_Press",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Side_Lateral_Raise",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            },
+            {
+              "idEjercicio": "Seated_Bent-Over_Rear_Delt_Raise",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Incline_Dumbbell_Curl",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 75
+            },
+            {
+              "idEjercicio": "Tricep_Dumbbell_Kickback",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 4 · Pierna B",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Split_Squat_with_Dumbbells",
+              "series": 4,
+              "repsMin": 8,
+              "repsMax": 10,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Plie_Dumbbell_Squat",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Dumbbell_Step_Ups",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Dumbbell_Seated_One-Leg_Calf_Raise",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Flat_Bench_Lying_Leg_Raise",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ]
+        ]
+      }
+    ],
+    "notas": "Divide la semana en 2 días de torso y 2 de pierna con al menos un día de descanso a la mitad. Los ejercicios unilaterales se cuentan por lado."
+  },
+  {
+    "id": "RUT-04",
+    "nombre": "Fuerza 5×5",
+    "nivel": "intermedio",
+    "objetivo": "fuerza",
+    "equipo": "gimnasio",
+    "diasSemana": 3,
+    "dias": [
+      {
+        "nombre": "Día 1 · Sesión A",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Barbell_Squat",
+              "series": 5,
+              "repsMin": 5,
+              "repsMax": 5,
+              "descansoS": 240
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Barbell_Bench_Press_-_Medium_Grip",
+              "series": 5,
+              "repsMin": 5,
+              "repsMax": 5,
+              "descansoS": 240
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Bent_Over_Barbell_Row",
+              "series": 5,
+              "repsMin": 5,
+              "repsMax": 5,
+              "descansoS": 180
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 2 · Sesión B",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Barbell_Squat",
+              "series": 5,
+              "repsMin": 5,
+              "repsMax": 5,
+              "descansoS": 240
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Standing_Military_Press",
+              "series": 5,
+              "repsMin": 5,
+              "repsMax": 5,
+              "descansoS": 240
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Barbell_Deadlift",
+              "series": 1,
+              "repsMin": 5,
+              "repsMax": 5,
+              "descansoS": 300
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 3 · Sesión A + accesorio",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Barbell_Squat",
+              "series": 5,
+              "repsMin": 5,
+              "repsMax": 5,
+              "descansoS": 240
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Barbell_Bench_Press_-_Medium_Grip",
+              "series": 5,
+              "repsMin": 5,
+              "repsMax": 5,
+              "descansoS": 240
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Bent_Over_Barbell_Row",
+              "series": 5,
+              "repsMin": 5,
+              "repsMax": 5,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Pullups",
+              "series": 3,
+              "repsMin": 5,
+              "repsMax": 8,
+              "descansoS": 180
+            }
+          ]
+        ]
+      }
+    ],
+    "notas": "Añade 2.5 kg por sesión mientras completes las 5×5 con técnica sólida; si fallas dos sesiones seguidas, baja la carga 10%. Alterna las sesiones A y B semana con semana."
+  },
+  {
+    "id": "RUT-05",
+    "nombre": "Recomposición torso/pierna",
+    "nivel": "intermedio",
+    "objetivo": "recomposicion",
+    "equipo": "gimnasio",
+    "diasSemana": 4,
+    "dias": [
+      {
+        "nombre": "Día 1 · Torso A",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Barbell_Bench_Press_-_Medium_Grip",
+              "series": 4,
+              "repsMin": 6,
+              "repsMax": 8,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Bent_Over_Barbell_Row",
+              "series": 4,
+              "repsMin": 6,
+              "repsMax": 8,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Seated_Barbell_Military_Press",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 10,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Close-Grip_Front_Lat_Pulldown",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Barbell_Curl",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 75
+            },
+            {
+              "idEjercicio": "Triceps_Pushdown_-_Rope_Attachment",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 75
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 2 · Pierna A",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Barbell_Squat",
+              "series": 4,
+              "repsMin": 6,
+              "repsMax": 8,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Romanian_Deadlift",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 10,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Leg_Press",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Standing_Calf_Raises",
+              "series": 4,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 60
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Decline_Crunch",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 3 · Torso B",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Incline_Dumbbell_Press",
+              "series": 4,
+              "repsMin": 8,
+              "repsMax": 10,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Pullups",
+              "series": 4,
+              "repsMin": 6,
+              "repsMax": 10,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Seated_Cable_Rows",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Side_Lateral_Raise",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            },
+            {
+              "idEjercicio": "Face_Pull",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Hammer_Curls",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 75
+            },
+            {
+              "idEjercicio": "EZ-Bar_Skullcrusher",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 75
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 4 · Pierna B",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Barbell_Hip_Thrust",
+              "series": 4,
+              "repsMin": 8,
+              "repsMax": 10,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Barbell_Lunge",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Lying_Leg_Curls",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 90
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Leg_Extensions",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 90
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Seated_Calf_Raise",
+              "series": 4,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Russian_Twist",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ]
+        ]
+      }
+    ],
+    "notas": "Progresión doble: primero llega al tope del rango de repeticiones y luego sube el peso. Si las dominadas superan 10 repeticiones fáciles, agrega lastre."
+  },
+  {
+    "id": "RUT-B1",
+    "nombre": "PPL Hipertrofia",
+    "nivel": "avanzado",
+    "objetivo": "hipertrofia",
+    "equipo": "gimnasio",
+    "diasSemana": 6,
+    "dias": [
+      {
+        "nombre": "Día 1 · Empuje A",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Barbell_Bench_Press_-_Medium_Grip",
+              "series": 4,
+              "repsMin": 6,
+              "repsMax": 10,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Barbell_Incline_Bench_Press_-_Medium_Grip",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 10,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Dumbbell_Shoulder_Press",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Cable_Crossover",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            },
+            {
+              "idEjercicio": "Side_Lateral_Raise",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            }
+          ],
+          [
+            {
+              "idEjercicio": "EZ-Bar_Skullcrusher",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 75
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Triceps_Pushdown_-_Rope_Attachment",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 2 · Tirón A",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Bent_Over_Barbell_Row",
+              "series": 4,
+              "repsMin": 6,
+              "repsMax": 10,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Wide-Grip_Lat_Pulldown",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Seated_Cable_Rows",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Face_Pull",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Barbell_Curl",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 75
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Incline_Dumbbell_Curl",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 60
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 3 · Pierna A",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Barbell_Squat",
+              "series": 4,
+              "repsMin": 6,
+              "repsMax": 10,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Romanian_Deadlift",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 10,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Leg_Press",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Lying_Leg_Curls",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 15,
+              "descansoS": 75
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Leg_Extensions",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Standing_Calf_Raises",
+              "series": 4,
+              "repsMin": 10,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 4 · Empuje B",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Seated_Barbell_Military_Press",
+              "series": 4,
+              "repsMin": 6,
+              "repsMax": 10,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Dumbbell_Bench_Press",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Incline_Dumbbell_Press",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Butterfly",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Cable_Seated_Lateral_Raise",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Dips_-_Triceps_Version",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 5 · Tirón B",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Pullups",
+              "series": 4,
+              "repsMin": 6,
+              "repsMax": 10,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "T-Bar_Row_with_Handle",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 10,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "One-Arm_Dumbbell_Row",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Rope_Straight-Arm_Pulldown",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Cable_Rear_Delt_Fly",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ],
+          [
+            {
+              "idEjercicio": "EZ-Bar_Curl",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 75
+            },
+            {
+              "idEjercicio": "Hammer_Curls",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 75
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 6 · Pierna B",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Front_Barbell_Squat",
+              "series": 4,
+              "repsMin": 6,
+              "repsMax": 8,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Stiff-Legged_Barbell_Deadlift",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 10,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Barbell_Hip_Thrust",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Split_Squat_with_Dumbbells",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Seated_Leg_Curl",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Seated_Calf_Raise",
+              "series": 4,
+              "repsMin": 12,
+              "repsMax": 20,
+              "descansoS": 60
+            }
+          ]
+        ]
+      }
+    ],
+    "notas": "Rotación empuje/tirón/pierna dos veces por semana: deja 1–2 repeticiones en reserva en cada serie. Descansa el séptimo día y sube el peso cuando completes el rango alto."
+  },
+  {
+    "id": "RUT-B2",
+    "nombre": "Fuerza 4 Días",
+    "nivel": "avanzado",
+    "objetivo": "fuerza",
+    "equipo": "gimnasio",
+    "diasSemana": 4,
+    "dias": [
+      {
+        "nombre": "Día 1 · Sentadilla",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Barbell_Squat",
+              "series": 5,
+              "repsMin": 3,
+              "repsMax": 5,
+              "descansoS": 300
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Front_Barbell_Squat",
+              "series": 3,
+              "repsMin": 3,
+              "repsMax": 5,
+              "descansoS": 240
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Leg_Press",
+              "series": 3,
+              "repsMin": 5,
+              "repsMax": 8,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Hanging_Leg_Raise",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 90
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 2 · Press de banca",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Barbell_Bench_Press_-_Medium_Grip",
+              "series": 5,
+              "repsMin": 3,
+              "repsMax": 5,
+              "descansoS": 300
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Close-Grip_Barbell_Bench_Press",
+              "series": 3,
+              "repsMin": 4,
+              "repsMax": 6,
+              "descansoS": 240
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Bent_Over_Barbell_Row",
+              "series": 4,
+              "repsMin": 5,
+              "repsMax": 6,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Face_Pull",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 3 · Peso muerto",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Barbell_Deadlift",
+              "series": 5,
+              "repsMin": 2,
+              "repsMax": 4,
+              "descansoS": 300
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Deficit_Deadlift",
+              "series": 3,
+              "repsMin": 4,
+              "repsMax": 6,
+              "descansoS": 240
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Good_Morning",
+              "series": 3,
+              "repsMin": 6,
+              "repsMax": 8,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Hyperextensions_Back_Extensions",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 90
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 4 · Press militar",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Standing_Military_Press",
+              "series": 5,
+              "repsMin": 3,
+              "repsMax": 5,
+              "descansoS": 240
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Push_Press",
+              "series": 3,
+              "repsMin": 3,
+              "repsMax": 5,
+              "descansoS": 240
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Pullups",
+              "series": 4,
+              "repsMin": 5,
+              "repsMax": 8,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Barbell_Curl",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 10,
+              "descansoS": 75
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Side_Lateral_Raise",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 60
+            }
+          ]
+        ]
+      }
+    ],
+    "notas": "Trabaja entre el 80 y el 90% de tu 1RM en los básicos y respeta los descansos largos de 3 a 5 minutos. Agrega peso solo cuando completes todas las series en el rango."
+  },
+  {
+    "id": "RUT-B3",
+    "nombre": "Mancuernas en Casa",
+    "nivel": "principiante",
+    "objetivo": "hipertrofia",
+    "equipo": "mancuernas",
+    "diasSemana": 2,
+    "dias": [
+      {
+        "nombre": "Día 1 · Cuerpo completo A",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Dumbbell_Squat",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Pushups",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 15,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "One-Arm_Dumbbell_Row",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Seated_Dumbbell_Press",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Dumbbell_Bicep_Curl",
+              "series": 2,
+              "repsMin": 10,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Tricep_Dumbbell_Kickback",
+              "series": 2,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Crunches",
+              "series": 2,
+              "repsMin": 12,
+              "repsMax": 20,
+              "descansoS": 60
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 2 · Cuerpo completo B",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Dumbbell_Lunges",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Stiff-Legged_Dumbbell_Deadlift",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Bent_Over_Two-Dumbbell_Row",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Side_Lateral_Raise",
+              "series": 2,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Hammer_Curls",
+              "series": 2,
+              "repsMin": 10,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Standing_Dumbbell_Calf_Raise",
+              "series": 2,
+              "repsMin": 12,
+              "repsMax": 20,
+              "descansoS": 60
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Reverse_Crunch",
+              "series": 2,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ]
+        ]
+      }
+    ],
+    "notas": "Deja al menos un día de descanso entre sesiones y usa un peso que te permita terminar todas las repeticiones con buena técnica. Cuando el rango alto se sienta fácil, sube de mancuerna."
+  },
+  {
+    "id": "RUT-B4",
+    "nombre": "Calistenia Intermedia",
+    "nivel": "intermedio",
+    "objetivo": "recomposicion",
+    "equipo": "peso corporal",
+    "diasSemana": 4,
+    "dias": [
+      {
+        "nombre": "Día 1 · Empuje",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Pushups",
+              "series": 4,
+              "repsMin": 12,
+              "repsMax": 20,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Push-Ups_With_Feet_Elevated",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 15,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Dips_-_Triceps_Version",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Push-Ups_-_Close_Triceps_Position",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 15,
+              "descansoS": 120
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 2 · Tirón",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Pullups",
+              "series": 4,
+              "repsMin": 6,
+              "repsMax": 12,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Chin-Up",
+              "series": 3,
+              "repsMin": 6,
+              "repsMax": 10,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Inverted_Row",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 15,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Superman",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 3 · Pierna",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Bodyweight_Squat",
+              "series": 4,
+              "repsMin": 15,
+              "repsMax": 25,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Bodyweight_Walking_Lunge",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 16,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Freehand_Jump_Squat",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Natural_Glute_Ham_Raise",
+              "series": 3,
+              "repsMin": 5,
+              "repsMax": 10,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Single_Leg_Glute_Bridge",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 4 · Centro y circuito",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Mountain_Climbers",
+              "series": 3,
+              "repsMin": 20,
+              "repsMax": 30,
+              "descansoS": 90
+            },
+            {
+              "idEjercicio": "Sit-Up",
+              "series": 3,
+              "repsMin": 15,
+              "repsMax": 25,
+              "descansoS": 90
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Russian_Twist",
+              "series": 3,
+              "repsMin": 16,
+              "repsMax": 24,
+              "descansoS": 90
+            },
+            {
+              "idEjercicio": "Flat_Bench_Lying_Leg_Raise",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 20,
+              "descansoS": 90
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Air_Bike",
+              "series": 3,
+              "repsMin": 20,
+              "repsMax": 30,
+              "descansoS": 60
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Oblique_Crunches",
+              "series": 2,
+              "repsMin": 15,
+              "repsMax": 20,
+              "descansoS": 60
+            }
+          ]
+        ]
+      }
+    ],
+    "notas": "Cuando llegues al tope de repeticiones, pasa a una variante más difícil o haz pausas de 2 segundos abajo. Deja un día de descanso entre bloques si acumulas fatiga."
+  },
+  {
+    "id": "RUT-B5",
+    "nombre": "Híbrido Recomposición",
+    "nivel": "avanzado",
+    "objetivo": "recomposicion",
+    "equipo": "gimnasio",
+    "diasSemana": 5,
+    "dias": [
+      {
+        "nombre": "Día 1 · Torso fuerza",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Barbell_Bench_Press_-_Medium_Grip",
+              "series": 4,
+              "repsMin": 4,
+              "repsMax": 6,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Bent_Over_Barbell_Row",
+              "series": 4,
+              "repsMin": 4,
+              "repsMax": 6,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Standing_Military_Press",
+              "series": 3,
+              "repsMin": 5,
+              "repsMax": 8,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Pullups",
+              "series": 3,
+              "repsMin": 6,
+              "repsMax": 10,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "EZ-Bar_Skullcrusher",
+              "series": 2,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 90
+            },
+            {
+              "idEjercicio": "Barbell_Curl",
+              "series": 2,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 90
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 2 · Pierna fuerza",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Barbell_Squat",
+              "series": 4,
+              "repsMin": 4,
+              "repsMax": 6,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Romanian_Deadlift",
+              "series": 3,
+              "repsMin": 6,
+              "repsMax": 8,
+              "descansoS": 180
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Barbell_Walking_Lunge",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Standing_Calf_Raises",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 15,
+              "descansoS": 75
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Hanging_Leg_Raise",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 3 · Empuje hipertrofia",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Barbell_Incline_Bench_Press_-_Medium_Grip",
+              "series": 4,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Dumbbell_Bench_Press",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Seated_Dumbbell_Press",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Cable_Crossover",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            },
+            {
+              "idEjercicio": "Side_Lateral_Raise",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Triceps_Pushdown_-_Rope_Attachment",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 15,
+              "descansoS": 60
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 4 · Tirón hipertrofia",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Wide-Grip_Lat_Pulldown",
+              "series": 4,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Seated_Cable_Rows",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "One-Arm_Dumbbell_Row",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Face_Pull",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            },
+            {
+              "idEjercicio": "Dumbbell_Shrug",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Incline_Dumbbell_Curl",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 75
+            },
+            {
+              "idEjercicio": "Hammer_Curls",
+              "series": 3,
+              "repsMin": 10,
+              "repsMax": 12,
+              "descansoS": 75
+            }
+          ]
+        ]
+      },
+      {
+        "nombre": "Día 5 · Pierna hipertrofia y metabólico",
+        "bloques": [
+          [
+            {
+              "idEjercicio": "Leg_Press",
+              "series": 4,
+              "repsMin": 10,
+              "repsMax": 15,
+              "descansoS": 150
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Barbell_Hip_Thrust",
+              "series": 3,
+              "repsMin": 8,
+              "repsMax": 12,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Leg_Extensions",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            },
+            {
+              "idEjercicio": "Lying_Leg_Curls",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 75
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Goblet_Squat",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "One-Arm_Kettlebell_Swings",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 15,
+              "descansoS": 120
+            }
+          ],
+          [
+            {
+              "idEjercicio": "Seated_Calf_Raise",
+              "series": 3,
+              "repsMin": 12,
+              "repsMax": 20,
+              "descansoS": 60
+            }
+          ]
+        ]
+      }
+    ],
+    "notas": "Combina días pesados de 4 a 6 repeticiones con días de volumen para ganar músculo mientras pierdes grasa. Mantén la proteína alta y el paso vivo en las superseries."
+  }
+]
