@@ -175,6 +175,7 @@ let subtab = 'rutinas';      // 'rutinas' | 'biblioteca' | 'historial'
 let modoBiblioteca = null;   // null (pestaña) | 'sesion' (overlay "agregar a la sesión")
 let verSesionId = null;      // sesión del historial abierta en modo lectura
 let verProgresoId = null;    // ejercicio abierto en "progreso"
+let fichaId = null;          // ejercicio abierto en su ficha (desde la Biblioteca)
 let consultaBib = '';        // texto del buscador (sobrevive repintados)
 let confirmando = null;      // botón destructivo esperando segundo toque
 
@@ -233,24 +234,19 @@ export function refrescar() {
 
 // ── Persistencia ─────────────────────────────────────────────────────────────
 
-// Escritura por INJERTO sobre el estado fresco del disco: este módulo solo
-// es dueño de entreno.* y de recientes.ejercicios. El tic del descanso
-// persiste en segundo plano aunque el usuario esté en otra pestaña, y con
-// el snapshot entero ese tic pisaba lo recién guardado por Diario o Pedir.
-// TODA escritura de este módulo pasa por aquí.
-function escribirRamas() {
-  const r = almacen.actualizar(e => ({
-    ...e,
-    entreno: estado.entreno,
-    recientes: { ...e.recientes, ejercicios: estado.recientes.ejercicios }
-  }));
+// TODA escritura de este módulo aplica SU mutación sobre el estado fresco del
+// disco (almacen.actualizar), nunca un snapshot de memoria: el tic del
+// descanso persiste en segundo plano aunque el usuario esté en otra pestaña,
+// y con un snapshot pisaba lo guardado por Diario o Pedir, o un respaldo
+// recién importado. Así el tic solo toca la sesión activa.
+function escribir(mutador) {
+  const r = almacen.actualizar(mutador);
   estado = r.estado;
   return r.guardado;
 }
 
 function persistir() {
-  estado = almacen.guardarSesionActiva(estado, sesion);
-  escribirRamas();
+  escribir(e => almacen.guardarSesionActiva(e, sesion));
 }
 
 // Un descanso guardado se restaura recreándolo con el tiempo que le queda:
@@ -401,8 +397,7 @@ function guardarSesionFinal() {
     ejercicios: sesion.ejercicios.map(e => ({ ...e, id: e.idEjercicio })),
     notas
   };
-  estado = almacen.cerrarSesion(estado, limpia);
-  const ok = escribirRamas();
+  const ok = escribir(e => almacen.cerrarSesion(e, limpia));
   sesion = null;
   subtab = 'historial';
   render();
@@ -418,8 +413,7 @@ function descartarSesion() {
   sesion = null;
   descansoObj = null;
   liberarWakeLock();
-  estado = almacen.guardarSesionActiva(estado, null);
-  escribirRamas();
+  escribir(e => almacen.guardarSesionActiva(e, null));
   render();
 }
 
@@ -477,6 +471,9 @@ function saltarDescanso() {
   // beep + vibración), que es para avisar a quien está esperando.
   avisadoFin = true;
   descansoObj.saltar();
+  // Persistir el salto: sin esto el descanso saltado resucitaba (con alarma)
+  // al volver a la pestaña o recargar, porque el disco guardaba su fin viejo.
+  if (sesion?.descanso) { delete sesion.descanso; persistir(); }
   tic();
 }
 
@@ -594,6 +591,7 @@ function renderVista() {
     if (s) { pintarResumen(raiz, s, { editable: false }); return; }
     verSesionId = null;
   }
+  if (fichaId) { pintarFicha(raiz, fichaId); return; }
   pintarInicio(raiz);
 }
 
@@ -610,7 +608,8 @@ function pintarSinMeta(raiz) {
   raiz.querySelector('.en-cta-perfil').addEventListener('click', () => {
     // goTab lo expone el shell (app.js); si no está, el botón de la tabbar
     // hace el mismo viaje sin acoplar nada más.
-    if (typeof globalThis.goTab === 'function') globalThis.goTab('pedir');
+    if (typeof globalThis.crearPerfil === 'function') globalThis.crearPerfil('entrenar');
+    else if (typeof globalThis.goTab === 'function') globalThis.goTab('pedir');
     else document.getElementById('tab-pedir')?.click();
   });
 }
@@ -623,10 +622,10 @@ function pintarInicio(raiz) {
     <div class="en-ey">Entrenar</div>
     <h2 class="en-titulo">Tu fuerza</h2>
     <p class="en-sub">Palomea cada serie y el descanso corre solo.</p>
-    <div class="en-tabs" role="tablist" aria-label="Secciones de Entrenar">
+    <div class="en-tabs" role="group" aria-label="Secciones de Entrenar">
       ${['rutinas', 'biblioteca', 'historial'].map(t => `
-        <button type="button" class="en-tab${subtab === t ? ' en-tab-on' : ''}" role="tab"
-          aria-selected="${subtab === t}" data-tab="${t}">${capital(t)}</button>`).join('')}
+        <button type="button" class="en-tab${subtab === t ? ' en-tab-on' : ''}"
+          aria-pressed="${subtab === t}" data-tab="${t}">${capital(t)}</button>`).join('')}
     </div>
     <div class="en-panel"></div>
     <p class="en-aviso-storage" hidden>No se pudo guardar en este dispositivo. Exporta un respaldo desde Diario antes de cerrar.</p>
@@ -658,15 +657,20 @@ function pintarPanelRutinas(panel) {
                  // al usuario se le muestra con su tilde, nunca el slug crudo.
                  ({ recomposicion: 'recomposición' })[r.objetivo] || r.objetivo,
                  r.equipo].filter(Boolean).join(' · ');
+    // Plegada por defecto: con las 10 rutinas expandidas la pantalla era un
+    // muro de ~37 botones "Empezar" idénticos. Se toca la rutina y aparecen
+    // sus días; un principiante elige entre 10 nombres, no entre 37 botones.
     return `
-    <article class="en-card">
-      <div class="en-card-nombre">${esc(r.nombre)}</div>
-      <div class="en-card-sub">${esc(sub)}</div>
+    <details class="en-card en-rut">
+      <summary class="en-rut-sum">
+        <span class="en-card-nombre">${esc(r.nombre)}</span>
+        <span class="en-card-sub">${esc(sub)}</span>
+      </summary>
       <div class="en-card-dias">
         ${dias.map((d, i) => `<button type="button" class="en-btn en-btn-ghost" data-acc="rutina"
           data-origen="${origen}" data-rid="${esc(r.id)}" data-dia="${i}">Empezar${dias.length > 1 ? ' · ' + esc(d.nombre) : ''}</button>`).join('')}
       </div>
-    </article>`;
+    </details>`;
   };
   panel.innerHTML = `
     <button type="button" class="en-btn en-btn-main en-empezar-vacia" data-acc="vacia">Empezar sesión vacía</button>
@@ -731,7 +735,7 @@ function pintarBiblioteca(cont, destino) {
   const recientes = !q && catEstado === 'listo'
     ? estado.recientes.ejercicios.map(id => porId.get(id)).filter(Boolean).slice(0, 5)
     : [];
-  const accion = overlay ? 'Agregar' : 'Entrenar';
+  const accion = overlay ? 'Agregar' : 'Ver';
 
   // La foto solo en Recientes (máx. 5): el CDN sirve los JPG a tamaño
   // completo y ponerla en cada fila costaba ~55 MB por recorrer la lista.
@@ -752,6 +756,7 @@ function pintarBiblioteca(cont, destino) {
       <input type="search" class="en-busca-in" placeholder="Buscar por nombre, músculo o equipo"
         value="${esc(consultaBib)}" aria-label="Buscar ejercicio">
     </div>
+    <p class="en-sr en-busca-estado" role="status" aria-live="polite"></p>
     <div class="en-busca-res">
     ${catEstado === 'cargando' || catEstado === 'nada' ? '<p class="en-vacio">Cargando ejercicios…</p>'
       : catEstado === 'fallo' || !catalogo.length
@@ -794,6 +799,12 @@ function pintarListaBiblioteca(cont, overlay) {
   pintarBiblioteca(html, overlay ? 'sesion' : null);
   const nueva = html.querySelector('.en-busca-res');
   marcador.replaceWith(nueva);
+  // Mensaje de estado (WCAG 4.1.3): el conteo, no la lista.
+  const est = cont.querySelector('.en-busca-estado');
+  if (est) {
+    const n = nueva.querySelectorAll('.en-ej-row').length;
+    est.textContent = consultaBib.trim() ? (n ? `${n} ${n === 1 ? 'ejercicio' : 'ejercicios'}` : 'Sin resultados') : '';
+  }
   // Los clicks ya los atiende el listener delegado de `cont`.
 }
 
@@ -805,9 +816,43 @@ function htmlLibre(q) {
 
 function elegirEjercicio(id, overlay) {
   const f = porId.get(id);
-  consultaBib = '';
-  if (overlay) agregarEjercicioASesion(id, f?.nombre ?? id);
-  else empezarConEjercicio(id);
+  if (overlay) { consultaBib = ''; agregarEjercicioASesion(id, f?.nombre ?? id); return; }
+  // Desde la Biblioteca se abre su FICHA (instrucciones, fotos, músculos): antes
+  // tocar la fila arrancaba una sesión al instante, y las instrucciones
+  // traducidas de 871 ejercicios no se veían en ninguna pantalla.
+  fichaId = id;
+  render();
+  window.scrollTo(0, 0);
+}
+
+function pintarFicha(raiz, id) {
+  const e = porId.get(id);
+  if (!e) { fichaId = null; pintarInicio(raiz); return; }
+  const fotos = (e.imagenes || []).slice(0, 2);
+  const pos = ['posición inicial', 'posición final'];
+  raiz.innerHTML = `
+  <div class="en-wrap">
+    <button type="button" class="en-volver" data-acc="ficha-volver">${SVG_VOLVER}<span>Biblioteca</span></button>
+    <div class="en-ey">${esc(capital(e.categoria || 'Ejercicio'))}</div>
+    <h2 class="en-titulo">${esc(e.nombre)}</h2>
+    <p class="en-sub">${esc([capital(e.equipo), capital(e.nivel)].filter(Boolean).join(' · '))}</p>
+    ${fotos.length ? `<div class="en-ficha-fotos">${fotos.map((f, i) => `
+      <span class="en-ficha-foto"><img loading="lazy" src="${esc(URL_IMG + f)}" alt="${esc(e.nombre)}, ${pos[i]}"></span>`).join('')}
+    </div>` : ''}
+    <div class="en-sec-lbl">Músculos</div>
+    <p class="en-ficha-txt"><b>Principales:</b> ${esc((e.musculosPrimarios || []).map(capital).join(', ') || '—')}${
+      (e.musculosSecundarios || []).length ? `<br><b>Secundarios:</b> ${esc(e.musculosSecundarios.map(capital).join(', '))}` : ''}</p>
+    ${(e.instrucciones || []).length ? `<div class="en-sec-lbl">Cómo se hace</div>
+    <ol class="en-ficha-pasos">${e.instrucciones.map(p => `<li>${esc(p)}</li>`).join('')}</ol>` : ''}
+    <button type="button" class="en-btn en-btn-main en-ficha-cta" data-acc="ficha-empezar">Empezar sesión con este ejercicio</button>
+    <p class="en-fuentes">Ejercicio e imágenes: free-exercise-db (dominio público).</p>
+  </div>`;
+  raiz.querySelector('.en-wrap').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-acc]');
+    if (!b) return;
+    if (b.dataset.acc === 'ficha-volver') { fichaId = null; render(); }
+    if (b.dataset.acc === 'ficha-empezar') { const fid = fichaId; fichaId = null; consultaBib = ''; empezarConEjercicio(fid); }
+  });
 }
 
 // Ejercicio libre: id estable derivado del nombre, así "la última vez" y el
@@ -1154,7 +1199,11 @@ function pintarResumen(raiz, ses, { editable }) {
 
   raiz.innerHTML = `
   <div class="en-wrap">
-    ${editable ? '' : `<button type="button" class="en-volver" data-acc="cerrar">${SVG_VOLVER}<span>Historial</span></button>`}
+    ${editable
+      // "Terminar sesión" ya no es un callejón: se puede volver a la sesión
+      // (un toque de más no obliga a guardar) o descartarla con doble toque.
+      ? `<button type="button" class="en-volver" data-acc="reanudar">${SVG_VOLVER}<span>Volver a la sesión</span></button>`
+      : `<button type="button" class="en-volver" data-acc="cerrar">${SVG_VOLVER}<span>Historial</span></button>`}
     <div class="en-ey">${editable ? 'Sesión completa' : 'Sesión del historial'}</div>
     <h2 class="en-titulo">${esc(nombreSesion(ses))}</h2>
     <p class="en-sub">${esc(fechaCorta(ses.inicioMs))}</p>
@@ -1200,7 +1249,8 @@ function pintarResumen(raiz, ses, { editable }) {
         <button type="button" class="en-btn en-btn-ghost" data-acc="rutina-ok">Guardar</button>
       </div>
     </div>
-    <button type="button" class="en-btn en-btn-main en-guardar" data-acc="guardar">Guardar sesión</button>`
+    <button type="button" class="en-btn en-btn-main en-guardar" data-acc="guardar">Guardar sesión</button>
+    <div class="en-vivo-acciones"><button type="button" class="en-peligro" data-acc="descartar-fin">Descartar esta sesión</button></div>`
     : (ses.notas ? `<div class="en-sec-lbl">Notas</div><p class="en-notas-ro">${esc(ses.notas)}</p>` : '')}
     <p class="en-aviso-storage" hidden>No se pudo guardar en este dispositivo. Exporta un respaldo desde Diario antes de cerrar.</p>
   </div>`;
@@ -1210,6 +1260,16 @@ function pintarResumen(raiz, ses, { editable }) {
     if (!b) return;
     const acc = b.dataset.acc;
     if (acc === 'cerrar') { verSesionId = null; render(); }
+    else if (acc === 'reanudar') {
+      delete sesion.finMs;
+      persistir();
+      pedirWakeLock();
+      render();
+    } else if (acc === 'descartar-fin') {
+      // Doble toque: destruir una sesión no puede costar un solo toque.
+      if (b.dataset.confirmar === '1') descartarSesion();
+      else { b.dataset.confirmar = '1'; b.textContent = 'Toca otra vez para descartarla'; }
+    }
     else if (acc === 'guardar') guardarSesionFinal();
     else if (acc === 'como-rutina') {
       const form = raiz.querySelector('.en-rutina-form');
@@ -1218,8 +1278,7 @@ function pintarResumen(raiz, ses, { editable }) {
       form.querySelector('.en-rutina-nombre').focus();
     } else if (acc === 'rutina-ok') {
       const nombre = raiz.querySelector('.en-rutina-nombre').value.trim() || 'Mi rutina';
-      estado = almacen.guardarRutina(estado, sesionARutina(ses, nombre));
-      escribirRamas();
+      escribir(e => almacen.guardarRutina(e, sesionARutina(ses, nombre)));
       const form = raiz.querySelector('.en-rutina-form');
       form.innerHTML = `<span class="en-rutina-ok">Guardada: ${esc(nombre)}</span>`;
     }

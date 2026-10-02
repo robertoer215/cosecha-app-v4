@@ -26,3 +26,5 @@ Este documento registra el origen y la licencia de cada fuente de datos usada en
 
 - **qrcodejs 1.0.0** (davidshimjs) — generación del QR del resumen, cargado
   desde cdnjs. Licencia MIT.
+- **Inter** e **IBM Plex Mono** — tipografías servidas por Google Fonts.
+  Licencia SIL Open Font License 1.1.
