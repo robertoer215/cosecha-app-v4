@@ -5,7 +5,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { epley1RM, volumenSesion, seriesPorGrupo, ultimaVez,
-         debeArrancarDescanso, aKg, siguientePendiente } from '../js/entreno.js';
+         debeArrancarDescanso, aKg, siguientePendiente, mejorSerie, resumenEjercicio, historialEjercicio,
+         recordsEjercicio, prsPorEjercicio, estadisticasPeriodo, cambioPct } from '../js/entreno.js';
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -253,4 +254,64 @@ test('siguientePendiente: lo palomeado en desorden se salta; todo hecho → null
   assert.equal(siguientePendiente(ejs), null);
   assert.equal(siguientePendiente([]), null);
   assert.equal(siguientePendiente(null), null);
+});
+
+// ── Progreso: récords, historial y estadísticas ─────────────────────────────
+const D = 86400000;
+const ser = (reps, pesoKg, hecha = true) => ({ reps, pesoKg, hecha });
+const sesP = (id, dia, ejs) => ({ id, inicioMs: dia * D, finMs: dia * D + 3600000, ejercicios: ejs });
+const ejP = (idEjercicio, series) => ({ idEjercicio, nombre: idEjercicio, series });
+const HIST = [
+  sesP('s1', 10, [ejP('banca', [ser(10, 60), ser(8, 70)]), ejP('dominada', [ser(8, 0), ser(10, 0)])]),
+  sesP('s2', 20, [ejP('banca', [ser(5, 80), ser(6, 80), ser(12, 50, false)])]),
+  sesP('s3', 30, [ejP('banca', [ser(8, 75)]), ejP('dominada', [ser(12, 0)])]),
+];
+
+test('mejorSerie: más peso gana; a igual peso, más reps; peso corporal por reps; ignora no hechas', () => {
+  assert.deepEqual(mejorSerie([ser(10, 60), ser(8, 70), ser(12, 90, false)]), ser(8, 70));
+  assert.deepEqual(mejorSerie([ser(5, 80), ser(6, 80)]), ser(6, 80));
+  assert.deepEqual(mejorSerie([ser(8, 0), ser(10, 0)]), ser(10, 0));
+  assert.equal(mejorSerie([ser(0, 50)]), null);
+  assert.equal(mejorSerie([]), null);
+});
+
+test('resumenEjercicio: series hechas, reps totales y volumen Σ reps × kg', () => {
+  const r = resumenEjercicio(ejP('banca', [ser(10, 60), ser(8, 70), ser(5, 100, false)]));
+  assert.equal(r.series.length, 2);
+  assert.equal(r.totalReps, 18);
+  assert.equal(r.volumen, 10 * 60 + 8 * 70);
+});
+
+test('historialEjercicio: cronológico y solo sesiones con series hechas del ejercicio', () => {
+  const h = historialEjercicio(HIST, 'banca');
+  assert.deepEqual(h.map(x => x.sesionId), ['s1', 's2', 's3']);
+  assert.deepEqual(h[1].mejor, ser(6, 80));
+  assert.deepEqual(historialEjercicio(HIST, 'dominada').map(x => x.sesionId), ['s1', 's3']);
+});
+
+test('recordsEjercicio: top por peso y luego reps; peso corporal por reps', () => {
+  assert.deepEqual(recordsEjercicio(HIST, 'banca').map(x => x.sesionId), ['s2', 's3', 's1']);
+  assert.deepEqual(recordsEjercicio(HIST, 'dominada', 1)[0].mejor, ser(12, 0));
+});
+
+test('prsPorEjercicio: récord vigente de cada ejercicio, el más reciente primero', () => {
+  const prs = prsPorEjercicio(HIST);
+  assert.deepEqual(prs.map(p => [p.idEjercicio, p.mejor.pesoKg, p.mejor.reps]), [['dominada', 0, 12], ['banca', 80, 6]]);
+});
+
+test('estadisticasPeriodo: sesiones, series y volumen del rango; por ejercicio si se pide', () => {
+  const todo = estadisticasPeriodo(HIST, 0, 100 * D);
+  assert.equal(todo.sesiones, 3);
+  assert.equal(todo.series, 2 + 2 + 2 + 1 + 1);
+  assert.equal(todo.volumen, (600 + 560) + (400 + 480) + 600);
+  const banca = estadisticasPeriodo(HIST, 15 * D, 100 * D, 'banca');
+  assert.equal(banca.sesiones, 2);
+  assert.equal(banca.promedio, (880 + 600) / 2);
+  assert.equal(estadisticasPeriodo(HIST, 200 * D, 300 * D).promedio, 0);
+});
+
+test('cambioPct: redondeado; sin periodo anterior no inventa porcentaje', () => {
+  assert.equal(cambioPct(12048, 11700), 3);
+  assert.equal(cambioPct(85, 100), -15);
+  assert.equal(cambioPct(500, 0), null);
 });
