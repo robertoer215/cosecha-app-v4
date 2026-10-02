@@ -5,7 +5,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { epley1RM, volumenSesion, seriesPorGrupo, ultimaVez,
-         debeArrancarDescanso, aKg } from '../js/entreno.js';
+         debeArrancarDescanso, aKg, siguientePendiente } from '../js/entreno.js';
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -219,4 +219,38 @@ test('aKg: basura numérica o negativos → 0 (una serie sin peso, nunca NaN gua
   assert.equal(aKg(NaN, 'kg'), 0);
   assert.equal(aKg(-20, 'lb'), 0);
   assert.equal(aKg(Infinity, 'kg'), 0);
+});
+
+// ── siguientePendiente: el orden real en que se entrena ─────────────────────
+const S = (...hechas) => hechas.map(h => ({ reps: 10, pesoKg: 20, hecha: h }));
+
+test('siguientePendiente: un ejercicio suelto agota sus series en orden', () => {
+  const ejs = [{ superGrupo: null, series: S(true, false, false) }, { superGrupo: null, series: S(false) }];
+  assert.deepEqual(siguientePendiente(ejs), { idx: 0, serie: 1 });
+});
+
+test('siguientePendiente: salta al siguiente ejercicio cuando el primero está completo', () => {
+  const ejs = [{ superGrupo: null, series: S(true, true) }, { superGrupo: null, series: S(false, false) }];
+  assert.deepEqual(siguientePendiente(ejs), { idx: 1, serie: 0 });
+});
+
+test('siguientePendiente: la superserie alterna por rondas (A1, B1, A2, B2)', () => {
+  const ejs = [{ superGrupo: 1, series: S(true, false) }, { superGrupo: 1, series: S(false, false) }];
+  assert.deepEqual(siguientePendiente(ejs), { idx: 1, serie: 0 });   // B1 antes que A2
+  ejs[1].series[0].hecha = true;
+  assert.deepEqual(siguientePendiente(ejs), { idx: 0, serie: 1 });   // luego A2
+});
+
+test('siguientePendiente: un miembro con menos series no bloquea la ronda', () => {
+  const ejs = [{ superGrupo: 2, series: S(true, true, false) }, { superGrupo: 2, series: S(true, true) }];
+  assert.deepEqual(siguientePendiente(ejs), { idx: 0, serie: 2 });
+});
+
+test('siguientePendiente: lo palomeado en desorden se salta; todo hecho → null', () => {
+  const ejs = [{ superGrupo: null, series: S(false, true) }];
+  assert.deepEqual(siguientePendiente(ejs), { idx: 0, serie: 0 });
+  ejs[0].series[0].hecha = true;
+  assert.equal(siguientePendiente(ejs), null);
+  assert.equal(siguientePendiente([]), null);
+  assert.equal(siguientePendiente(null), null);
 });

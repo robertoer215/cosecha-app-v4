@@ -116,6 +116,33 @@ export function debeArrancarDescanso(ejercicios, idx, serieIdx) {
 // A kilogramos desde la unidad del perfil. Redondeo a centésima: 10 g está
 // por debajo de lo que distingue cualquier placa real y evita que el JSON
 // guardado engorde con colas de flotante (45.359237000000004).
+// La siguiente serie por hacer, en el ORDEN en que se entrena: un ejercicio
+// suelto agota sus series; una superserie alterna por rondas (A1, B1, A2, B2…).
+// Lo que se palomeó en desorden desde la lista simplemente se salta.
+// → { idx, serie } o null si ya no queda ninguna.
+export function siguientePendiente(ejercicios) {
+  const ejs = Array.isArray(ejercicios) ? ejercicios : [];
+  for (let i = 0; i < ejs.length; i++) {
+    const g = ejs[i]?.superGrupo;
+    if (g == null) {
+      const j = (ejs[i].series || []).findIndex(s => !s.hecha);
+      if (j >= 0) return { idx: i, serie: j };
+      continue;
+    }
+    let fin = i;
+    while (fin + 1 < ejs.length && ejs[fin + 1]?.superGrupo === g) fin++;
+    const rondas = Math.max(...ejs.slice(i, fin + 1).map(e => (e.series || []).length));
+    for (let r = 0; r < rondas; r++) {
+      for (let k = i; k <= fin; k++) {
+        const s = ejs[k].series?.[r];
+        if (s && !s.hecha) return { idx: k, serie: r };
+      }
+    }
+    i = fin;
+  }
+  return null;
+}
+
 export function aKg(valor, unidad) {
   if (!Number.isFinite(valor) || valor < 0) return 0;
   const kg = unidad === 'lb' ? valor * 0.45359237 : valor;
@@ -175,7 +202,10 @@ let subtab = 'rutinas';      // 'rutinas' | 'biblioteca' | 'historial'
 let modoBiblioteca = null;   // null (pestaña) | 'sesion' (overlay "agregar a la sesión")
 let verSesionId = null;      // sesión del historial abierta en modo lectura
 let verProgresoId = null;    // ejercicio abierto en "progreso"
-let fichaId = null;          // ejercicio abierto en su ficha (desde la Biblioteca)
+let fichaId = null;          // ejercicio abierto en su ficha (Biblioteca o sesión)
+let vistaVivo = 'foco';      // 'foco' (Sesión en vivo) | 'ejercicios' (lista editable)
+let filtroMusculo = '';      // filtros de la Biblioteca (combinables con la búsqueda)
+let filtroEquipo = '';
 let consultaBib = '';        // texto del buscador (sobrevive repintados)
 let confirmando = null;      // botón destructivo esperando segundo toque
 
@@ -358,10 +388,17 @@ function alPalomear(idxEj, idxSerie, fila) {
   leerFila(fila, serie);
   serie.hecha = !serie.hecha;
   serie.tsHecha = serie.hecha ? Date.now() : null;
+  const c = sesion.serieEnCurso;
+  if (c && c.idx === idxEj && c.serie === idxSerie) {
+    if (serie.hecha) serie.durS = Math.round((serie.tsHecha - c.inicioMs) / 1000);
+    sesion.serieEnCurso = null;
+  }
   prepararAudio();
   if (serie.hecha && debeArrancarDescanso(sesion.ejercicios, idxEj, idxSerie)) {
     const idxRest = ej.superGrupo == null ? idxEj : ultimoDelGrupo(ej.superGrupo);
     arrancarDescanso(idxRest);
+  } else if (serie.hecha) {
+    sesion.listoDesdeMs = Date.now();
   }
   persistir();
   render();
@@ -473,7 +510,7 @@ function saltarDescanso() {
   descansoObj.saltar();
   // Persistir el salto: sin esto el descanso saltado resucitaba (con alarma)
   // al volver a la pestaña o recargar, porque el disco guardaba su fin viejo.
-  if (sesion?.descanso) { delete sesion.descanso; persistir(); }
+  if (sesion) { delete sesion.descanso; sesion.listoDesdeMs = Date.now(); persistir(); }
   tic();
 }
 
@@ -491,6 +528,7 @@ function tic() {
   const crono = ctx.raiz.querySelector('.en-crono');
   if (crono) crono.textContent = formatear((Date.now() - sesion.inicioMs) / 1000);
   pintarDescanso();
+  pintarFoco();
 }
 
 function arrancarReloj() {
@@ -578,6 +616,7 @@ function renderVista() {
     return;
   }
   if (sesion && !sesion.finMs) {
+    if (fichaId) { pintarFicha(raiz, fichaId); return; }
     if (modoBiblioteca === 'sesion') { pintarBiblioteca(raiz, 'sesion'); return; }
     pintarVivo(raiz);
     return;
@@ -718,12 +757,28 @@ function pintarBiblioteca(cont, destino) {
   }
 
   const q = normalizar(consultaBib.trim());
+  const filtrando = !!(q || filtroMusculo || filtroEquipo);
   const filtra = e => {
+    // Filtros por grupo muscular (principal) y por equipo: se combinan entre
+    // sí y con el texto. "Pecho + Mancuernas" es la pregunta real en el gym.
+    if (filtroMusculo && !(e.musculosPrimarios || []).includes(filtroMusculo)) return false;
+    if (filtroEquipo && e.equipo !== filtroEquipo) return false;
     if (!q) return true;
     const pajar = normalizar([e.nombre, e.nombreEn, (e.musculosPrimarios || []).join(' '),
       (e.musculosSecundarios || []).join(' '), e.equipo].filter(Boolean).join(' '));
     return q.split(/\s+/).every(t => pajar.includes(t));
   };
+  const opciones = (vals, sel) => [...new Set(vals)].filter(Boolean).sort((a, b) => a.localeCompare(b, 'es'))
+    .map(v => `<option value="${esc(v)}"${v === sel ? ' selected' : ''}>${esc(capital(v))}</option>`).join('');
+  const filtrosHTML = catEstado === 'listo' ? `
+    <div class="en-filtros">
+      <label class="en-filtro"><span>Músculo</span>
+        <select class="en-sel" data-filtro="musculo"><option value="">Todos</option>${opciones(catalogo.flatMap(e => e.musculosPrimarios || []), filtroMusculo)}</select>
+      </label>
+      <label class="en-filtro"><span>Equipo</span>
+        <select class="en-sel" data-filtro="equipo"><option value="">Todo</option>${opciones(catalogo.map(e => e.equipo), filtroEquipo)}</select>
+      </label>
+    </div>` : '';
   const todas = catEstado === 'listo' ? catalogo.filter(filtra) : [];
   // Tope de filas: pintar 876 botones por tecla congelaba teléfonos medios
   // (long tasks de 65–117 ms medidos) y, con foto por fila, bajaba los JPG
@@ -732,17 +787,18 @@ function pintarBiblioteca(cont, destino) {
   const CAP = 60;
   const lista = todas.slice(0, CAP);
   const recortadas = todas.length - lista.length;
-  const recientes = !q && catEstado === 'listo'
+  const recientes = !filtrando && catEstado === 'listo'
     ? estado.recientes.ejercicios.map(id => porId.get(id)).filter(Boolean).slice(0, 5)
     : [];
   const accion = overlay ? 'Agregar' : 'Ver';
 
-  // La foto solo en Recientes (máx. 5): el CDN sirve los JPG a tamaño
-  // completo y ponerla en cada fila costaba ~55 MB por recorrer la lista.
-  const fila = (e, conThumb) => `
+  // Foto en cada fila, perezosa: con el tope de 60 filas y loading="lazy" solo
+  // bajan las que entran en pantalla (el CDN sirve los JPG completos, así que
+  // sin tope ni lazy recorrer la lista costaba ~55 MB).
+  const fila = e => `
     <button type="button" class="en-ej-row" data-acc="ej" data-id="${esc(e.id)}">
-      ${conThumb ? `<span class="en-thumb">${e.imagenes?.[0]
-        ? `<img loading="lazy" src="${esc(URL_IMG + e.imagenes[0])}" alt="">` : ''}</span>` : ''}
+      <span class="en-thumb">${e.imagenes?.[0]
+        ? `<img loading="lazy" src="${esc(URL_IMG + e.imagenes[0])}" alt="">` : ''}</span>
       <span class="en-ej-row-txt">
         <span class="en-ej-row-nombre">${esc(e.nombre)}</span>
         <span class="en-ej-row-sub">${esc([capital(e.musculosPrimarios?.[0]), e.equipo].filter(Boolean).join(' · '))}</span>
@@ -756,15 +812,16 @@ function pintarBiblioteca(cont, destino) {
       <input type="search" class="en-busca-in" placeholder="Buscar por nombre, músculo o equipo"
         value="${esc(consultaBib)}" aria-label="Buscar ejercicio">
     </div>
+    ${filtrosHTML}
     <p class="en-sr en-busca-estado" role="status" aria-live="polite"></p>
     <div class="en-busca-res">
     ${catEstado === 'cargando' || catEstado === 'nada' ? '<p class="en-vacio">Cargando ejercicios…</p>'
       : catEstado === 'fallo' || !catalogo.length
         ? `<p class="en-vacio">La biblioteca no está disponible por ahora. Puedes escribir el nombre de tu ejercicio y registrarlo igual.</p>${htmlLibre(q)}`
-        : `${recientes.length ? `<div class="en-sec-lbl">Recientes</div>${recientes.map(e => fila(e, true)).join('')}` : ''}
-           ${q ? '' : '<div class="en-sec-lbl">Todos</div>'}
-           ${lista.length ? lista.map(e => fila(e, false)).join('')
-             : `<p class="en-vacio">Nada con «${esc(consultaBib.trim())}».</p>${htmlLibre(q)}`}
+        : `${recientes.length ? `<div class="en-sec-lbl">Recientes</div>${recientes.map(fila).join('')}` : ''}
+           <div class="en-sec-lbl">${filtrando ? `${todas.length} ${todas.length === 1 ? 'ejercicio' : 'ejercicios'}` : 'Todos'}</div>
+           ${lista.length ? lista.map(fila).join('')
+             : `<p class="en-vacio">${q ? `Nada con «${esc(consultaBib.trim())}»` : 'Nada con esos filtros'}.</p>${htmlLibre(q)}`}
            ${recortadas > 0 ? `<p class="en-vacio">Mostrando ${CAP} de ${todas.length}. Sigue escribiendo para afinar.</p>` : ''}`}
     </div>`;
 
@@ -777,6 +834,11 @@ function pintarBiblioteca(cont, destino) {
     clearTimeout(input._t);
     input._t = setTimeout(() => pintarListaBiblioteca(cont, overlay), 160);
   });
+  cont.querySelectorAll('.en-sel').forEach(sel => sel.addEventListener('change', () => {
+    if (sel.dataset.filtro === 'musculo') filtroMusculo = sel.value;
+    else filtroEquipo = sel.value;
+    pintarListaBiblioteca(cont, overlay);
+  }));
   cont.addEventListener('click', e => {
     const b = e.target.closest('[data-acc]');
     if (!b) return;
@@ -803,7 +865,7 @@ function pintarListaBiblioteca(cont, overlay) {
   const est = cont.querySelector('.en-busca-estado');
   if (est) {
     const n = nueva.querySelectorAll('.en-ej-row').length;
-    est.textContent = consultaBib.trim() ? (n ? `${n} ${n === 1 ? 'ejercicio' : 'ejercicios'}` : 'Sin resultados') : '';
+    est.textContent = (consultaBib.trim() || filtroMusculo || filtroEquipo) ? (n ? `${n} ${n === 1 ? 'ejercicio' : 'ejercicios'}` : 'Sin resultados') : '';
   }
   // Los clicks ya los atiende el listener delegado de `cont`.
 }
@@ -827,12 +889,13 @@ function elegirEjercicio(id, overlay) {
 
 function pintarFicha(raiz, id) {
   const e = porId.get(id);
-  if (!e) { fichaId = null; pintarInicio(raiz); return; }
+  const enSesion = !!(sesion && !sesion.finMs);
+  if (!e) { fichaId = null; render(); return; }
   const fotos = (e.imagenes || []).slice(0, 2);
   const pos = ['posición inicial', 'posición final'];
   raiz.innerHTML = `
   <div class="en-wrap">
-    <button type="button" class="en-volver" data-acc="ficha-volver">${SVG_VOLVER}<span>Biblioteca</span></button>
+    <button type="button" class="en-volver" data-acc="ficha-volver">${SVG_VOLVER}<span>${enSesion ? 'Volver a la sesión' : 'Biblioteca'}</span></button>
     <div class="en-ey">${esc(capital(e.categoria || 'Ejercicio'))}</div>
     <h2 class="en-titulo">${esc(e.nombre)}</h2>
     <p class="en-sub">${esc([capital(e.equipo), capital(e.nivel)].filter(Boolean).join(' · '))}</p>
@@ -844,15 +907,22 @@ function pintarFicha(raiz, id) {
       (e.musculosSecundarios || []).length ? `<br><b>Secundarios:</b> ${esc(e.musculosSecundarios.map(capital).join(', '))}` : ''}</p>
     ${(e.instrucciones || []).length ? `<div class="en-sec-lbl">Cómo se hace</div>
     <ol class="en-ficha-pasos">${e.instrucciones.map(p => `<li>${esc(p)}</li>`).join('')}</ol>` : ''}
-    <button type="button" class="en-btn en-btn-main en-ficha-cta" data-acc="ficha-empezar">Empezar sesión con este ejercicio</button>
+    ${enSesion ? '' : '<button type="button" class="en-btn en-btn-main en-ficha-cta" data-acc="ficha-empezar">Empezar sesión con este ejercicio</button>'}
     <p class="en-fuentes">Ejercicio e imágenes: free-exercise-db (dominio público).</p>
-  </div>`;
+  </div>${enSesion ? htmlBarraDescanso() : ''}`;
   raiz.querySelector('.en-wrap').addEventListener('click', ev => {
     const b = ev.target.closest('[data-acc]');
     if (!b) return;
     if (b.dataset.acc === 'ficha-volver') { fichaId = null; render(); }
     if (b.dataset.acc === 'ficha-empezar') { const fid = fichaId; fichaId = null; consultaBib = ''; empezarConEjercicio(fid); }
   });
+  // Dentro de la sesión, leer la ficha no pausa nada: el crono y el descanso
+  // siguen corriendo y el aviso de fin suena igual.
+  if (enSesion) {
+    conectarBarraDescanso(raiz);
+    pintarDescanso();
+    arrancarReloj();
+  }
 }
 
 // Ejercicio libre: id estable derivado del nombre, así "la última vez" y el
@@ -964,85 +1034,121 @@ function nombreSesion(s) {
   return 'Sesión libre';
 }
 
-// ── Sesión en vivo ───────────────────────────────────────────────────────────
+// ── Sesión en vivo: dos ventanas ─────────────────────────────────────────────
+//
+// Patrón de experiencia de WHOOP (no su contenido ni sus métricas de sensor):
+//   · «Sesión en vivo» — foco total: un círculo con el estado (Calentamiento /
+//     Activo / Descansar / Listo), la serie que toca y UN botón grande que
+//     alterna Empezar serie → Fin de la serie. Fin de la serie palomea y
+//     arranca el descanso; Empezar serie durante el descanso lo corta.
+//   · «Ejercicios» — la lista completa para corregir pesos, reps y RIR.
+// Todo el tiempo se deriva de timestamps guardados en la sesión
+// (serieEnCurso.inicioMs, descanso.finMs, listoDesdeMs): un reload no pierde
+// ni un segundo.
+
+function miniatura(idEjercicio, clase = 'en-thumb') {
+  const f = porId.get(idEjercicio);
+  const img = f?.imagenes?.[0];
+  return `<span class="${clase}">${img ? `<img loading="lazy" src="${esc(URL_IMG + img)}" alt="">` : ''}</span>`;
+}
+
+function serieEnCursoValida() {
+  const c = sesion?.serieEnCurso;
+  if (!c) return null;
+  const s = sesion.ejercicios[c.idx]?.series?.[c.serie];
+  return s && !s.hecha ? c : null;
+}
+
+// Estado del foco, derivado (nunca guardado): qué dice el círculo y qué hace
+// el botón grande.
+function estadoFoco() {
+  const enCurso = serieEnCursoValida();
+  if (enCurso) return { tipo: 'activo', lbl: 'Activo', ref: enCurso, desdeMs: enCurso.inicioMs };
+  const sig = siguientePendiente(sesion.ejercicios);
+  if (descansoObj && !descansoObj.haTerminado()) return { tipo: 'descanso', lbl: 'Descansar', ref: sig };
+  if (!sig) return { tipo: 'fin', lbl: sesion.ejercicios.length ? 'Completa' : 'Sin ejercicios', ref: null };
+  const algunaHecha = sesion.ejercicios.some(e => e.series.some(x => x.hecha));
+  return algunaHecha
+    ? { tipo: 'listo', lbl: 'Listo', ref: sig, desdeMs: sesion.listoDesdeMs || sesion.inicioMs }
+    : { tipo: 'calentamiento', lbl: 'Calentamiento', ref: sig, desdeMs: sesion.inicioMs };
+}
+
+function tiempoFoco(ef) {
+  if (ef.tipo === 'descanso') return formatear(descansoObj.restanteS());
+  if (ef.desdeMs) return formatear((Date.now() - ef.desdeMs) / 1000);
+  return '0:00';
+}
+
+function empezarSerie() {
+  const sig = siguientePendiente(sesion.ejercicios);
+  if (!sig) return;
+  // Empezar durante el descanso lo corta en silencio: es una decisión, no un aviso.
+  if (descansoObj) {
+    avisadoFin = true;
+    descansoObj = null;
+    if (timerOcultar) { clearTimeout(timerOcultar); timerOcultar = null; }
+    delete sesion.descanso;
+  }
+  sesion.serieEnCurso = { idx: sig.idx, serie: sig.serie, inicioMs: Date.now() };
+  prepararAudio();
+  persistir();
+  render();
+}
+
+function finDeSerie() {
+  const c = serieEnCursoValida();
+  if (!c) return;
+  const ej = sesion.ejercicios[c.idx];
+  const serie = ej.series[c.serie];
+  serie.hecha = true;
+  serie.tsHecha = Date.now();
+  // Cuánto duró la serie: dato barato que enriquece el historial.
+  serie.durS = Math.round((serie.tsHecha - c.inicioMs) / 1000);
+  sesion.serieEnCurso = null;
+  if (debeArrancarDescanso(sesion.ejercicios, c.idx, c.serie)) {
+    arrancarDescanso(ej.superGrupo == null ? c.idx : ultimoDelGrupo(ej.superGrupo));
+  } else {
+    // Superserie a media ronda: sin descanso, directo al siguiente ejercicio.
+    sesion.listoDesdeMs = Date.now();
+  }
+  persistir();
+  render();
+}
 
 function pintarVivo(raiz) {
   const unidad = unidadPeso();
-  const previos = new Map(sesion.ejercicios.map(e =>
-    [e.idEjercicio, ultimaVez(estado.entreno.sesiones, e.idEjercicio)]));
-
-  const htmlEjercicio = (ej, idx) => `
-    <section class="en-ej" data-idx="${idx}">
-      <div class="en-ej-hd">
-        <div class="en-ej-nombre">${esc(ej.nombre)}</div>
-        <div class="en-ej-desc" aria-label="Descanso de este ejercicio">
-          <button type="button" class="en-mini" data-acc="desc" data-idx="${idx}" data-d="-15" aria-label="Quitar 15 segundos al descanso">−15</button>
-          <span class="en-ej-desc-val">${formatear(ej.descansoS)}</span>
-          <button type="button" class="en-mini" data-acc="desc" data-idx="${idx}" data-d="15" aria-label="Sumar 15 segundos al descanso">+15</button>
-        </div>
-      </div>
-      <div class="en-tabla" role="group" aria-label="Series de ${esc(ej.nombre)}">
-        <div class="en-fila en-fila-hd" aria-hidden="true">
-          <span>#</span><span>Previa</span><span>${unidad}</span><span>Reps</span><span>RIR</span><span></span>
-        </div>
-        ${ej.series.map((s, j) => {
-          const prev = previos.get(ej.idEjercicio)?.[j];
-          return `
-          <div class="en-fila${s.hecha ? ' en-hecha' : ''}" data-serie="${j}">
-            <span class="en-num">${j + 1}</span>
-            <span class="en-prev">${prev ? `${prev.reps}×${fmtPeso(prev.pesoKg, unidad)}` : '—'}</span>
-            <input class="en-in en-in-peso" inputmode="decimal" value="${s.pesoKg ? fmtPeso(s.pesoKg, unidad) : ''}"
-              aria-label="Peso de la serie ${j + 1} en ${unidad}">
-            <input class="en-in en-in-reps" inputmode="numeric" value="${s.reps || ''}"
-              aria-label="Repeticiones de la serie ${j + 1}">
-            <input class="en-in en-in-rir" inputmode="numeric" value="${s.rir ?? ''}" placeholder="·"
-              aria-label="RIR de la serie ${j + 1}, opcional">
-            <button type="button" class="en-check${s.hecha ? ' en-check-on' : ''}" data-acc="check"
-              data-idx="${idx}" data-serie="${j}" aria-pressed="${s.hecha}"
-              aria-label="Serie ${j + 1} ${s.hecha ? 'hecha; tócala para desmarcarla' : 'por hacer; tócala al terminarla'}">${SVG_CHECK}</button>
-          </div>`;
-        }).join('')}
-        <button type="button" class="en-mas-serie" data-acc="serie" data-idx="${idx}">+ serie</button>
-      </div>
-    </section>`;
-
-  // Los bloques con el mismo superGrupo se pintan dentro de un marco común
-  // con su rótulo: la superserie es un objeto de primera clase (WHOOP), no
-  // dos tarjetas que casualmente van juntas.
-  const trozos = [];
-  for (let i = 0; i < sesion.ejercicios.length; i++) {
-    const g = sesion.ejercicios[i].superGrupo;
-    if (g == null) { trozos.push(htmlEjercicio(sesion.ejercicios[i], i)); continue; }
-    let fin = i;
-    while (fin + 1 < sesion.ejercicios.length && sesion.ejercicios[fin + 1].superGrupo === g) fin++;
-    const dentro = [];
-    for (let k = i; k <= fin; k++) dentro.push(htmlEjercicio(sesion.ejercicios[k], k));
-    trozos.push(`<div class="en-super"><div class="en-super-tag">Superserie</div>${dentro.join('')}</div>`);
-    i = fin;
-  }
+  const vista = vistaVivo;
+  const tabs = `
+    <div class="en-tabs en-vivo-tabs" role="group" aria-label="Vista de la sesión">
+      <button type="button" class="en-tab${vista === 'foco' ? ' en-tab-on' : ''}" aria-pressed="${vista === 'foco'}" data-acc="vista" data-v="foco">Sesión en vivo</button>
+      <button type="button" class="en-tab${vista === 'ejercicios' ? ' en-tab-on' : ''}" aria-pressed="${vista === 'ejercicios'}" data-acc="vista" data-v="ejercicios">Ejercicios</button>
+    </div>`;
 
   raiz.innerHTML = `
-  <div class="en-wrap en-vivo">
+  <div class="en-wrap en-vivo${vista === 'foco' ? ' en-vivo-foco' : ''}">
     <header class="en-vivo-hd">
       <div>
         <div class="en-ey">Sesión en curso</div>
         <h2 class="en-titulo">${esc(nombreSesion(sesion))}</h2>
       </div>
-      <div class="en-crono" aria-label="Tiempo de sesión">${formatear((Date.now() - sesion.inicioMs) / 1000)}</div>
+      <div class="en-crono" role="timer" aria-label="Tiempo de sesión">${formatear((Date.now() - sesion.inicioMs) / 1000)}</div>
     </header>
-    ${trozos.join('') || '<p class="en-vacio">Agrega tu primer ejercicio para empezar.</p>'}
-    <button type="button" class="en-btn en-btn-ghost en-add-ej" data-acc="agregar">+ Agregar ejercicio</button>
-    <div class="en-vivo-acciones">
-      <button type="button" class="en-btn en-btn-main" data-acc="terminar">Terminar sesión</button>
-      <button type="button" class="en-peligro" data-acc="descartar">Descartar sesión</button>
-    </div>
+    ${tabs}
+    ${vista === 'foco' ? htmlFoco(unidad) : htmlListaVivo(unidad)}
   </div>
-  ${htmlBarraDescanso()}`;
+  ${vista === 'ejercicios' ? htmlBarraDescanso() : ''}`;
 
-  raiz.querySelector('.en-vivo').addEventListener('click', e => {
+  const wrap = raiz.querySelector('.en-vivo');
+  wrap.addEventListener('click', e => {
     const b = e.target.closest('[data-acc]');
     if (!b) return;
     const acc = b.dataset.acc;
+    if (acc === 'vista') { vistaVivo = b.dataset.v; render(); return; }
+    if (acc === 'ficha') { fichaId = b.dataset.id; render(); window.scrollTo(0, 0); return; }
+    if (acc === 'empezar-serie') { empezarSerie(); return; }
+    if (acc === 'fin-serie') { finDeSerie(); return; }
+    if (acc === 'f-aj') { ajustarDescanso(+b.dataset.d); return; }
+    if (acc === 'editar') { vistaVivo = 'ejercicios'; render(); return; }
     if (acc === 'check') {
       alPalomear(+b.dataset.idx, +b.dataset.serie, b.closest('.en-fila'));
     } else if (acc === 'serie') {
@@ -1064,7 +1170,7 @@ function pintarVivo(raiz) {
     } else if (acc === 'terminar') {
       const sinHacer = sesion.ejercicios.some(ej => ej.series.some(s => !s.hecha));
       if (sinHacer && confirmando !== 'terminar') {
-        confirmarDosToques(b, 'terminar', 'Hay series sin palomear · toca otra vez');
+        confirmarDosToques(b, 'terminar', 'Hay series sin hacer · toca otra vez');
         return;
       }
       confirmando = null;
@@ -1081,7 +1187,7 @@ function pintarVivo(raiz) {
 
   // Los valores tecleados se persisten al salir del campo: un reload a mitad
   // de sesión no pierde ni la fila a medias.
-  raiz.querySelector('.en-vivo').addEventListener('change', e => {
+  wrap.addEventListener('change', e => {
     const fila = e.target.closest('.en-fila');
     const ejEl = e.target.closest('.en-ej');
     if (!fila || !ejEl || !e.target.classList.contains('en-in')) return;
@@ -1090,9 +1196,152 @@ function pintarVivo(raiz) {
     persistir();
   });
 
-  conectarBarraDescanso(raiz);
+  if (vista === 'ejercicios') conectarBarraDescanso(raiz);
   pintarDescanso();
   arrancarReloj();
+}
+
+function htmlFoco(unidad) {
+  if (!sesion.ejercicios.length) {
+    return `<div class="en-foco">
+      <p class="en-vacio">Agrega tu primer ejercicio para empezar.</p>
+      <button type="button" class="en-btn en-btn-main" data-acc="agregar">+ Agregar ejercicio</button>
+    </div>`;
+  }
+  const ef = estadoFoco();
+  const ref = ef.ref;
+  const ej = ref ? sesion.ejercicios[ref.idx] : null;
+  const s = ej ? ej.series[ref.serie] : null;
+  const enFicha = ej && porId.has(ej.idEjercicio);
+  const rotulo = ef.tipo === 'activo' ? 'Ahora' : 'Siguiente';
+  const tarjeta = ej ? `
+    <div class="en-foco-card">
+      <div class="en-foco-ej">
+        ${enFicha ? `<button type="button" class="en-foco-ficha" data-acc="ficha" data-id="${esc(ej.idEjercicio)}" aria-label="Ver cómo se hace ${esc(ej.nombre)}">${miniatura(ej.idEjercicio, 'en-thumb en-thumb-lg')}</button>`
+          : miniatura(ej.idEjercicio, 'en-thumb en-thumb-lg')}
+        <div class="en-foco-ej-txt">
+          <span class="en-foco-rot">${rotulo}</span>
+          <span class="en-foco-nombre">${esc(ej.nombre)}</span>
+        </div>
+        ${enFicha ? `<button type="button" class="en-foco-info" data-acc="ficha" data-id="${esc(ej.idEjercicio)}" aria-label="Ficha técnica de ${esc(ej.nombre)}">i</button>` : ''}
+      </div>
+      <button type="button" class="en-foco-stats" data-acc="editar" aria-label="Editar pesos y repeticiones">
+        <span><b>${ref.serie + 1}/${ej.series.length}</b><small>Serie</small></span>
+        <span><b>${s.reps || '—'}</b><small>Reps</small></span>
+        <span><b>${s.pesoKg ? fmtPeso(s.pesoKg, unidad) : '—'}</b><small>${unidad}</small></span>
+      </button>
+    </div>` : `<p class="en-vacio en-foco-fin">Hiciste todas las series. Termina la sesión para ver tu resumen, o agrega otro ejercicio.</p>`;
+
+  const boton = ef.tipo === 'activo'
+    ? `<button type="button" class="en-btn en-btn-main en-foco-btn" data-acc="fin-serie">Fin de la serie</button>`
+    : ef.tipo === 'fin'
+      ? `<button type="button" class="en-btn en-btn-main en-foco-btn" data-acc="terminar">Terminar sesión</button>
+         <button type="button" class="en-btn en-btn-ghost en-add-ej" data-acc="agregar">+ Agregar ejercicio</button>`
+      : `<button type="button" class="en-btn en-btn-main en-foco-btn" data-acc="empezar-serie">Empezar serie</button>`;
+
+  return `
+  <div class="en-foco">
+    <div class="en-foco-anillo" data-estado="${ef.tipo}" style="--p:${progresoDescanso()}">
+      <div class="en-foco-centro">
+        <span class="en-foco-lbl">${ef.lbl}</span>
+        <span class="en-foco-t" role="timer">${tiempoFoco(ef)}</span>
+      </div>
+    </div>
+    <div class="en-foco-aj"${ef.tipo === 'descanso' ? '' : ' hidden'}>
+      <button type="button" class="en-d-aj" data-acc="f-aj" data-d="-15" aria-label="Quitar 15 segundos de descanso">−15</button>
+      <button type="button" class="en-d-aj" data-acc="f-aj" data-d="15" aria-label="Sumar 15 segundos de descanso">+15</button>
+    </div>
+    ${tarjeta}
+    ${boton}
+    <span class="en-sr en-sr-descanso" aria-live="polite"></span>
+    ${ef.tipo !== 'fin' ? `<div class="en-vivo-acciones"><button type="button" class="en-btn en-btn-ghost en-foco-terminar" data-acc="terminar">Terminar sesión</button></div>` : ''}
+  </div>`;
+}
+
+function progresoDescanso() {
+  if (!descansoObj || !sesion?.descanso?.duracionS) return 0;
+  return Math.max(0, Math.min(1, descansoObj.restanteS() / sesion.descanso.duracionS)).toFixed(3);
+}
+
+// Repinta SOLO lo que cambia cada segundo en el foco; si el estado de fondo
+// cambió (el descanso acabó), repinta la vista entera una vez.
+function pintarFoco() {
+  const anillo = ctx.raiz.querySelector('.en-foco-anillo');
+  if (!anillo) return;
+  const ef = estadoFoco();
+  if (anillo.dataset.estado !== ef.tipo) { render(); return; }
+  anillo.style.setProperty('--p', progresoDescanso());
+  const t = anillo.querySelector('.en-foco-t');
+  if (t) t.textContent = tiempoFoco(ef);
+}
+
+function htmlListaVivo(unidad) {
+  const previos = new Map(sesion.ejercicios.map(e =>
+    [e.idEjercicio, ultimaVez(estado.entreno.sesiones, e.idEjercicio)]));
+  const enCurso = serieEnCursoValida();
+
+  const htmlEjercicio = (ej, idx) => {
+    const enFicha = porId.has(ej.idEjercicio);
+    return `
+    <section class="en-ej" data-idx="${idx}">
+      <div class="en-ej-hd">
+        ${enFicha
+          ? `<button type="button" class="en-ej-tit" data-acc="ficha" data-id="${esc(ej.idEjercicio)}" aria-label="Ver cómo se hace ${esc(ej.nombre)}">${miniatura(ej.idEjercicio)}<span class="en-ej-nombre">${esc(ej.nombre)}</span></button>`
+          : `<div class="en-ej-tit">${miniatura(ej.idEjercicio)}<span class="en-ej-nombre">${esc(ej.nombre)}</span></div>`}
+        <div class="en-ej-desc" aria-label="Descanso de este ejercicio">
+          <button type="button" class="en-mini" data-acc="desc" data-idx="${idx}" data-d="-15" aria-label="Quitar 15 segundos al descanso">−15</button>
+          <span class="en-ej-desc-val">${formatear(ej.descansoS)}</span>
+          <button type="button" class="en-mini" data-acc="desc" data-idx="${idx}" data-d="15" aria-label="Sumar 15 segundos al descanso">+15</button>
+        </div>
+      </div>
+      <div class="en-tabla" role="group" aria-label="Series de ${esc(ej.nombre)}">
+        <div class="en-fila en-fila-hd" aria-hidden="true">
+          <span>#</span><span>Previa</span><span>${unidad}</span><span>Reps</span><span>RIR</span><span></span>
+        </div>
+        ${ej.series.map((s, j) => {
+          const prev = previos.get(ej.idEjercicio)?.[j];
+          const activa = enCurso && enCurso.idx === idx && enCurso.serie === j;
+          return `
+          <div class="en-fila${s.hecha ? ' en-hecha' : ''}${activa ? ' en-activa' : ''}" data-serie="${j}">
+            <span class="en-num">${j + 1}</span>
+            <span class="en-prev">${prev ? `${prev.reps}×${fmtPeso(prev.pesoKg, unidad)}` : '—'}</span>
+            <input class="en-in en-in-peso" inputmode="decimal" value="${s.pesoKg ? fmtPeso(s.pesoKg, unidad) : ''}"
+              aria-label="Peso de la serie ${j + 1} en ${unidad}">
+            <input class="en-in en-in-reps" inputmode="numeric" value="${s.reps || ''}"
+              aria-label="Repeticiones de la serie ${j + 1}">
+            <input class="en-in en-in-rir" inputmode="numeric" value="${s.rir ?? ''}" placeholder="·"
+              aria-label="RIR de la serie ${j + 1}, opcional">
+            <button type="button" class="en-check${s.hecha ? ' en-check-on' : ''}" data-acc="check"
+              data-idx="${idx}" data-serie="${j}" aria-pressed="${s.hecha}"
+              aria-label="Serie ${j + 1} ${s.hecha ? 'hecha; tócala para desmarcarla' : 'por hacer; tócala al terminarla'}">${SVG_CHECK}</button>
+          </div>`;
+        }).join('')}
+        <button type="button" class="en-mas-serie" data-acc="serie" data-idx="${idx}">+ serie</button>
+      </div>
+    </section>`;
+  };
+
+  // Los bloques con el mismo superGrupo van dentro de un marco común con su
+  // rótulo: la superserie es un objeto de primera clase, no dos tarjetas que
+  // casualmente van juntas.
+  const trozos = [];
+  for (let i = 0; i < sesion.ejercicios.length; i++) {
+    const g = sesion.ejercicios[i].superGrupo;
+    if (g == null) { trozos.push(htmlEjercicio(sesion.ejercicios[i], i)); continue; }
+    let fin = i;
+    while (fin + 1 < sesion.ejercicios.length && sesion.ejercicios[fin + 1].superGrupo === g) fin++;
+    const dentro = [];
+    for (let k = i; k <= fin; k++) dentro.push(htmlEjercicio(sesion.ejercicios[k], k));
+    trozos.push(`<div class="en-super"><div class="en-super-tag">Superserie</div>${dentro.join('')}</div>`);
+    i = fin;
+  }
+  return `
+    ${trozos.join('') || '<p class="en-vacio">Agrega tu primer ejercicio para empezar.</p>'}
+    <button type="button" class="en-btn en-btn-ghost en-add-ej" data-acc="agregar">+ Agregar ejercicio</button>
+    <div class="en-vivo-acciones">
+      <button type="button" class="en-btn en-btn-main" data-acc="terminar">Terminar sesión</button>
+      <button type="button" class="en-peligro" data-acc="descartar">Descartar sesión</button>
+    </div>`;
 }
 
 // Confirmación destructiva sin confirm(): el mismo botón pide el segundo
@@ -1138,22 +1387,32 @@ function conectarBarraDescanso(raiz) {
   });
 }
 
+// El aviso de fin NO depende de qué vista esté pintada (barra, foco, ficha o
+// biblioteca): se revisa en cada tic y suena una sola vez.
+function revisarFinDescanso() {
+  if (!descansoObj || avisadoFin || !descansoObj.haTerminado()) return;
+  avisadoFin = true;
+  avisarFin();
+  const sr = ctx.raiz.querySelector('.en-descanso .en-sr, .en-sr-descanso');
+  if (sr) sr.textContent = 'Descanso terminado. A darle.';
+  if (sesion) {
+    delete sesion.descanso;
+    sesion.listoDesdeMs = Date.now();
+    persistir();
+  }
+  // El aviso visual se queda unos segundos y se va solo: el gesto siguiente
+  // del usuario es la serie, no cerrar una barra.
+  timerOcultar = setTimeout(cerrarBarraDescanso, 5000);
+}
+
 function pintarDescanso() {
+  revisarFinDescanso();
   const barra = ctx.raiz.querySelector('.en-descanso');
   if (!barra) return;
   if (!descansoObj) { barra.hidden = true; return; }
   barra.hidden = false;
   const fin = descansoObj.haTerminado();
   barra.querySelector('.en-d-tiempo').textContent = formatear(descansoObj.restanteS());
-  if (fin && !avisadoFin) {
-    avisadoFin = true;
-    avisarFin();
-    barra.querySelector('.en-sr').textContent = 'Descanso terminado. A darle.';
-    // La barra verde se queda unos segundos como aviso visual y se va sola:
-    // el gesto siguiente del usuario es la serie, no cerrar una barra.
-    if (sesion?.descanso) { delete sesion.descanso; persistir(); }
-    timerOcultar = setTimeout(cerrarBarraDescanso, 5000);
-  }
   barra.classList.toggle('en-d-fin', fin);
   barra.querySelector('.en-d-lbl').textContent = fin ? '¡A darle!' : 'descanso';
   barra.querySelector('.en-d-saltar').textContent = fin ? 'Listo' : 'Saltar';
