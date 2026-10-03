@@ -136,6 +136,10 @@ export function puntuar(item, palabras, q) {
     if (i >= 0) p += Math.max(12, 32 - i * 8);
   }
   for (const r of RAROS) if (n.includes(r) && !q.includes(r.slice(0, 5))) p -= 20;
+  // El alimento SOLO va primero: lo que viene "con" otra cosa (arroz con
+  // aceite, frijoles con carne) baja; "con piel", "con hueso", "con cáscara"
+  // describen la pieza misma y no cuentan.
+  if (/ con (?!piel|hueso|cascara)/.test(n) && !q.includes(' con ')) p -= 18;
   const est = item.alimento?.estado;
   if (est === 'cocido' || est === 'listo para comer') p += 6;
   p -= Math.min(20, n.length / 6);
@@ -162,6 +166,17 @@ export function seccionDe(alimento) {
   if (/carta cosecha/i.test(g) || /cosecha/i.test(alimento?.fuente || '')) return 'cosecha';
   if (/platillos/i.test(g)) return 'platillos';
   return 'alimentos';
+}
+
+// Palabras con las que se pide un PLATILLO. Si la búsqueda no trae ninguna,
+// se busca un alimento y solo se enseñan alimentos.
+const PALABRAS_PLATILLO = ['taco', 'tamal', 'enchilad', 'quesadill', 'torta', 'sopa', 'mole', 'pozole',
+  'burrito', 'chilaquil', 'guisad', 'tostada', 'gordita', 'sope', 'huarache', 'flauta', 'caldo', 'tinga',
+  'barbacoa', 'pastor', 'carnitas', 'birria', 'menudo', 'ensalada', 'sandwich', 'hamburguesa', 'pizza',
+  'molletes', 'chile relleno', 'enfrijolad', 'entomatad', 'picadillo', 'albondiga', 'milanesa', 'cosecha'];
+export function pidePlatillo(consulta) {
+  const q = normalizarTexto(consulta);
+  return PALABRAS_PLATILLO.some(w => q.includes(w));
 }
 
 export function buscarAgrupado(indice, consulta) {
@@ -959,10 +974,33 @@ function htmlResultados() {
       ${lista.length > max && !abierta ? `<button type="button" class="dia-ver-mas" data-accion="ver-mas" data-seccion="${clave}">Ver ${lista.length - max} más</button>` : ''}
     </section>`;
   };
-  return `${seccion('Alimentos', g.alimentos, 8, 'alimentos')}
-  ${seccion('Platillos', g.platillos, 3, 'platillos')}
-  ${seccion('Del menú COSECHA', g.cosecha, 3, 'cosecha')}
-  <button type="button" class="dia-manual-link" data-accion="manual">¿No está? Regístralo a mano</button>`;
+  // Se busca un ALIMENTO: se enseña el alimento solo. Los platillos que lo
+  // llevan (tacos, guisados) y el menú COSECHA quedan detrás de un enlace,
+  // salvo que la búsqueda nombre un platillo ("taco", "mole") o que no haya
+  // ningún alimento con ese nombre.
+  const verOtros = pidePlatillo(consulta) || !g.alimentos.length || verMasSeccion === 'otros';
+  const nOtros = g.platillos.length + g.cosecha.length;
+  if (verOtros) {
+    // Si se pidió un platillo, los platillos van PRIMERO; de los alimentos
+    // solo los que llevan la palabra en el nombre (no coincidencias sueltas
+    // por sinónimo, como "lengua" al buscar "taco").
+    if (pidePlatillo(consulta)) {
+      const qn = normalizarTexto(consulta).split(' ');
+      const conNombre = g.alimentos.filter(a => qn.every(w => incluyePalabra(normalizarTexto(a.nombre), w)));
+      return `${seccion('Platillos', g.platillos, 10, 'platillos')}
+      ${seccion('Del menú COSECHA', g.cosecha, 4, 'cosecha')}
+      ${seccion('Alimentos', conNombre, 6, 'alimentos')}
+      <button type="button" class="dia-manual-link" data-accion="manual">¿No está? Regístralo a mano</button>`;
+    }
+    return `${seccion('Alimentos', g.alimentos, 10, 'alimentos')}
+    ${seccion('Platillos', g.platillos, 6, 'platillos')}
+    ${seccion('Del menú COSECHA', g.cosecha, 4, 'cosecha')}
+    <button type="button" class="dia-manual-link" data-accion="manual">¿No está? Regístralo a mano</button>`;
+  }
+  return `<ul class="dia-lista dia-resultados dia-solo">${(verMasSeccion === 'alimentos' ? g.alimentos : g.alimentos.slice(0, 12)).map(fila).join('')}</ul>
+    ${g.alimentos.length > 12 && verMasSeccion !== 'alimentos' ? `<button type="button" class="dia-ver-mas" data-accion="ver-mas" data-seccion="alimentos">Ver ${g.alimentos.length - 12} más</button>` : ''}
+    ${nOtros ? `<button type="button" class="dia-manual-link" data-accion="ver-mas" data-seccion="otros">Ver platillos con «${esc(consulta.trim())}» (${nOtros})</button>` : ''}
+    <button type="button" class="dia-manual-link" data-accion="manual">¿No está? Regístralo a mano</button>`;
 }
 
 function htmlBuscar() {

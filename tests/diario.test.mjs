@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  normalizarTexto, construirIndice, buscar, buscarAgrupado, seccionDe,
+  normalizarTexto, construirIndice, buscar, buscarAgrupado, seccionDe, pidePlatillo,
   macrosDeCantidad, kcalDerivada, sumarDia, metaDelDia
 } from '../js/diario.js';
 
@@ -264,4 +264,23 @@ test('seccionDe: platillos y carta COSECHA se distinguen del resto', () => {
   assert.equal(seccionDe({ grupo: 'Platillos y antojitos (FNDDS)' }), 'platillos');
   assert.equal(seccionDe({ grupo: 'Carta COSECHA' }), 'cosecha');
   assert.equal(seccionDe({ grupo: 'Frutas' }), 'alimentos');
+});
+
+test('alimento solo: lo que va "con" otra cosa baja; "con piel" no cuenta', () => {
+  const idx = construirIndice([
+    { id: 'A1', nombre: 'Arroz blanco cocido con aceite', grupo: 'Cereales y tubérculos', estado: 'cocido' },
+    { id: 'A2', nombre: 'Arroz blanco cocido', grupo: 'Cereales y tubérculos', estado: 'cocido' },
+    { id: 'C1', nombre: 'Pechuga de pollo con piel, asada', grupo: 'Carnes y aves', estado: 'cocido' },
+    { id: 'C2', nombre: 'Pechuga de pollo con verduras', grupo: 'Carnes y aves', estado: 'cocido' },
+  ]);
+  assert.equal(buscar(idx, 'arroz')[0].id, 'A2');
+  assert.equal(buscar(idx, 'pechuga')[0].id, 'C1');
+});
+
+test('pidePlatillo: solo cuando la búsqueda nombra un platillo', () => {
+  assert.equal(pidePlatillo('pollo'), false);
+  assert.equal(pidePlatillo('tortilla'), false);
+  assert.equal(pidePlatillo('tacos de pastor'), true);
+  assert.equal(pidePlatillo('Tamal'), true);
+  assert.equal(pidePlatillo('pollo en mole'), true);
 });
