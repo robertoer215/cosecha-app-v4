@@ -29,6 +29,7 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 import * as almacen from './almacen.js';
+import { AVISO_URL, AVISO_VERSION } from './privacidad.js';
 // El mismo ±4 g por macro con el que el resumen de Pedir pinta "En tu meta":
 // un diario que marcara "fuera" con otro umbral contradiría a la otra pestaña.
 import { UMBRAL_G } from './calc.js';
@@ -297,6 +298,8 @@ let datosAbierto = false;
 let importPendiente = null; // estado ya migrado, esperando confirmación
 let importError = '';
 let importOk = false;
+let borrarPendiente = false; // "Borrar todos mis datos" esperando confirmación
+let borrarError = '';
 let fallaGuardado = false;  // guardar() devolvió false: se avisa, no se rompe
 
 const esc = s => String(s).replace(/[&<>"']/g, c => (
@@ -739,6 +742,20 @@ function confirmarImportacion() {
   render();
 }
 
+// Cancelación y revocación del consentimiento (arts. 7 y 24 LFPDPPP), en el
+// dispositivo y sin intermediarios. Se recarga la página en vez de limpiar
+// módulo por módulo: así no queda ni un dato en memoria, y almacen.borrarTodo()
+// ya bloqueó cualquier guardado en vuelo hasta que la recarga termine.
+function confirmarBorrado() {
+  if (almacen.borrarTodo()) {
+    location.reload();
+    return;
+  }
+  borrarPendiente = false;
+  borrarError = 'No se pudo borrar en este dispositivo. Borra los datos del sitio desde los ajustes de tu navegador.';
+  render();
+}
+
 // ── HTML de cada vista ───────────────────────────────────────────────────────
 
 function etiquetaFecha(f) {
@@ -845,13 +862,20 @@ function htmlDatos() {
         <button type="button" class="btn btn-ghost" data-accion="importar-cancelar">Cancelar</button>
       </div>
     </div>` : '';
+  const confirmarBorrar = borrarPendiente ? `<div class="dia-import-confirmar" role="alert">
+      <p>Esto borra de este dispositivo tu perfil, tu meta, tu diario, tus entrenamientos y tus rutinas. No se puede deshacer: si quieres conservarlos, exporta antes un respaldo.</p>
+      <div class="dia-datos-botones">
+        <button type="button" class="btn btn-main dia-borrar-si" data-accion="borrar-confirmar">Sí, borrar todo</button>
+        <button type="button" class="btn btn-ghost" data-accion="borrar-cancelar">Cancelar</button>
+      </div>
+    </div>` : '';
   return `<details class="dia-datos"${datosAbierto ? ' open' : ''}>
     <summary class="dia-datos-sum" data-accion="datos-toggle">
       <span>Tus datos</span>
       <span class="dia-datos-chev" aria-hidden="true">${CHEV}</span>
     </summary>
     <div class="dia-datos-body">
-      <p>Tu diario vive solo en este dispositivo: nada sale a ningún servidor. Llévate un respaldo en JSON o restaura uno.</p>
+      <p>Tu perfil, tu diario y tus entrenamientos viven solo en este dispositivo: nada sale a ningún servidor. Llévate un respaldo en JSON, restaura uno o bórralo todo.</p>
       <p class="dia-fuentes">Datos nutricionales: USDA FoodData Central (dominio público, CC0 1.0) y carta COSECHA. Los desvíos de etiqueta van marcados, no corregidos.</p>
       <div class="dia-datos-botones">
         <button type="button" class="btn btn-ghost" data-accion="exportar">Exportar respaldo</button>
@@ -861,6 +885,12 @@ function htmlDatos() {
       ${importError ? `<p class="form-error" role="alert">${esc(importError)}</p>` : ''}
       ${confirmar}
       ${importOk ? '<p class="dia-datos-ok">Respaldo importado.</p>' : ''}
+      <div class="dia-datos-botones dia-borrar-fila">
+        <button type="button" class="btn btn-ghost dia-borrar" data-accion="borrar-pedir">Borrar todos mis datos</button>
+      </div>
+      ${borrarError ? `<p class="form-error" role="alert">${esc(borrarError)}</p>` : ''}
+      ${confirmarBorrar}
+      <p class="dia-fuentes dia-aviso-link"><a href="${AVISO_URL}">Aviso de privacidad</a> · versión ${AVISO_VERSION}</p>
     </div>
   </details>`;
 }
@@ -1269,6 +1299,7 @@ function alClick(ev) {
       exportarRespaldo();
       break;
     case 'importar-elegir':
+      if (borrarPendiente) { borrarPendiente = false; render(); }
       raiz.querySelector('[data-rol="importar-file"]')?.click();
       break;
     case 'importar-confirmar':
@@ -1278,6 +1309,23 @@ function alClick(ev) {
       importPendiente = null;
       importError = '';
       render();
+      break;
+    case 'borrar-pedir':
+      // Una confirmación a la vez: borrar e importar no conviven en pantalla.
+      importPendiente = null;
+      importOk = false;
+      borrarError = '';
+      borrarPendiente = true;
+      render();
+      raiz.querySelector('[data-accion="borrar-cancelar"]')?.focus();
+      break;
+    case 'borrar-confirmar':
+      confirmarBorrado();
+      break;
+    case 'borrar-cancelar':
+      borrarPendiente = false;
+      render();
+      raiz.querySelector('[data-accion="borrar-pedir"]')?.focus();
       break;
     case 'datos-toggle':
       // El click llega ANTES de que el navegador alterne el <details>: el

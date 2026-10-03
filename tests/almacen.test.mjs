@@ -34,7 +34,7 @@ const PERFIL = {
   actividad: 'moderado', objetivo: 'mantener', comidas: 3,
   unidadPeso: 'kg', comidasDiario: null,
   // Preferencias de UI que migrar() conserva con defaults deterministas.
-  terminos: false, modo: 'calc', subModo: 'comida', manual: null,
+  terminos: false, avisoVersion: null, modo: 'calc', subModo: 'comida', manual: null,
   actualizado: 1700000000000
 };
 

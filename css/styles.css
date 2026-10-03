@@ -943,3 +943,8 @@ html:has(.en-descanso:not([hidden])){scroll-padding-bottom:calc(180px + env(safe
 .hoy-bv-pasos b{color:var(--text);font-weight:500}
 .hoy-bv-cta{width:100%}
 .hoy-retomar:focus-visible,.hoy-plato:focus-visible,.hoy-menu-ver:focus-visible,.hoy-dia .hoy-editar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ═══ PRIVACIDAD — enlace al aviso y datos legales pendientes (docs/privacidad; lo del Diario, en diario.css) ═══ */
+.hoy-legal{margin:40px 0 8px;text-align:center;font-size:12px;line-height:1.6;color:var(--muted-ink)}
+.hoy-legal a,.legal-simplificado a{color:var(--accent-ink);text-decoration:underline;text-underline-offset:2px}
+.legal-pendiente{color:var(--danger);font-weight:500}

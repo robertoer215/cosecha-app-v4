@@ -3,6 +3,7 @@ import { precio, mac, calcularMeta, metaManualComida, metaManualTotal,
          porcionar, explicarCambio, proponerCierre, tamanosPermitidos, UMBRAL_G, cubrenGrasa, nombreCorto } from './calc.js';
 import { armarPedido, clavePedido, compararConCocina, llamarCocina, K_DE_ETIQUETA, origenMeta } from './cocina.js';
 import * as almacen from './almacen.js';
+import { AVISO_VERSION, avisoAceptado, rellenarLegales } from './privacidad.js';
 
 let meta = {}, selBase = {}, szBase = {}, selExtra = {}, szExtra = {};
 
@@ -336,6 +337,9 @@ function persistirPerfilYMeta() {
       unidadPeso: previo.unidadPeso || 'kg',
       comidasDiario: previo.comidasDiario ?? null,
       terminos: modoActual === 'calc' ? true : (previo.terminos ?? false),
+      // Calcular con la fórmula exige aceptar el aviso vigente (art. 8 LFPDPPP:
+      // datos de salud). Se guarda QUÉ versión se aceptó, no solo que sí.
+      avisoVersion: modoActual === 'calc' ? AVISO_VERSION : (previo.avisoVersion ?? null),
       actualizado: Date.now()
     });
     return almacen.guardarMetaCache(nuevo, metaNueva);
@@ -348,7 +352,9 @@ function persistirPerfilYMeta() {
 // plato". El perfil sigue a un toque en el stepper para cambiarlo.
 function prepararMetaGuardada() {
   const p = estadoLocal.perfil;
-  if (!p || !p.terminos || !estadoLocal.metaCache) return;
+  // Una aceptación de un aviso anterior no basta: el perfil se abre para que
+  // la persona lea el aviso vigente y lo acepte de nuevo.
+  if (!avisoAceptado(p) || !estadoLocal.metaCache) return;
   const vuelta = volverTrasPerfil;
   volverTrasPerfil = null;
   window.calcular();
@@ -404,7 +410,7 @@ function restaurarPerfil() {
     // en modo fórmula se recalculaba con el formulario manual del dispositivo.
     window.setMode(p.modo === 'manual' ? 'manual' : 'calc');
     window.setSubMode(p.subModo === 'total' ? 'total' : 'comida');
-    if (p.terminos) {
+    if (avisoAceptado(p)) {
       $('terms-btn').classList.add('accepted');
       $('terms-icon').textContent = '●';
       $('terms-btn-txt').textContent = 'Aceptado';
@@ -1607,6 +1613,7 @@ document.querySelectorAll('.s-node').forEach(n => {
 
 // Arranque: el perfil guardado rellena el formulario (corre al final, cuando
 // setMode y compañía ya existen en window) y la app abre en Hoy.
+rellenarLegales();
 restaurarPerfil();
 prepararMetaGuardada();
 renderHoy();

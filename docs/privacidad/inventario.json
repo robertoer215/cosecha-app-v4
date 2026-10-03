@@ -1,0 +1,73 @@
+{
+  "_leeme": "Inventario de datos de COSECHA App. Lo lee tests/privacidad.test.mjs: todo dominio externo que cargue la app y toda clave de almacenamiento deben estar aquí, y aviso.version debe coincidir con js/privacidad.js y privacidad.html. Explicación humana en inventario-de-datos.md.",
+  "aviso": {
+    "version": "1.0",
+    "fecha": "2026-10-03",
+    "url": "privacidad.html"
+  },
+  "responsable": {
+    "estado": "pendiente",
+    "falta": ["nombre o razón social", "domicilio", "correo de privacidad", "persona o área que atiende solicitudes (art. 29)"],
+    "donde_se_escribe": "js/privacidad.js (RESPONSABLE)"
+  },
+  "almacenamiento_local": [
+    {
+      "clave": "cosecha.v1",
+      "donde": "localStorage del navegador, en el dispositivo de la persona",
+      "contenido": ["perfil", "metaCache", "diario", "entreno", "recientes", "preferencias"],
+      "datos_sensibles": true,
+      "sale_del_dispositivo": false,
+      "conservacion": "Hasta que la persona lo borre (Diario › Tus datos › Borrar todos mis datos) o borre los datos del sitio en su navegador"
+    }
+  ],
+  "terceros": [
+    {
+      "dominio": "robertoer215.github.io",
+      "proveedor": "GitHub, Inc. (GitHub Pages)",
+      "funcion": "Aloja la app",
+      "recibe": "Dirección IP, navegador y página solicitada (directo del navegador)",
+      "recibe_datos_de_la_app": false,
+      "aviso": "https://docs.github.com/es/site-policy/privacy-policies/github-general-privacy-statement"
+    },
+    {
+      "dominio": "raw.githubusercontent.com",
+      "proveedor": "GitHub, Inc.",
+      "funcion": "Imágenes de los ejercicios (free-exercise-db)",
+      "recibe": "Dirección IP y navegador (directo del navegador)",
+      "recibe_datos_de_la_app": false,
+      "aviso": "https://docs.github.com/es/site-policy/privacy-policies/github-general-privacy-statement"
+    },
+    {
+      "dominio": "fonts.googleapis.com",
+      "proveedor": "Google LLC (Google Fonts)",
+      "funcion": "Hoja de estilos de las tipografías Inter e IBM Plex Mono",
+      "recibe": "Dirección IP y navegador (directo del navegador)",
+      "recibe_datos_de_la_app": false,
+      "aviso": "https://policies.google.com/privacy?hl=es"
+    },
+    {
+      "dominio": "fonts.gstatic.com",
+      "proveedor": "Google LLC (Google Fonts)",
+      "funcion": "Archivos de las tipografías",
+      "recibe": "Dirección IP y navegador (directo del navegador)",
+      "recibe_datos_de_la_app": false,
+      "aviso": "https://policies.google.com/privacy?hl=es"
+    },
+    {
+      "dominio": "cdnjs.cloudflare.com",
+      "proveedor": "Cloudflare, Inc. (cdnjs)",
+      "funcion": "Librería qrcodejs 1.0.0 que dibuja el QR del pedido (con integridad SRI)",
+      "recibe": "Dirección IP y navegador (directo del navegador)",
+      "recibe_datos_de_la_app": false,
+      "aviso": "https://www.cloudflare.com/es-es/privacypolicy/"
+    },
+    {
+      "dominio": "n8n.srv1683942.hstgr.cloud",
+      "proveedor": "n8n de COSECHA en un servidor de Hostinger",
+      "funcion": "Cocina: recibiría el pedido (meta por comida y selección de módulos, sin identificadores)",
+      "recibe": "NADA mientras MODO_DEMO = true en js/cocina.js",
+      "recibe_datos_de_la_app": false,
+      "estado": "inactivo — activarlo exige actualizar el aviso (subir versión) y declarar a los encargados (Hostinger, Anthropic, Google Sheets)"
+    }
+  ]
+}

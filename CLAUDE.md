@@ -178,6 +178,28 @@ n8n: aquí no se redacta nada) y propone (`propuesta_cierre`).
   propios macros (hasta ±9.5 kcal por item); en platos grandes esos desvíos pueden
   apilarse más allá de los 68 kcal y aún pintar la kcal en rojo con macros en meta.
 
+## Privacidad y protección de datos (obligatorio, 3-oct-2026)
+Marco: LFPDPPP (DOF 20-03-2025). Todo vive en `docs/privacidad/`: el README tiene el
+estado de cada obligación y los pendientes antes de lanzar.
+- Los datos NUNCA salen del dispositivo: perfil, diario y entrenamiento van solo a
+  `localStorage` (`cosecha.v1`), y solo `js/almacen.js` toca el almacenamiento del
+  navegador. `tests/privacidad.test.mjs` falla si otro módulo lo toca, si alguien
+  usa cookies o si la app carga algo de un dominio no declarado.
+- Antes de fusionar un cambio que recoja un dato nuevo, envíe algo fuera del
+  dispositivo, cargue algo de un dominio nuevo o cambie para qué se usan los datos:
+  actualiza `docs/privacidad/inventario.json`, `inventario-de-datos.md` y
+  `privacidad.html`. Si cambia el tratamiento, sube `AVISO_VERSION`
+  (`js/privacidad.js` e `inventario.json`) y la app volverá a pedir la aceptación.
+- La identidad del responsable (nombre, domicilio, correo) vive SOLO en
+  `js/privacidad.js` (`RESPONSABLE`). No la inventes: mientras falte, la app la
+  enseña en rojo como "dato pendiente".
+- Calcular con la fórmula exige aceptar la versión VIGENTE del aviso
+  (`avisoAceptado()`); el perfil guarda qué versión se aceptó (`avisoVersion`).
+- "Borrar todos mis datos" (Diario › Tus datos) usa `almacen.borrarTodo()`, que
+  bloquea la escritura hasta recargar: no lo sustituyas por un `guardar()` vacío.
+- Activar cuentas o nube exige pasar antes `docs/privacidad/evaluacion-impacto-nube.md`
+  (RLS en cada tabla, consentimiento expreso y por escrito, aviso 2.0).
+
 ## Bugs conocidos
 - (Resuelto 16-sep-2026) El QR del resumen no se dibujaba NUNCA, ni con un módulo:
   qrcodejs 1.0.0 calcula mal el tamaño en cuanto hay un carácter fuera de ASCII y

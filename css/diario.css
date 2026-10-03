@@ -206,3 +206,12 @@
 .dia-res-t{margin:0 0 6px;padding-bottom:6px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;font-weight:400;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-ink)}
 .dia-ver-mas{display:block;min-height:44px;padding:0;background:none;border:0;color:var(--accent-deep);font-family:var(--sans);font-size:13px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .dia-ver-mas:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ═══ Tus datos · privacidad (docs/privacidad) ═══ */
+.dia-datos-body a{color:var(--accent-ink);text-decoration:underline;text-underline-offset:2px}
+/* La acción destructiva va aparte de las de respaldo, y se distingue por color Y
+   por texto: --danger da 6,35:1 sobre --bg */
+.dia-borrar-fila{margin-top:20px;padding-top:16px;border-top:1px solid var(--border)}
+.dia-borrar,.dia-borrar:hover{color:var(--danger);border-color:var(--danger)}
+.btn-main.dia-borrar-si,.btn-main.dia-borrar-si:hover{background:var(--danger);box-shadow:none}
+.dia-datos-body>.dia-aviso-link{margin:16px 0 0} /* gana a .dia-datos-body>p (0-1-1) */

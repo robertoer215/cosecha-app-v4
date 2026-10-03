@@ -8,7 +8,8 @@
 <!-- diario.css y entreno.css se cargan bajo demanda junto con su módulo
      (cargarCSS en app.js): la carga inicial de Pedir no crece. -->
 <link rel="icon" href="data:,">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<!-- integrity (SRI): si el archivo de cdnjs cambiara, el navegador no lo ejecuta. -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js" integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSQX0FslNhTDadL4O5SAGapGt4FodqL8My0mA==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 <body>
 <div class="app">
@@ -103,6 +104,8 @@
       </div>
       <ul class="hoy-carrusel" id="hoy-carrusel"></ul>
     </section>
+
+    <p class="hoy-legal">Tus datos viven solo en este teléfono · <a href="privacidad.html">Aviso de privacidad</a></p>
   </main>
 
   <main id="vista-pedir" hidden>
@@ -171,6 +174,10 @@
       <div class="terms-wrap">
         <div class="terms-title">Antes de continuar</div>
         <p class="terms-text">Esta herramienta usa la fórmula Mifflin-St Jeor, pensada para personas sanas en general. Si tienes alguna condición de salud, estás bajo tratamiento médico o trabajas con un especialista, te recomendamos usar sus indicaciones directamente.</p>
+        <!-- Aviso de privacidad simplificado (art. 16 fr. II LFPDPPP): responsable,
+             datos (con los sensibles señalados), finalidad, cómo limitar su uso y
+             dónde está el integral. La identidad sale de js/privacidad.js. -->
+        <p class="terms-text legal-simplificado"><b>Tu privacidad.</b> <span data-legal="nombre">dato pendiente</span> (domicilio: <span data-legal="domicilio">dato pendiente</span>), responsable de COSECHA, usa tu sexo, edad, peso, estatura, actividad y objetivo —datos de salud, sensibles— solo para calcular tu meta y armar tu plato. Se guardan únicamente en este teléfono: no los recibimos ni los compartimos, y puedes borrarlos cuando quieras en Diario › Tus datos. Al tocar «Entendido, acepto continuar» aceptas el <a href="privacidad.html">aviso de privacidad</a>.</p>
         <button class="terms-accept-btn" id="terms-btn" onclick="aceptarTerminos()">
           <span class="terms-btn-icon" id="terms-icon">○</span>
           <span id="terms-btn-txt">Entendido, acepto continuar</span>

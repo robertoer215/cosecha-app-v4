@@ -87,6 +87,9 @@ function migrarPerfil(p) {
     // modo del formulario. No afectan al cálculo, pero perderlas obligaría a
     // re-aceptar y re-elegir en cada visita.
     terminos: p.terminos === true,
+    // Qué versión del aviso de privacidad aceptó (js/privacidad.js). Una
+    // versión vieja no vale: si el tratamiento cambió, se vuelve a preguntar.
+    avisoVersion: typeof p.avisoVersion === 'string' ? p.avisoVersion : null,
     modo: p.modo === 'manual' ? 'manual' : 'calc',
     subModo: p.subModo === 'total' ? 'total' : 'comida',
     // Los valores tecleados en "Ingresar mis macros": sin ellos, recargar
@@ -246,11 +249,39 @@ export function cargar(storage) {
 export function guardar(estado, storage) {
   try {
     const st = storage ?? globalThis.localStorage;
+    // Tras borrarTodo() nada vuelve a escribir en esta visita (ver abajo).
+    if (borrados.has(st)) return false;
     st.setItem(CLAVE, JSON.stringify(estado));
     return true;
   } catch {
     // Cuota llena o storage bloqueado. Se avisa con false: app.js decide si
     // enseña el aviso de "no pude guardar"; aquí no hay UI.
+    return false;
+  }
+}
+
+// ── Borrar todo: cancelación y revocación sin pedirle nada a nadie ───────────
+//
+// Quita del dispositivo TODO lo que COSECHA guardó: la clave vigente y
+// cualquier otra con prefijo "cosecha." (versiones futuras o pasadas). Nada
+// ajeno a COSECHA se toca. Después, ese storage queda bloqueado para escribir
+// hasta que la página se recargue: un temporizador o un guardado en vuelo
+// resucitaría lo que el usuario acaba de borrar. Por storage y no global, para
+// que un test no contamine a otro.
+const borrados = new WeakSet();
+
+export function borrarTodo(storage) {
+  try {
+    const st = storage ?? globalThis.localStorage;
+    const claves = [];
+    for (let i = 0; i < st.length; i++) {
+      const k = st.key(i);
+      if (k === CLAVE || (typeof k === 'string' && k.startsWith('cosecha.'))) claves.push(k);
+    }
+    claves.forEach(k => st.removeItem(k));
+    borrados.add(st);
+    return true;
+  } catch {
     return false;
   }
 }
