@@ -39,7 +39,10 @@ export function estadoInicial() {
     metaCache: null,
     diario: {},
     entreno: { rutinas: [], sesiones: [], sesionActiva: null },
-    recientes: { alimentos: [], ejercicios: [] }
+    recientes: { alimentos: [], ejercicios: [] },
+    // Preferencias que no dependen del perfil nutricional (Entrenar ya no lo
+    // exige): sin esto, quien solo entrena no podía usar libras.
+    preferencias: { unidadPeso: 'kg' }
   };
 }
 
@@ -177,7 +180,9 @@ function tipar(o, tipos) {
 // sin red de seguridad, así que la red vive aquí. Lo irreconocible se
 // normaliza a listas vacías, nunca pasa crudo.
 function sesionSegura(s) {
-  if (!esObjeto(s)) return null;
+  // Sin id no se puede ver, borrar ni reemplazar: un objeto suelto de un
+  // respaldo manipulado se descarta (antes quedaba como sesión "Invalid Date").
+  if (!esObjeto(s) || typeof s.id !== 'string' || s.id === '') return null;
   return {
     ...s,
     ejercicios: Array.isArray(s.ejercicios)
@@ -216,7 +221,10 @@ export function migrar(crudo) {
     metaCache: migrarMetaCache(crudo.metaCache),
     diario: migrarDiario(crudo.diario),
     entreno: migrarEntreno(crudo.entreno),
-    recientes: migrarRecientes(crudo.recientes)
+    recientes: migrarRecientes(crudo.recientes),
+    preferencias: {
+      unidadPeso: (esObjeto(crudo.preferencias) ? crudo.preferencias.unidadPeso : crudo.perfil?.unidadPeso) === 'lb' ? 'lb' : 'kg'
+    }
   };
 }
 

@@ -449,7 +449,11 @@ function unidadDe(al) {
 
 function porcionDe(al) {
   const lista = Array.isArray(al.porciones) ? al.porciones.filter(p => p && Number.isFinite(p.g) && p.g > 0) : [];
-  const p = lista.find(x => UNIDAD_NATURAL.test(x.nombre || '')) || lista[0] || null;
+  // Aceites, mantequilla, mayonesa, miel…: la medida natural es la cucharada
+  // (con porciones[0] arrancaban en "1 taza": 1.500–2.000 kcal precargadas).
+  const cuchara = /aceite|mantequilla|manteca|mayonesa|miel|crema|aderezo|salsa|azucar|mermelada|cajeta|jarabe|vinagreta|margarina/.test(normalizarTexto(al.nombre || ''))
+    ? lista.find(x => /cucharad/i.test(x.nombre || '')) : null;
+  const p = cuchara || lista.find(x => UNIDAD_NATURAL.test(x.nombre || '')) || lista[0] || null;
   return p && typeof p.nombre === 'string' && Number.isFinite(p.g) && p.g > 0
     ? { nombre: p.nombre, g: p.g }
     : null;
@@ -581,8 +585,19 @@ function confirmarManual() {
   const vals = { prot: n(manual.prot), carb: n(manual.carb), gras: n(manual.gras) };
   const err = raiz.querySelector('[data-zona="manual-error"]');
   const malos = Object.entries(vals).filter(([, v]) => !(Number.isFinite(v) && v >= 0 && v <= 500));
-  if (!nombre || malos.length || vals.prot + vals.carb + vals.gras <= 0) {
-    if (err) err.textContent = !nombre ? 'Escribe qué comiste.' : 'Revisa los macros: números de 0 a 500 g, al menos uno mayor que 0.';
+  raiz.querySelectorAll('[data-rol="manual-campo"]').forEach(i => i.removeAttribute('aria-invalid'));
+  const ETQ = { prot: 'Proteína', carb: 'Carbohidratos', gras: 'Grasas' };
+  let campoMalo = null, msg = '';
+  if (!nombre) { campoMalo = 'nombre'; msg = 'Escribe qué comiste.'; }
+  else if (malos.length) { campoMalo = malos[0][0]; msg = `${malos.map(([k]) => ETQ[k]).join(', ')}: escribe un número de 0 a 500 g.`; }
+  else if (vals.prot + vals.carb + vals.gras <= 0) { campoMalo = 'prot'; msg = 'Al menos un macro tiene que ser mayor que 0.'; }
+  if (campoMalo) {
+    if (err) { err.textContent = msg; err.id = 'dia-m-error'; }
+    (campoMalo === 'nombre' ? [['nombre']] : (malos.length ? malos : [['prot']])).forEach(([k]) => {
+      const i = raiz.querySelector(`#dia-m-${k}`);
+      if (i) { i.setAttribute('aria-invalid', 'true'); i.setAttribute('aria-describedby', 'dia-m-error'); }
+    });
+    raiz.querySelector(`#dia-m-${campoMalo}`)?.focus();
     return;
   }
   const entrada = {
@@ -689,6 +704,11 @@ function recibirArchivo(archivo) {
 }
 
 function confirmarImportacion() {
+  // Un respaldo sin perfil ni meta no borra los del dispositivo: se conservan
+  // (antes se perdían sin aviso, incluidos los macros de la nutrióloga).
+  const actual = almacen.cargar();
+  if (!importPendiente.perfil && actual.perfil) importPendiente = { ...importPendiente, perfil: actual.perfil };
+  if (!importPendiente.metaCache && actual.metaCache) importPendiente = { ...importPendiente, metaCache: actual.metaCache };
   estado = importPendiente;
   importPendiente = null;
   importOk = true;
@@ -763,7 +783,7 @@ function htmlEntrada(e, comida, i) {
   const kcal = Math.round(kcalDerivada(e.macros));
   const cant = e.porcion
     ? `${fmt1(e.gramos / e.porcion.g)} × ${esc(e.porcion.nombre)}`
-    : `${fmt1(e.gramos)} g`;
+    : e.gramos > 0 ? `${fmt1(e.gramos)} g` : 'registrado a mano';
   return `<li><button type="button" class="dia-entrada" data-accion="editar-entrada" data-comida="${comida}" data-indice="${i}">
     <span class="dia-e-main">
       <span class="dia-e-nm">${esc(e.nombre)}</span>
@@ -804,7 +824,7 @@ function htmlComidas(sumas) {
 
 function htmlDatos() {
   const confirmar = importPendiente ? `<div class="dia-import-confirmar" role="alert">
-      <p>Esto sustituye tu diario y tus entrenamientos actuales por los del respaldo.</p>
+      <p>Esto sustituye tu diario y tus entrenamientos por los del respaldo${importPendiente.perfil ? ', y también tu perfil y tu meta' : '. Tu perfil y tu meta se conservan (el respaldo no los trae)'}.</p>
       <div class="dia-datos-botones">
         <button type="button" class="btn btn-main" data-accion="importar-confirmar">Sí, importar</button>
         <button type="button" class="btn btn-ghost" data-accion="importar-cancelar">Cancelar</button>
@@ -876,7 +896,7 @@ function htmlChips() {
   return `<div class="dia-chips-zona">
     <div class="sec-lbl">Recientes y frecuentes</div>
     <div class="dia-chips">${chips.map(e => {
-      const cant = e.porcion ? `${fmt1(e.gramos / e.porcion.g)} × ${esc(e.porcion.nombre)}` : `${fmt1(e.gramos)} g`;
+      const cant = e.porcion ? `${fmt1(e.gramos / e.porcion.g)} × ${esc(e.porcion.nombre)}` : e.gramos > 0 ? `${fmt1(e.gramos)} g` : 'a mano';
       return `<button type="button" class="dia-chip" data-accion="chip" data-id="${esc(e.id)}">
         <span class="dia-chip-nm">${esc(e.nombre)}</span>
         <span class="dia-chip-sub">${cant} · ${Math.round(kcalDerivada(e.macros))} kcal</span>

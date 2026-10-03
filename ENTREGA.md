@@ -34,7 +34,7 @@ Los datos del usuario viven SOLO en el dispositivo (`localStorage`, esquema vers
 | **Progreso en Entrenar** (pedido de Roberto, 2-oct 12:56) | ✅ Publicado (`4d5123d`, 13:06) y verificado en la URL pública: pestaña «Progreso» con volumen promedio por sesión y % frente al periodo anterior (1 mes / 6 meses), sesiones, series y volumen total, gráfica de barras (SVG propio, resumen accesible) y récords personales por ejercicio; detalle por ejercicio con foto, top 3 récords con medalla (desplegables: series, reps totales, volumen, «Ver la sesión»), historial e instrucciones. En peso corporal se mide por repeticiones. 1RM Epley rotulado «estimado». 7 tests nuevos (179) |
 | **Hoy cálida** (pedido de Roberto, 2-oct 12:20: «el inicio se siente vacío y frío») | ✅ Publicada (`a4c5fdb`, 12:32) y verificada en la URL pública: saludo según la hora y frase que cambia con tu día; tu día en un anillo (consumido · por comer · meta) sobre lavado `--ember`; acciones con iconos en círculos de color y subtítulos personales; «Tu semana» (comida y entrenos de 7 días); carrusel «Del menú COSECHA» con fotos reales (miniaturas de ~35 KB, carga perezosa) que deja el plato elegido en Pedir; bienvenida con foto para la primera visita. Solo tokens de la marca (el motor de diseño proponía lavanda + Lora: descartado por la regla de tokens); contraste AA medido en cada par nuevo |
 | **Sesión de Entrenar de dos ventanas** (pedido de Roberto, 2-oct 11:06) | ✅ Publicada (`f247fb1`, 11:20) y verificada en la URL pública: «Sesión en vivo» con círculo de estado (Calentamiento → Activo → Descansar → Listo), un botón grande Empezar serie / Fin de la serie, tarjeta del ejercicio con foto, Serie X/N, reps y kg; «Ejercicios» con la lista editable y miniaturas; ficha técnica desde la sesión sin perder el descanso; filtros por músculo y equipo en la Biblioteca. Recargar en «Activo» conserva el tiempo (6 s medidos tras recargar). Patrón de experiencia de WHOOP **sin** frecuencia cardiaca ni zonas (dependen de su sensor: regla 4 del encargo) |
-| Auditoría multi-rol | Ronda 1: 35 confirmados (3 S0) → arreglados. Ronda 2: 15 confirmados (0 S0, 3 S1) → arreglados. Ronda 3: **0 S0, 0 S1**, 14 S2 → arreglados (los 42 refutadores cayeron por falta de créditos: cada S2 lo verifiqué yo contra el código antes de arreglarlo; ninguno resultó falso). Ronda 4: en curso |
+| Auditoría multi-rol | Ronda 1: 35 confirmados (3 S0) → arreglados. Ronda 2: 15 confirmados (0 S0, 3 S1) → arreglados. Ronda 3: **0 S0, 0 S1**, 14 S2 → arreglados (los 42 refutadores cayeron por falta de créditos: cada S2 lo verifiqué yo contra el código antes de arreglarlo; ninguno resultó falso). Ronda 4: 4 S1 + ~30 S2 → arreglados. Ronda 5 (110/110 agentes, sin caídas): **2 S1 + 28 S2** (≈18 defectos distintos tras deduplicar) → **todos arreglados** el 3-oct, verificados con 6 recorridos en Chrome y 185 tests. Quedan 47 S3 de pulido como backlog (ver abajo) |
 | **Publicación** | ✅ **`main` publicado en Pages** (`ced3dce`, 2-oct 10:45) y verificado en la URL pública con recorridos CDP a 375 px: Hoy → perfil → Diario (alta) → Hoy refleja lo comido; Entrenar: CTA de perfil devuelve a Entrenar, rutinas plegables, ficha de ejercicio, palomear arranca el descanso, saltar se persiste, terminar → volver a la sesión; **0 peticiones a n8n** |
 
 ## Decisiones tomadas y por qué
@@ -57,6 +57,18 @@ Los datos del usuario viven SOLO en el dispositivo (`localStorage`, esquema vers
 - Verificación continua de esta noche: tests (116 ✓), plato de punta a punta en la URL pública con registro de red (0 peticiones a n8n), línea base de rendimiento de Pedir (124 KB, DCL mediana 106 ms, `scratchpad/base-rendimiento-pedir.json`).
 - Las flotas de datos llevan verificación adversarial integrada (muestras contra fuente, revisión de entrenador).
 - Auditoría multi-rol completa (cumplimiento, nutrición, fuerza, UX, AA, marca, código, rendimiento, QA, licencias, producto): **pendiente de ejecutar como primer paso al retomar** — el corte de servicio de esta noche no da tiempo de correrla entera y arreglar lo confirmado. No se da por auditado lo que no lo está.
+
+## Búsqueda del Diario (pedido de Roberto, 3-oct)
+
+«Busco tortilla y salen tacos; pollo y sale un guisado». Antes el orden era alfabético dentro de cada grupo y lo raro salía primero. Ahora cada resultado se puntúa (nombre que empieza por lo buscado, variante de uso diario en México, ya cocinado, nombre simple; variantes raras restan) y los resultados van en tres secciones: **Alimentos → Platillos → Del menú COSECHA**, con «Ver N más». Verificado en la URL pública: «tortilla» abre con la de maíz y los tacos van a Platillos; «pollo» abre con pechuga, el mole y el guisado en Platillos.
+
+## Backlog de pulido (S3 de la ronda 5, no bloquean el lanzamiento)
+
+- qrcodejs desde cdnjs sin SRI (heredado de Pedir).
+- La miniatura de la biblioteca baja el JPG completo del CDN (1,4–3,2 MB por búsqueda con muchas filas): generar miniaturas propias.
+- Editar los macros de una entrada registrada a mano (hoy se mueve o se quita).
+- Mayúsculas mezcladas en nombres de la base USDA (449 en minúscula).
+- Botón para borrar todos los datos del dispositivo.
 
 ## Recomendaciones que NO apliqué (fuera de mi permiso)
 

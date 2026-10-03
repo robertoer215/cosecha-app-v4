@@ -45,7 +45,8 @@ test('estadoInicial: forma v1 completa y objetos frescos en cada llamada', () =>
   assert.deepEqual(a, {
     v: VERSION, perfil: null, metaCache: null, diario: {},
     entreno: { rutinas: [], sesiones: [], sesionActiva: null },
-    recientes: { alimentos: [], ejercicios: [] }
+    recientes: { alimentos: [], ejercicios: [] },
+    preferencias: { unidadPeso: 'kg' }
   });
   // Si dos llamadas compartieran referencias, mutar una contaminaría la otra.
   const b = estadoInicial();
@@ -310,4 +311,14 @@ test('guardarRutina: alta al final y reemplazo por id SIN reordenar', () => {
   e = guardarRutina(e, { id: 'r1', nombre: 'Empuje v2' });
   assert.deepEqual(e.entreno.rutinas.map(r => [r.id, r.nombre]), [['r1', 'Empuje v2'], ['r2', 'Jalón']]);
   assert.equal(antes.entreno.rutinas[0].nombre, 'Empuje'); // inmutable
+});
+
+test('preferencias: la unidad de peso vive aparte del perfil y se hereda del perfil viejo', () => {
+  assert.equal(migrar({ preferencias: { unidadPeso: 'lb' } }).preferencias.unidadPeso, 'lb');
+  assert.equal(migrar({ perfil: { unidadPeso: 'lb' } }).preferencias.unidadPeso, 'lb');
+  assert.equal(migrar({ preferencias: { unidadPeso: 'stones' } }).preferencias.unidadPeso, 'kg');
+});
+
+test('importarJSON: una sesión sin id (respaldo manipulado) no cuela ni cuenta como dato', () => {
+  assert.throws(() => importarJSON(JSON.stringify({ entreno: { sesiones: [{}] } })), /no trae datos/);
 });

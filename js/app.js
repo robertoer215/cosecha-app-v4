@@ -285,7 +285,7 @@ function pintarMenuHoy() {
     const mm = mac(it, 1);
     return `<li><button type="button" class="hoy-plato" onclick="elegirDelMenu('${it.id}','${it.cat}')" aria-label="${it.nombre}: ${mm.prot} g de proteína, ${mm.carb} g de carbohidratos, ${mm.gras} g de grasa, $${precio(it, 1)}">
       <img src="assets/hoy/${it.img}" alt="" width="320" height="320" loading="lazy" decoding="async"${it.foco ? ` style="object-position:${it.foco}"` : ''}>
-      <span class="hoy-plato-cat">${CAT_LABEL[it.cat] || ''}</span>
+      <span class="hoy-plato-cat">${CAT_LABEL[it.cat] || ''} · estándar</span>
       <span class="hoy-plato-n">${it.nombre}</span>
       <span class="hoy-plato-mac"><b class="m-p">${mm.prot}P</b><b class="m-c">${mm.carb}C</b><b class="m-g">${mm.gras}G</b><span class="hoy-plato-pr">$${precio(it, 1)}</span></span>
     </button></li>`;
@@ -293,9 +293,12 @@ function pintarMenuHoy() {
 }
 
 // Desde el carrusel: el plato queda elegido y Pedir abre en su paso.
+let platoPendiente = null;   // plato del carrusel elegido antes de tener perfil
 window.elegirDelMenu = function(id, cat) {
   window.goTab('pedir');
-  if (!(meta && typeof meta.kcal === 'number')) return;   // sin meta, Pedir pide el perfil
+  // Sin meta, Pedir pide el perfil; el plato se recuerda y queda elegido
+  // en cuanto se toca Continuar (antes la tarjeta prometía algo que no hacía).
+  if (!(meta && typeof meta.kcal === 'number')) { platoPendiente = { id, cat }; return; }
   if (!(selBase[cat] || []).includes(id) && !selExtra[id]) window.selBI(id, cat);
   const paso = CATS_STEPS.indexOf(cat);
   if (paso >= 0) platoCatIdx = paso;
@@ -396,10 +399,11 @@ function restaurarPerfil() {
       if (m.mCarb != null) $('m-carb').value = m.mCarb;
       if (m.mGras != null) $('m-gras').value = m.mGras;
     }
-    if (p.modo === 'manual') {
-      window.setMode('manual');
-      if (p.subModo === 'total') window.setSubMode('total');
-    }
+    // El modo SIEMPRE se fija al del perfil (también de vuelta a fórmula y
+    // a "por comida"): restaurando solo el caso manual, un respaldo importado
+    // en modo fórmula se recalculaba con el formulario manual del dispositivo.
+    window.setMode(p.modo === 'manual' ? 'manual' : 'calc');
+    window.setSubMode(p.subModo === 'total' ? 'total' : 'comida');
     if (p.terminos) {
       $('terms-btn').classList.add('accepted');
       $('terms-icon').textContent = '●';
@@ -549,6 +553,7 @@ window.calcular = function() {
   renderBase();
   updateGlobalTracker();
   goStep(1);
+  if (platoPendiente) { const pp = platoPendiente; platoPendiente = null; window.elegirDelMenu(pp.id, pp.cat); return; }
   if (volverTrasPerfil) window.goTab(volverTrasPerfil);
 };
 

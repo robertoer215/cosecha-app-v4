@@ -257,6 +257,7 @@ function esc(s) {
 }
 
 function fechaCorta(ms) {
+  if (!Number.isFinite(ms)) return 'Sin fecha';
   const f = new Date(ms).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
   return f.charAt(0).toUpperCase() + f.slice(1);
 }
@@ -683,7 +684,7 @@ async function cargarRutinasReal() {
   }
 }
 
-function unidadPeso() { return estado.perfil?.unidadPeso === 'lb' ? 'lb' : 'kg'; }
+function unidadPeso() { return (estado.preferencias?.unidadPeso || estado.perfil?.unidadPeso) === 'lb' ? 'lb' : 'kg'; }
 
 // ── Render raíz ──────────────────────────────────────────────────────────────
 
@@ -750,7 +751,7 @@ function pintarInicio(raiz) {
     </div>
     <div class="en-panel"></div>
     <p class="en-aviso-storage" hidden>No se pudo guardar en este dispositivo. Exporta un respaldo desde Diario antes de cerrar.</p>
-    ${estado.perfil ? `<div class="en-unidad en-unidad-pie" role="group" aria-label="Unidad de peso">
+    ${true ? `<div class="en-unidad en-unidad-pie" role="group" aria-label="Unidad de peso">
       <span>Unidad de peso</span>
       ${['kg', 'lb'].map(u => `<button type="button" class="en-unidad-btn${unidadPeso() === u ? ' en-unidad-on' : ''}" aria-pressed="${unidadPeso() === u}" data-unidad="${u}">${u}</button>`).join('')}
     </div>` : ''}
@@ -761,7 +762,11 @@ function pintarInicio(raiz) {
     if (!b) return;
     // En México los discos y mancuernas suelen venir en libras: se guarda en
     // el perfil (los pesos se siguen guardando en kg; solo cambia la vista).
-    escribir(est => est.perfil ? almacen.guardarPerfil(est, { ...est.perfil, unidadPeso: b.dataset.unidad }) : est);
+    const u = b.dataset.unidad;
+    escribir(est => {
+      const conPref = { ...est, preferencias: { ...(est.preferencias || {}), unidadPeso: u } };
+      return est.perfil ? almacen.guardarPerfil(conPref, { ...est.perfil, unidadPeso: u }) : conPref;
+    });
     render();
   });
   raiz.querySelector('.en-tabs').addEventListener('click', e => {
