@@ -96,18 +96,79 @@ export function incluyePalabra(texto, p) {
   return (p.endsWith('es') && texto.includes(p.slice(0, -2))) || (p.endsWith('s') && texto.includes(p.slice(0, -1)));
 }
 
+// ── Orden de los resultados: lo común primero ───────────────────────────────
+//
+// Antes se ordenaba alfabético dentro de cada grupo y lo raro salía primero
+// ("huevo" → codorniz y pato; "tortilla" → tres de harina antes que la de
+// maíz). Ahora cada resultado se PUNTÚA: que el nombre empiece por lo buscado,
+// que sea la variante de uso diario en México, que ya esté cocinado (es lo que
+// se registra) y que el nombre sea simple; las variantes raras restan.
+const PREFERIDOS = {
+  tortilla: ['maiz'], pollo: ['pechuga', 'muslo', 'pierna'], huevo: ['entero'],
+  arroz: ['blanco'], frijol: ['negro', 'pinto', 'bayo', 'de la olla', 'refrito'],
+  platano: ['tabasco', 'maduro y semimaduro', 'crudo'], leche: ['entera', 'descremada', 'semidescremada', 'deslactosada'],
+  queso: ['panela', 'fresco', 'oaxaca', 'manchego', 'cotija'], carne: ['res', 'molida'],
+  res: ['molida', 'bistec', 'arrachera'], pan: ['bolillo', 'blanco', 'integral'],
+  avena: ['hojuela'], papa: ['hervida', 'cocida'], atun: ['en agua'], yogur: ['natural', 'griego'],
+  cafe: ['negro', 'americano'], manzana: ['cruda'], jitomate: ['crudo'], aguacate: ['crudo'],
+  nopal: ['cocido'], pescado: ['tilapia', 'mojarra'], cerdo: ['lomo'], pavo: ['pechuga']
+};
+const RAROS = ['codorniz', 'pato', 'ganso', 'polvo', 'deshidratad', 'liofiliz', 'enlatad', 'de lata',
+  'refrigerad', 'empacad', 'larga vida', 'restaurante', 'comida rapida', 'comercial', 'para bebe',
+  'great northern', 'cranberry', 'enharinad', 'tipo de grasa sin especificar', 'fortificad', 'concentrad',
+  // En México "plátano" es el Tabasco: el macho sube solo si se escribe.
+  'macho'];
+const raizPalabra = w => w.replace(/(es|s)$/, '');
+
+export function puntuar(item, palabras, q) {
+  const n = item.nombre;
+  const primera = n.split(/[\s,()]+/)[0];
+  const alInicioDePalabra = w => (' ' + n.replace(/[,()]/g, ' ')).includes(' ' + raizPalabra(w));
+  let p = 0;
+  if (n.startsWith(q)) p += 60;
+  else if (palabras.some(w => raizPalabra(primera) === raizPalabra(w))) p += 50;
+  else if (palabras.every(alInicioDePalabra)) p += 30;
+  else if (palabras.every(w => incluyePalabra(n, w))) p += 15;
+  for (const w of palabras) {
+    const pref = PREFERIDOS[raizPalabra(w)] || PREFERIDOS[w];
+    // El orden de la lista importa: la primera variante es la más común.
+    const i = pref ? pref.findIndex(t => n.includes(t)) : -1;
+    if (i >= 0) p += Math.max(12, 32 - i * 8);
+  }
+  for (const r of RAROS) if (n.includes(r) && !q.includes(r.slice(0, 5))) p -= 20;
+  const est = item.alimento?.estado;
+  if (est === 'cocido' || est === 'listo para comer') p += 6;
+  p -= Math.min(20, n.length / 6);
+  return p;
+}
+
 export function buscar(indice, consulta, limite = 20) {
   const q = normalizarTexto(consulta);
   if (q === '') return [];
   const palabras = q.split(' ');
-  const aciertos = [];
-  for (const item of indice) {
-    if (!palabras.every(p => incluyePalabra(item.texto, p))) continue;
-    const rango = item.nombre.startsWith(q) ? 0 : item.nombre.includes(palabras[0]) ? 1 : 2;
-    aciertos.push({ item, rango });
-  }
-  aciertos.sort((a, b) => a.rango - b.rango || a.item.nombre.localeCompare(b.item.nombre));
-  return aciertos.slice(0, limite).map(x => x.item.alimento);
+  return indice
+    .filter(item => palabras.every(p => incluyePalabra(item.texto, p)))
+    .map(item => ({ item, p: puntuar(item, palabras, q) }))
+    .sort((a, b) => b.p - a.p || a.item.nombre.localeCompare(b.item.nombre))
+    .slice(0, limite)
+    .map(x => x.item.alimento);
+}
+
+// Los resultados en tres secciones, en el orden en que se buscan: primero el
+// ALIMENTO (la tortilla), luego los PLATILLOS que lo llevan (los tacos) y al
+// final lo del menú COSECHA. Así "pollo" no abre con un guisado.
+export function seccionDe(alimento) {
+  const g = alimento?.grupo || '';
+  if (/carta cosecha/i.test(g) || /cosecha/i.test(alimento?.fuente || '')) return 'cosecha';
+  if (/platillos/i.test(g)) return 'platillos';
+  return 'alimentos';
+}
+
+export function buscarAgrupado(indice, consulta) {
+  const todos = buscar(indice, consulta, 400);
+  const out = { alimentos: [], platillos: [], cosecha: [] };
+  for (const a of todos) out[seccionDe(a)].push(a);
+  return out;
 }
 
 // Macros de una cantidad concreta de un alimento de la base (valores por
@@ -490,6 +551,7 @@ function confirmarDetalle() {
 // silencio. Un solo mensaje (no uno por toque), ligado al campo.
 // ── Registro a mano: lo que no está en la base también se puede anotar ────────
 let manual = { nombre: '', prot: '', carb: '', gras: '' };
+let verMasSeccion = null;   // sección de resultados desplegada entera
 
 function htmlManual() {
   const n = v => (Number.isFinite(parseFloat(v)) && parseFloat(v) >= 0 ? parseFloat(v) : 0);
@@ -849,14 +911,14 @@ function htmlResultados() {
   }
   if (base === null) return '<p class="dia-estado dia-vacio-s">Cargando la base de alimentos…</p>';
   if (normalizarTexto(consulta) === '') return '';
-  const lista = buscar(indice, consulta);
-  if (!lista.length) {
+  const g = buscarAgrupado(indice, consulta);
+  if (!g.alimentos.length && !g.platillos.length && !g.cosecha.length) {
     return `<div class="dia-estado">
       <p class="dia-vacio-s">Nada con «${esc(consulta)}». Prueba con otro nombre o regístralo tú.</p>
       <button type="button" class="btn btn-ghost" data-accion="manual">Registrar «${esc(consulta)}» a mano</button>
     </div>`;
   }
-  return `<ul class="dia-lista dia-resultados">${lista.map(a => {
+  const fila = a => {
     const kcal = Math.round(kcalDerivada({ prot: a.proteina_g, carb: a.carbohidratos_g, gras: a.grasa_g }));
     const p = porcionDe(a);
     return `<li><button type="button" class="dia-entrada" data-accion="resultado" data-id="${esc(a.id)}">
@@ -866,7 +928,20 @@ function htmlResultados() {
       </span>
       <span class="dia-e-kcal">${kcal} kcal</span>
     </button></li>`;
-  }).join('')}</ul>
+  };
+  const seccion = (titulo, lista, max, clave) => {
+    if (!lista.length) return '';
+    const abierta = verMasSeccion === clave;
+    const visibles = abierta ? lista : lista.slice(0, max);
+    return `<section class="dia-res-sec" aria-label="${titulo}">
+      <h3 class="dia-res-t">${titulo}</h3>
+      <ul class="dia-lista dia-resultados">${visibles.map(fila).join('')}</ul>
+      ${lista.length > max && !abierta ? `<button type="button" class="dia-ver-mas" data-accion="ver-mas" data-seccion="${clave}">Ver ${lista.length - max} más</button>` : ''}
+    </section>`;
+  };
+  return `${seccion('Alimentos', g.alimentos, 8, 'alimentos')}
+  ${seccion('Platillos', g.platillos, 3, 'platillos')}
+  ${seccion('Del menú COSECHA', g.cosecha, 3, 'cosecha')}
   <button type="button" class="dia-manual-link" data-accion="manual">¿No está? Regístralo a mano</button>`;
 }
 
@@ -1107,6 +1182,12 @@ function alClick(ev) {
       det.comida = btn.dataset.comida;
       render();
       break;
+    case 'ver-mas': {
+      verMasSeccion = btn.dataset.seccion;
+      const zona = raiz.querySelector('[data-zona="resultados"]');
+      if (zona) zona.innerHTML = htmlResultados();
+      break;
+    }
     case 'manual':
       manual = { nombre: consulta.trim(), prot: '', carb: '', gras: '' };
       irVista('manual');
@@ -1159,6 +1240,7 @@ function alInput(ev) {
   const rol = ev.target.dataset && ev.target.dataset.rol;
   if (rol === 'buscar-input') {
     consulta = ev.target.value;
+    verMasSeccion = null;
     // Solo la zona de resultados: repintar el campo mataría el foco y el cursor.
     const zona = raiz.querySelector('[data-zona="resultados"]');
     if (zona) zona.innerHTML = htmlResultados();
