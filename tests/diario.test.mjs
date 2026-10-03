@@ -4,7 +4,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  normalizarTexto, construirIndice, buscar,
+  normalizarTexto, construirIndice, buscar, buscarAgrupado, seccionDe,
   macrosDeCantidad, kcalDerivada, sumarDia, metaDelDia
 } from '../js/diario.js';
 
@@ -223,4 +223,45 @@ test('metaDelDia: meta.comidas nulo o inválido (metaCache migrada) degrada a ×
 test('metaDelDia: la kcal del día sigue cuadrando 4/4/9 si la meta por comida cuadraba', () => {
   const md = metaDelDia(META('formula', 3), null);
   assert.equal(md.kcal, kcalDerivada(md));
+});
+
+// ---------- orden intuitivo: lo común primero, platillos aparte ----------
+const BASE_ORDEN = [
+  { id: 'T1', nombre: 'Tortilla de harina de trigo integral', grupo: 'Cereales y tubérculos', estado: 'listo para comer' },
+  { id: 'T2', nombre: 'Tortilla de maíz', grupo: 'Cereales y tubérculos', estado: 'listo para comer' },
+  { id: 'T3', nombre: 'Taco de tortilla de maíz con res', grupo: 'Platillos y antojitos (FNDDS)', estado: 'listo para comer' },
+  { id: 'P1', nombre: 'Pollo en mole', grupo: 'Platillos y antojitos (FNDDS)', estado: 'listo para comer' },
+  { id: 'P2', nombre: 'Pollo entero con piel, rostizado', grupo: 'Carnes y aves', estado: 'cocido' },
+  { id: 'P3', nombre: 'Pechuga de pollo sin piel, asada', grupo: 'Carnes y aves', estado: 'cocido' },
+  { id: 'P4', nombre: 'Pollo al cilantro y limón (COSECHA)', grupo: 'Carta COSECHA', estado: 'listo para comer', fuente: 'Carta COSECHA (js/data.js)' },
+  { id: 'H1', nombre: 'Huevo de codorniz entero crudo', grupo: 'Lácteos y huevo', estado: 'crudo' },
+  { id: 'H2', nombre: 'Huevo entero cocido (duro)', grupo: 'Lácteos y huevo', estado: 'cocido' },
+  { id: 'B1', nombre: 'Plátano macho verde, crudo', grupo: 'Frutas', estado: 'crudo' },
+  { id: 'B2', nombre: 'plátano maduro y semimaduro, crudo', grupo: 'Frutas', estado: 'crudo' },
+];
+
+test('orden: "tortilla" trae primero la de maíz y deja los tacos en Platillos', () => {
+  const g = buscarAgrupado(construirIndice(BASE_ORDEN), 'tortilla');
+  assert.deepEqual(g.alimentos.map(a => a.id), ['T2', 'T1']);
+  assert.deepEqual(g.platillos.map(a => a.id), ['T3']);
+});
+
+test('orden: "pollo" abre con la pechuga; el guisado va a Platillos y lo de la carta a COSECHA', () => {
+  const g = buscarAgrupado(construirIndice(BASE_ORDEN), 'pollo');
+  assert.equal(g.alimentos[0].id, 'P3');
+  assert.deepEqual(g.platillos.map(a => a.id), ['P1']);
+  assert.deepEqual(g.cosecha.map(a => a.id), ['P4']);
+});
+
+test('orden: lo raro baja ("huevo" → entero antes que codorniz; "plátano" → Tabasco antes que macho)', () => {
+  const idx = construirIndice(BASE_ORDEN);
+  assert.equal(buscar(idx, 'huevo')[0].id, 'H2');
+  assert.equal(buscar(idx, 'platano')[0].id, 'B2');
+  assert.equal(buscar(idx, 'platano macho')[0].id, 'B1');
+});
+
+test('seccionDe: platillos y carta COSECHA se distinguen del resto', () => {
+  assert.equal(seccionDe({ grupo: 'Platillos y antojitos (FNDDS)' }), 'platillos');
+  assert.equal(seccionDe({ grupo: 'Carta COSECHA' }), 'cosecha');
+  assert.equal(seccionDe({ grupo: 'Frutas' }), 'alimentos');
 });

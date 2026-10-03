@@ -262,7 +262,7 @@
 /* ── Filtros de la Biblioteca ────────────────────────────────────────────── */
 .en-filtros{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
 .en-filtro{display:flex;flex-direction:column;gap:4px;color:var(--muted-ink)}
-.en-sel{width:100%;min-height:44px;padding:0 10px;border:1px solid var(--border-strong);border-radius:var(--r-sm);background:var(--bg);color:var(--text);font-family:var(--sans);font-size:16px}
+.en-sel{width:100%;min-height:44px;padding:0 30px 0 10px;border:1px solid var(--border-strong);border-radius:var(--r-sm);background-color:var(--bg);background-position:right 12px center;color:var(--text);font-family:var(--sans);font-size:16px}
 
 /* .en-thumb es un <span>: fuera de una fila flex el ancho fijo no aplicaba y
    la foto se estiraba a todo lo ancho. Bloque siempre. */
@@ -370,3 +370,22 @@
 .en-nivel-avanzado{background:var(--ember);color:var(--accent-deep)}
 /* La unidad de peso es un ajuste: vive al pie, discreta. */
 .en-unidad-pie{margin:28px 0 0;padding-top:16px;border-top:1px solid var(--border)}
+
+/* ── Auditoría r5 ────────────────────────────────────────────────────────── */
+/* Reps y peso se anotan EN la tarjeta de foco: campos grandes, evidentes. */
+.en-foco-stats{cursor:default}
+.en-foco-st{display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid var(--border);padding:0 6px}
+.en-foco-st:last-child{border-right:0}
+.en-foco-in{width:100%;max-width:84px;min-height:44px;border:1px solid var(--border-strong);border-radius:var(--r-sm);background:var(--bg);text-align:center;font-family:var(--sans);font-size:22px;font-weight:500;color:var(--text);font-variant-numeric:tabular-nums}
+.en-foco-in:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
+.en-foco-in[aria-invalid="true"]{border-color:var(--danger)}
+.en-foco-rango,.en-ej-rango{margin:0;padding:0 12px 10px;font-size:12px;color:var(--muted-ink);text-align:center}
+.en-ej-rango{text-align:left;padding:0 0 6px}
+.en-foco-error{margin:0;padding:0 12px 10px;font-size:13px;color:var(--danger);text-align:center}
+.en-foco-error:empty{display:none}
+.en-ej-pie{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.en-ej-pie .en-mas-serie{width:auto}
+.en-quitar-ej{margin-left:auto}
+/* Los filtros eran select sin flecha: el atajo background borraba la imagen
+   con la que styles.css la dibuja. Solo el color de fondo. */
+.en-sel{background-color:var(--bg)}

@@ -199,3 +199,10 @@
 .dia-buscar-caja:focus-within{outline:2px solid var(--accent-ink);outline-offset:2px}
 .dia-buscar-caja svg{width:20px;height:20px;color:var(--muted-ink);flex-shrink:0}
 .dia-buscar-caja input,.dia-buscar-caja #dia-buscar-input{flex:1;min-width:0;min-height:48px;border:0;border-bottom:0;background:transparent;padding:0;font-family:var(--sans);font-size:16px;color:var(--text);outline:none;box-shadow:none}
+
+/* ── Resultados por secciones: Alimentos · Platillos · Del menú COSECHA ──── */
+.dia-res-sec{margin-top:18px}
+.dia-res-sec:first-child{margin-top:8px}
+.dia-res-t{margin:0 0 6px;padding-bottom:6px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:12px;font-weight:400;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-ink)}
+.dia-ver-mas{display:block;min-height:44px;padding:0;background:none;border:0;color:var(--accent-deep);font-family:var(--sans);font-size:13px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.dia-ver-mas:focus-visible{outline:2px solid var(--accent);outline-offset:2px}

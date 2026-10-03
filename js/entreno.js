@@ -391,7 +391,7 @@ function serieVacia(prev) {
   return { reps: prev?.reps ?? 0, pesoKg: prev?.pesoKg ?? 0, rir: null, hecha: false, tsHecha: null };
 }
 
-function ejercicioDeSesion(idEjercicio, nombre, descansoS, superGrupo, nSeries, repsBase) {
+function ejercicioDeSesion(idEjercicio, nombre, descansoS, superGrupo, nSeries, repsBase, rango = null) {
   const previas = ultimaVez(estado.entreno.sesiones, idEjercicio);
   const series = [];
   for (let i = 0; i < nSeries; i++) {
@@ -403,7 +403,9 @@ function ejercicioDeSesion(idEjercicio, nombre, descansoS, superGrupo, nSeries, 
       rir: null, hecha: false, tsHecha: null
     });
   }
-  return { idEjercicio, nombre, descansoS, superGrupo, series };
+  // El rango de la rutina (8–12) se muestra: varias rutinas progresan "al
+  // llegar al tope del rango" y sin verlo no hay forma de seguirlas.
+  return { idEjercicio, nombre, descansoS, superGrupo, series, ...(rango && rango.max ? { rango } : {}) };
 }
 
 function empezarVacia() {
@@ -438,7 +440,8 @@ async function empezarDesdeRutina(rutina, dia) {
     for (const b of bloque) {
       const f = porId.get(b.idEjercicio);
       sesion.ejercicios.push(ejercicioDeSesion(
-        b.idEjercicio, f?.nombre ?? b.nombre ?? b.idEjercicio, b.descansoS ?? 90, g, b.series ?? 3, b.repsMin ?? null));
+        b.idEjercicio, f?.nombre ?? b.nombre ?? b.idEjercicio, b.descansoS ?? 90, g, b.series ?? 3, b.repsMin ?? null,
+        b.repsMax ? { min: b.repsMin ?? b.repsMax, max: b.repsMax } : null));
     }
   }
   persistir();
@@ -481,7 +484,8 @@ function alPalomear(idxEj, idxSerie, fila) {
     sesion.serieEnCurso = null;
   }
   prepararAudio();
-  if (serie.hecha && debeArrancarDescanso(sesion.ejercicios, idxEj, idxSerie)) {
+  if (serie.hecha) heredarASiguiente(ej, idxSerie);
+  if (serie.hecha && siguientePendiente(sesion.ejercicios) && debeArrancarDescanso(sesion.ejercicios, idxEj, idxSerie)) {
     const idxRest = ej.superGrupo == null ? idxEj : ultimoDelGrupo(ej.superGrupo);
     arrancarDescanso(idxRest);
   } else if (serie.hecha) {
@@ -691,7 +695,7 @@ function selectorFoco(el) {
   if (!el || el === document.body || !ctx.raiz.contains(el)) return null;
   if (el.id) return '#' + CSS.escape(el.id);
   const d = el.dataset || {};
-  const attrs = ['acc', 'id', 'idx', 'tab', 'sid', 'ej', 'serie'].filter(k => d[k] !== undefined)
+  const attrs = ['acc', 'id', 'idx', 'tab', 'sid', 'ej', 'serie', 'v', 'campo', 'dtab', 'periodo'].filter(k => d[k] !== undefined)
     .map(k => `[data-${k}="${CSS.escape(d[k])}"]`).join('');
   return attrs ? el.tagName.toLowerCase() + attrs : null;
 }
@@ -1365,8 +1369,10 @@ function estadoFoco() {
   const enCurso = serieEnCursoValida();
   if (enCurso) return { tipo: 'activo', lbl: 'Activo', ref: enCurso, desdeMs: enCurso.inicioMs };
   const sig = siguientePendiente(sesion.ejercicios);
-  if (descansoObj && !descansoObj.haTerminado()) return { tipo: 'descanso', lbl: 'Descansar', ref: sig };
+  // Sin series pendientes no hay "siguiente" que empezar: el foco pasa a
+  // "Completa" con Terminar sesión, aunque corriera un descanso.
   if (!sig) return { tipo: 'fin', lbl: sesion.ejercicios.length ? 'Completa' : 'Sin ejercicios', ref: null };
+  if (descansoObj && !descansoObj.haTerminado()) return { tipo: 'descanso', lbl: 'Descansar', ref: sig };
   const algunaHecha = sesion.ejercicios.some(e => e.series.some(x => x.hecha));
   return algunaHecha
     ? { tipo: 'listo', lbl: 'Listo', ref: sig, desdeMs: sesion.listoDesdeMs || sesion.inicioMs }
@@ -1390,9 +1396,28 @@ function empezarSerie() {
     delete sesion.descanso;
   }
   sesion.serieEnCurso = { idx: sig.idx, serie: sig.serie, inicioMs: Date.now() };
+  const ejS = sesion.ejercicios[sig.idx];
+  anunciar(`Serie ${sig.serie + 1} de ${ejS.series.length} de ${ejS.nombre}, en curso.`);
   prepararAudio();
   persistir();
   render();
+}
+
+// Lo anotado en una serie pasa a la siguiente del mismo ejercicio si está en
+// blanco: en el gym lo normal es repetir carga, y teclear todo de nuevo en
+// cada serie es la fricción que hacía que se guardaran series en cero.
+function heredarASiguiente(ej, j) {
+  const hecha = ej.series[j], sig = ej.series[j + 1];
+  if (!sig || sig.hecha) return;
+  if (!sig.reps) sig.reps = hecha.reps;
+  if (!sig.pesoKg) sig.pesoKg = hecha.pesoKg;
+}
+
+function leerFoco(serie) {
+  const r = ctx.raiz.querySelector('.en-foco-in[data-campo="reps"]');
+  const p = ctx.raiz.querySelector('.en-foco-in[data-campo="peso"]');
+  if (r) { const v = parseInt(r.value, 10); serie.reps = Number.isFinite(v) && v > 0 ? v : 0; }
+  if (p) { const v = parseFloat(p.value.replace(',', '.')); serie.pesoKg = aKg(Number.isFinite(v) && v > 0 ? v : 0, unidadPeso()); }
 }
 
 function finDeSerie() {
@@ -1400,13 +1425,29 @@ function finDeSerie() {
   if (!c) return;
   const ej = sesion.ejercicios[c.idx];
   const serie = ej.series[c.serie];
+  leerFoco(serie);
+  // Una serie sin repeticiones no es una serie: se pide el dato en vez de
+  // guardar "0 × 0 kg" (y un resumen que dice "peso corporal" en una sentadilla).
+  if (!serie.reps) {
+    const err = ctx.raiz.querySelector('.en-foco-error');
+    if (err) err.textContent = '¿Cuántas repeticiones hiciste? Anótalas y vuelve a tocar Fin de la serie.';
+    const r = ctx.raiz.querySelector('.en-foco-in[data-campo="reps"]');
+    if (r) { r.setAttribute('aria-invalid', 'true'); r.focus(); }
+    persistir();
+    return;
+  }
   serie.hecha = true;
   serie.tsHecha = Date.now();
   // Cuánto duró la serie: dato barato que enriquece el historial.
   serie.durS = Math.round((serie.tsHecha - c.inicioMs) / 1000);
   sesion.serieEnCurso = null;
-  if (debeArrancarDescanso(sesion.ejercicios, c.idx, c.serie)) {
+  heredarASiguiente(ej, c.serie);
+  const quedan = siguientePendiente(sesion.ejercicios);
+  if (quedan && debeArrancarDescanso(sesion.ejercicios, c.idx, c.serie)) {
     arrancarDescanso(ej.superGrupo == null ? c.idx : ultimoDelGrupo(ej.superGrupo));
+    anunciar(`Serie hecha. Descanso de ${formatear(sesion.descanso.duracionS)}.`);
+  } else if (!quedan) {
+    anunciar('Hiciste todas las series. Termina la sesión para ver tu resumen.');
   } else {
     // Superserie a media ronda: sin descanso, directo al siguiente ejercicio.
     sesion.listoDesdeMs = Date.now();
@@ -1456,6 +1497,23 @@ function pintarVivo(raiz) {
       ej.series.push(serieVacia(ej.series[ej.series.length - 1]));
       persistir();
       render();
+    } else if (acc === 'menos-serie') {
+      const idx = +b.dataset.idx, ej = sesion.ejercicios[idx];
+      if (ej.series.length > 1) {
+        ej.series.pop();
+        const c = sesion.serieEnCurso;
+        if (c && c.idx === idx && c.serie >= ej.series.length) sesion.serieEnCurso = null;
+        persistir();
+        render();
+      }
+    } else if (acc === 'quitar-ej') {
+      if (!armarDosToques(b, 'Toca otra vez para quitarlo')) return;
+      const idx = +b.dataset.idx;
+      sesion.ejercicios.splice(idx, 1);
+      const c = sesion.serieEnCurso;
+      if (c) { if (c.idx === idx) sesion.serieEnCurso = null; else if (c.idx > idx) c.idx--; }
+      persistir();
+      render();
     } else if (acc === 'desc') {
       const ej = sesion.ejercicios[+b.dataset.idx];
       // Piso de 15 s y techo de 10 min: fuera de ahí ya no es un descanso
@@ -1480,6 +1538,12 @@ function pintarVivo(raiz) {
   // Los valores tecleados se persisten al salir del campo: un reload a mitad
   // de sesión no pierde ni la fila a medias.
   wrap.addEventListener('change', e => {
+    if (e.target.classList.contains('en-foco-in')) {
+      const ej = sesion.ejercicios[+e.target.dataset.idx];
+      const sr = ej?.series[+e.target.dataset.serie];
+      if (sr) { leerFoco(sr); e.target.removeAttribute('aria-invalid'); persistir(); }
+      return;
+    }
     const fila = e.target.closest('.en-fila');
     const ejEl = e.target.closest('.en-ej');
     if (!fila || !ejEl || !e.target.classList.contains('en-in')) return;
@@ -1517,19 +1581,21 @@ function htmlFoco(unidad) {
         </div>
         ${enFicha ? `<button type="button" class="en-foco-info" data-acc="ficha" data-id="${esc(ej.idEjercicio)}" aria-label="Ficha técnica de ${esc(ej.nombre)}">i</button>` : ''}
       </div>
-      <button type="button" class="en-foco-stats" data-acc="editar" aria-label="Editar pesos y repeticiones">
-        <span><b>${ref.serie + 1}/${ej.series.length}</b><small>Serie</small></span>
-        <span><b>${s.reps || '—'}</b><small>Reps</small></span>
-        <span><b>${s.pesoKg ? fmtPeso(s.pesoKg, unidad) : '—'}</b><small>${unidad}</small></span>
-      </button>
+      <div class="en-foco-stats">
+        <span class="en-foco-st"><b>${ref.serie + 1}/${ej.series.length}</b><small>Serie</small></span>
+        <label class="en-foco-st"><input class="en-foco-in" data-campo="reps" data-idx="${ref.idx}" data-serie="${ref.serie}" inputmode="numeric" value="${s.reps || ''}" placeholder="0" aria-label="Repeticiones de la serie ${ref.serie + 1}"><small>Reps</small></label>
+        <label class="en-foco-st"><input class="en-foco-in" data-campo="peso" data-idx="${ref.idx}" data-serie="${ref.serie}" inputmode="decimal" value="${s.pesoKg ? fmtPeso(s.pesoKg, unidad) : ''}" placeholder="0" aria-label="Peso de la serie ${ref.serie + 1} en ${unidad}"><small>${unidad}</small></label>
+      </div>
+      ${ej.rango ? `<p class="en-foco-rango">Objetivo de la rutina: ${ej.rango.min === ej.rango.max ? ej.rango.max : `${ej.rango.min}–${ej.rango.max}`} reps</p>` : ''}
+      <p class="en-foco-error" role="alert"></p>
     </div>` : `<p class="en-vacio en-foco-fin">Hiciste todas las series. Termina la sesión para ver tu resumen, o agrega otro ejercicio.</p>`;
 
   const boton = ef.tipo === 'activo'
-    ? `<button type="button" class="en-btn en-btn-main en-foco-btn" data-acc="fin-serie">Fin de la serie</button>`
+    ? `<button type="button" id="en-foco-btn" class="en-btn en-btn-main en-foco-btn" data-acc="fin-serie">Fin de la serie</button>`
     : ef.tipo === 'fin'
-      ? `<button type="button" class="en-btn en-btn-main en-foco-btn" data-acc="terminar">Terminar sesión</button>
+      ? `<button type="button" id="en-foco-btn" class="en-btn en-btn-main en-foco-btn" data-acc="terminar">Terminar sesión</button>
          <button type="button" class="en-btn en-btn-ghost en-add-ej" data-acc="agregar">+ Agregar ejercicio</button>`
-      : `<button type="button" class="en-btn en-btn-main en-foco-btn" data-acc="empezar-serie">Empezar serie</button>`;
+      : `<button type="button" id="en-foco-btn" class="en-btn en-btn-main en-foco-btn" data-acc="empezar-serie">Empezar serie</button>`;
 
   return `
   <div class="en-foco">
@@ -1610,7 +1676,12 @@ function htmlListaVivo(unidad) {
               aria-label="Serie ${j + 1} ${s.hecha ? 'hecha; tócala para desmarcarla' : 'por hacer; tócala al terminarla'}">${SVG_CHECK}</button>
           </div>`;
         }).join('')}
-        <button type="button" class="en-mas-serie" data-acc="serie" data-idx="${idx}">+ serie</button>
+        <div class="en-ej-pie">
+          <button type="button" class="en-mas-serie" data-acc="serie" data-idx="${idx}">+ serie</button>
+          ${ej.series.length > 1 ? `<button type="button" class="en-mas-serie" data-acc="menos-serie" data-idx="${idx}">− serie</button>` : ''}
+          <button type="button" class="en-peligro en-quitar-ej" data-acc="quitar-ej" data-idx="${idx}">Quitar ejercicio</button>
+        </div>
+        ${ej.rango ? `<p class="en-ej-rango">Objetivo: ${ej.rango.min === ej.rango.max ? ej.rango.max : `${ej.rango.min}–${ej.rango.max}`} reps</p>` : ''}
       </div>
     </section>`;
   };
@@ -1683,14 +1754,27 @@ function conectarBarraDescanso(raiz) {
   });
 }
 
+// Región de avisos fuera de la raíz del módulo: el innerHTML de cada render no
+// se la lleva, así "Descanso terminado" llega al lector de pantalla.
+function anunciar(texto) {
+  let el = document.getElementById('en-anuncio');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'en-anuncio'; el.className = 'en-sr';
+    el.setAttribute('aria-live', 'polite');
+    document.body.appendChild(el);
+  }
+  el.textContent = '';
+  setTimeout(() => { el.textContent = texto; }, 60);
+}
+
 // El aviso de fin NO depende de qué vista esté pintada (barra, foco, ficha o
 // biblioteca): se revisa en cada tic y suena una sola vez.
 function revisarFinDescanso() {
   if (!descansoObj || avisadoFin || !descansoObj.haTerminado()) return;
   avisadoFin = true;
   avisarFin();
-  const sr = ctx.raiz.querySelector('.en-descanso .en-sr, .en-sr-descanso');
-  if (sr) sr.textContent = 'Descanso terminado. A darle.';
+  anunciar('Descanso terminado. A darle.');
   if (sesion) {
     delete sesion.descanso;
     sesion.listoDesdeMs = Date.now();
