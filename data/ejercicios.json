@@ -120,7 +120,7 @@
    "aductores"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "intermedio",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -289,7 +289,7 @@
    "glúteos",
    "femorales"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "pliometría",
   "instrucciones": [
@@ -485,7 +485,7 @@
    "pantorrillas"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -506,7 +506,7 @@
    "glúteos"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -575,7 +575,7 @@
   "musculosSecundarios": [
    "trapecios"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -2360,7 +2360,7 @@
    "glúteos",
    "femorales"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "fuerza",
   "instrucciones": [
@@ -3358,7 +3358,7 @@
    "pantorrillas"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -3379,7 +3379,7 @@
    "pantorrillas"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -3481,7 +3481,7 @@
    "femorales",
    "cuádriceps"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "pliometría",
   "instrucciones": [
@@ -3505,7 +3505,7 @@
    "espalda media",
    "trapecios"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -3622,7 +3622,7 @@
   "musculosSecundarios": [
    "lumbar"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -3840,7 +3840,7 @@
    "glúteos",
    "espalda media"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -3889,7 +3889,7 @@
   "musculosSecundarios": [
    "trapecios"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -4512,7 +4512,7 @@
    "femorales",
    "cuádriceps"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "intermedio",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -4649,7 +4649,7 @@
    "abductores",
    "glúteos"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -4939,7 +4939,7 @@
    "hombros",
    "tríceps"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "fuerza",
   "instrucciones": [
@@ -6118,7 +6118,7 @@
    "dorsales"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -6140,7 +6140,7 @@
   "musculosSecundarios": [
    "espalda media"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -6208,7 +6208,7 @@
   "musculosSecundarios": [
    "trapecios"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -6252,7 +6252,7 @@
   "musculosSecundarios": [
    "hombros"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -6669,7 +6669,7 @@
    "pantorrillas",
    "glúteos"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "intermedio",
   "categoria": "fuerza",
   "instrucciones": [
@@ -6868,7 +6868,7 @@
    "glúteos",
    "femorales"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "intermedio",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -7421,7 +7421,7 @@
    "aductores"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "intermedio",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -7557,7 +7557,7 @@
    "femorales"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -7988,7 +7988,7 @@
   "musculosSecundarios": [
    "glúteos"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -8626,7 +8626,7 @@
   "musculosSecundarios": [
    "dorsales"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "fuerza",
   "instrucciones": [
@@ -8696,7 +8696,7 @@
    "cuádriceps"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "intermedio",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -9492,7 +9492,7 @@
    "abductores",
    "lumbar"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -9587,7 +9587,7 @@
   "musculosSecundarios": [
    "abdomen"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "pliometría",
   "instrucciones": [
@@ -9653,7 +9653,7 @@
    "antebrazos"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -9699,7 +9699,7 @@
   "musculosSecundarios": [
    "cuádriceps"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -10000,7 +10000,7 @@
    "femorales"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -10309,7 +10309,7 @@
    "pantorrillas",
    "cuádriceps"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "pliometría",
   "instrucciones": [
@@ -10335,7 +10335,7 @@
    "glúteos",
    "cuádriceps"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "pliometría",
   "instrucciones": [
@@ -10440,7 +10440,7 @@
    "cuádriceps"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -11317,7 +11317,7 @@
    "dorsales",
    "lumbar"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -11387,7 +11387,7 @@
    "femorales",
    "hombros"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "pliometría",
   "instrucciones": [
@@ -11410,7 +11410,7 @@
    "pantorrillas",
    "cuádriceps"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "pliometría",
   "instrucciones": [
@@ -11729,7 +11729,7 @@
    "cuádriceps"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -12312,7 +12312,7 @@
    "dorsales"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -12503,7 +12503,7 @@
    "bíceps",
    "pecho"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -12549,7 +12549,7 @@
    "femorales",
    "lumbar"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -12751,7 +12751,7 @@
    "dorsales",
    "tríceps"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -12959,7 +12959,7 @@
    "lumbar"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "intermedio",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -13545,7 +13545,7 @@
    "femorales"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "fuerza",
   "instrucciones": [
@@ -14899,7 +14899,7 @@
   "musculosSecundarios": [
    "pantorrillas"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -15004,7 +15004,7 @@
    "dorsales",
    "espalda media"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "fuerza",
   "instrucciones": [
@@ -15305,7 +15305,7 @@
    "femorales",
    "lumbar"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -15485,7 +15485,7 @@
   "musculosSecundarios": [
    "pantorrillas"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -15577,7 +15577,7 @@
   "musculosSecundarios": [
    "pantorrillas"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "avanzado",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -15756,7 +15756,7 @@
    "abdomen"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -15940,7 +15940,7 @@
   "musculosSecundarios": [
    "trapecios"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -15985,7 +15985,7 @@
   "musculosSecundarios": [
    "dorsales"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -16004,7 +16004,7 @@
    "hombros"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -16023,7 +16023,7 @@
    "dorsales"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -16174,7 +16174,7 @@
   "musculosSecundarios": [
    "femorales"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -16195,7 +16195,7 @@
    "cuello"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -16219,7 +16219,7 @@
    "glúteos",
    "femorales"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "pliometría",
   "instrucciones": [
@@ -16270,7 +16270,7 @@
    "antebrazos",
    "dorsales"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -16662,7 +16662,7 @@
    "glúteos",
    "femorales"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -17673,7 +17673,7 @@
    "cuello",
    "trapecios"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -17839,7 +17839,7 @@
    "glúteos",
    "cuádriceps"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "intermedio",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -18509,7 +18509,7 @@
   "musculosSecundarios": [
    "femorales"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -18575,7 +18575,7 @@
    "cuádriceps"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -18617,7 +18617,7 @@
    "abdomen"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -18949,7 +18949,7 @@
   "musculosSecundarios": [
    "glúteos"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -18992,7 +18992,7 @@
    "pantorrillas"
   ],
   "musculosSecundarios": [],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -19014,7 +19014,7 @@
   "musculosSecundarios": [
    "pantorrillas"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -19770,7 +19770,7 @@
    "aductores",
    "pantorrillas"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -19916,7 +19916,7 @@
    "glúteos",
    "femorales"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "cardio",
   "instrucciones": [
@@ -19985,7 +19985,7 @@
   "musculosSecundarios": [
    "hombros"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -20094,7 +20094,7 @@
   "musculosSecundarios": [
    "dorsales"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -20281,7 +20281,7 @@
    "lumbar",
    "espalda media"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -20303,7 +20303,7 @@
   "musculosSecundarios": [
    "espalda media"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -20397,7 +20397,7 @@
    "pecho",
    "dorsales"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "principiante",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -20992,7 +20992,7 @@
    "femorales",
    "lumbar"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "intermedio",
   "categoria": "estiramiento",
   "instrucciones": [
@@ -21017,7 +21017,7 @@
    "glúteos",
    "cuádriceps"
   ],
-  "equipo": "sin equipo",
+  "equipo": "no especificado",
   "nivel": "intermedio",
   "categoria": "estiramiento",
   "instrucciones": [
