@@ -261,7 +261,7 @@ const entre = (v, min, max, def) => Number.isFinite(v) ? Math.min(max, Math.max(
 // nunca por debajo del mínimo (8–6 se lee como 6–8, no como error).
 export function limpiarEjercicioRutina(ej) {
   const series = entre(ej.series, 1, 10, 3);
-  const a = entre(ej.repsMin, 1, 50, 8), b = entre(ej.repsMax, 1, 50, a);
+  const a = entre(ej.repsMin, 1, 50, 8), b = entre(ej.repsMax, 1, 50, Number.isFinite(ej.repsMin) ? a : 12);
   return { ...ej, series, repsMin: Math.min(a, b), repsMax: Math.max(a, b) };
 }
 
@@ -272,15 +272,43 @@ export function validarBorrador(b) {
   return { ok: !Object.keys(errores).length, errores };
 }
 
-// Borrador del editor → rutina de un día con la misma forma que sesionARutina
-// (un ejercicio por bloque): "Tus rutinas" la pinta y la empieza igual.
+// Rutina guardada → borrador del editor (editar "Tus rutinas", pedido de
+// Roberto, 30-oct-2026). Se edita el primer día; cada ejercicio recuerda su
+// superserie (`grupo`) para volver a agruparse al guardar. `original` guarda
+// la rutina tal cual: lo que el editor no toca (otros días, notas) se conserva.
+export function borradorDesdeRutina(r) {
+  const bloques = r?.dias?.[0]?.bloques || [];
+  const ejercicios = bloques.flatMap((bloque, g) => bloque.map(it => ({
+    ...limpiarEjercicioRutina({
+      idEjercicio: it.idEjercicio, nombre: it.nombre ?? it.idEjercicio,
+      series: it.series, repsMin: it.repsMin ?? it.repsMax, repsMax: it.repsMax ?? it.repsMin, descansoS: it.descansoS ?? 90
+    }),
+    grupo: bloque.length > 1 ? g : null
+  })));
+  return { id: r.id, nombre: r.nombre ?? '', ejercicios, original: r };
+}
+
+// Borrador del editor → rutina con la misma forma que sesionARutina:
+// "Tus rutinas" la pinta y la empieza igual. Los ejercicios seguidos del mismo
+// `grupo` vuelven a ser una superserie; los nuevos van cada uno en su bloque.
 export function rutinaDesdeBorrador(b, id) {
-  const bloques = b.ejercicios.map(ej => {
+  const bloques = [];
+  let previo;
+  for (const ej of b.ejercicios) {
     const e = limpiarEjercicioRutina(ej);
-    return [{ idEjercicio: e.idEjercicio, nombre: e.nombre, series: e.series, repsMin: e.repsMin, repsMax: e.repsMax, descansoS: e.descansoS ?? 90 }];
-  });
+    const item = { idEjercicio: e.idEjercicio, nombre: e.nombre, series: e.series, repsMin: e.repsMin, repsMax: e.repsMax, descansoS: e.descansoS ?? 90 };
+    if (ej.grupo != null && ej.grupo === previo) bloques[bloques.length - 1].push(item);
+    else bloques.push([item]);
+    previo = ej.grupo;
+  }
+  const nombre = String(b.nombre).trim().slice(0, 40);
+  const o = b.original;
+  if (o) {
+    const [dia1, ...resto] = o.dias || [];
+    return { ...o, nombre, dias: [{ ...(dia1 || {}), nombre: dia1?.nombre ?? 'Día 1', bloques }, ...resto] };
+  }
   return {
-    id, nombre: String(b.nombre).trim().slice(0, 40), nivel: null, objetivo: null, equipo: null,
+    id, nombre, nivel: null, objetivo: null, equipo: null,
     diasSemana: null, dias: [{ nombre: 'Día 1', bloques }], notas: ''
   };
 }
@@ -347,6 +375,7 @@ let borrador = null;         // rutina en el editor de "Crear rutina": { nombre,
 let erroresBorrador = {};    // errores del último intento de guardar (se ven junto a su campo)
 let inicioPendiente = null;  // { rutina, dia }: falta elegir el descanso antes de empezar
 let rutinaAbiertaId = null;  // rutina recién guardada: su tarjeta se pinta abierta una vez
+let avisoRutina = '';        // "Rutina guardada" / "Cambios guardados" para lectores de pantalla
 let verSesionId = null;      // sesión del historial abierta en modo lectura
 let verProgresoId = null;    // ejercicio abierto en "progreso"
 let fichaId = null;          // ejercicio abierto en su ficha (Biblioteca o sesión)
@@ -891,7 +920,10 @@ function pintarPanelRutinas(panel) {
         ${dias.map((d, i) => `<button type="button" class="en-btn en-btn-ghost" data-acc="rutina"
           data-origen="${origen}" data-rid="${esc(r.id)}" data-dia="${i}">Empezar${dias.length > 1 ? ' · ' + esc(d.nombre) : ''}</button>`).join('')}
       </div>
-      ${origen === 'mia' ? `<div class="en-rut-borrar"><button type="button" class="en-peligro" data-acc="borrar-rutina" data-rid="${esc(r.id)}">Borrar rutina</button></div>` : ''}
+      ${origen === 'mia' ? `<div class="en-rut-borrar">
+        <button type="button" class="en-rut-editar" data-acc="editar-rutina" data-rid="${esc(r.id)}" aria-label="Editar ${esc(r.nombre)}">Editar</button>
+        <button type="button" class="en-peligro" data-acc="borrar-rutina" data-rid="${esc(r.id)}">Borrar rutina</button>
+      </div>` : ''}
     </details>`;
   };
   // Una sola acción principal: crear la rutina propia. Entrenar sin plan
@@ -901,7 +933,7 @@ function pintarPanelRutinas(panel) {
       <button type="button" class="en-btn en-btn-main" data-acc="crear-rutina">Crear rutina</button>
       <button type="button" class="en-btn en-btn-ghost en-empezar-vacia" data-acc="vacia">Empezar sesión vacía</button>
     </div>
-    <p class="en-sr" role="status">${rutinaAbiertaId ? 'Rutina guardada en Tus rutinas.' : ''}</p>
+    <p class="en-sr" role="status">${esc(avisoRutina)}</p>
     ${guardadas.length ? `<div class="en-sec-lbl">Tus rutinas</div>${guardadas.map(r => htmlRutina(r, 'mia')).join('')}` : ''}
     <div class="en-sec-lbl">Rutinas COSECHA</div>
     ${rutEstado === 'listo' && rutinasBase.length
@@ -912,8 +944,18 @@ function pintarPanelRutinas(panel) {
   panel.addEventListener('click', e => {
     // La tarjeta recién guardada se abre una vez; cualquier toque la libera.
     rutinaAbiertaId = null;
+    avisoRutina = '';
     const b = e.target.closest('[data-acc]');
     if (!b) return;
+    if (b.dataset.acc === 'editar-rutina') {
+      const r = estado.entreno.rutinas.find(x => String(x.id) === b.dataset.rid);
+      if (!r) return;
+      borrador = borradorDesdeRutina(r);
+      erroresBorrador = {};
+      render();
+      window.scrollTo(0, 0);
+      return;
+    }
     if (b.dataset.acc === 'crear-rutina') {
       borrador = { nombre: '', ejercicios: [] };
       erroresBorrador = {};
@@ -982,6 +1024,7 @@ function pintarElegirDescanso(raiz) {
 function pintarEditorRutina(raiz) {
   const b = borrador;
   const err = erroresBorrador;
+  const editando = !!b.original;   // editar una de "Tus rutinas" o crear una nueva
   const tarjeta = (ej, i) => `
     <li class="en-card en-ed-ej" data-idx="${i}">
       <div class="en-ed-ej-top">
@@ -1014,9 +1057,11 @@ function pintarEditorRutina(raiz) {
   raiz.innerHTML = `
   <div class="en-wrap en-editor">
     <button type="button" class="en-volver" data-acc="ed-cancelar">${SVG_VOLVER}<span>Rutinas</span></button>
-    <div class="en-ey">Nueva rutina</div>
-    <h2 class="en-titulo">Crear rutina</h2>
-    <p class="en-sub">Elige tus ejercicios y cuántas series y repeticiones harás. Se guarda en Tus rutinas; el descanso lo eliges al empezarla.</p>
+    <div class="en-ey">${editando ? 'Tus rutinas' : 'Nueva rutina'}</div>
+    <h2 class="en-titulo">${editando ? 'Editar rutina' : 'Crear rutina'}</h2>
+    <p class="en-sub">${editando
+      ? 'Cambia el nombre, los ejercicios, las series o las repeticiones. Tus sesiones anteriores no cambian.'
+      : 'Elige tus ejercicios y cuántas series y repeticiones harás. Se guarda en Tus rutinas; el descanso lo eliges al empezarla.'}</p>
 
     <label class="en-ed-lbl" for="en-ed-nombre">Nombre</label>
     <input id="en-ed-nombre" class="en-rutina-nombre en-ed-nombre" maxlength="40" autocomplete="off" value="${esc(b.nombre)}"
@@ -1031,13 +1076,14 @@ function pintarEditorRutina(raiz) {
     <button type="button" class="en-btn en-btn-ghost en-ed-agregar" data-acc="ed-agregar"
       ${err.ejercicios ? 'aria-describedby="en-ed-ej-err"' : ''}>Agregar ejercicio</button>
 
-    <button type="button" class="en-btn en-btn-main en-ed-guardar" data-acc="ed-guardar">Guardar rutina</button>
+    <button type="button" class="en-btn en-btn-main en-ed-guardar" data-acc="ed-guardar">${editando ? 'Guardar cambios' : 'Guardar rutina'}</button>
     <p class="en-aviso-storage" hidden>No se pudo guardar en este dispositivo. Exporta un respaldo desde Diario antes de cerrar.</p>
   </div>`;
 
   const wrap = raiz.querySelector('.en-wrap');
   wrap.querySelector('#en-ed-nombre').addEventListener('input', e => {
     b.nombre = e.target.value;
+    b.sucio = true;
     if (erroresBorrador.nombre && b.nombre.trim()) {
       delete erroresBorrador.nombre;
       e.target.removeAttribute('aria-invalid');
@@ -1050,6 +1096,7 @@ function pintarEditorRutina(raiz) {
   wrap.querySelectorAll('.en-ed-in').forEach(inp => inp.addEventListener('change', () => {
     const i = +inp.dataset.idx;
     b.ejercicios[i] = limpiarEjercicioRutina({ ...b.ejercicios[i], [inp.dataset.campo]: parseInt(inp.value, 10) });
+    b.sucio = true;
     wrap.querySelectorAll(`.en-ed-in[data-idx="${i}"]`).forEach(x => { x.value = b.ejercicios[i][x.dataset.campo]; });
   }));
   wrap.addEventListener('click', e => {
@@ -1059,7 +1106,7 @@ function pintarEditorRutina(raiz) {
     if (acc === 'ed-cancelar') {
       // Perder una rutina a medio armar por un toque en "volver" dolería:
       // con algo escrito, doble toque, igual que los demás descartes.
-      if ((b.nombre.trim() || b.ejercicios.length) && !armarDosToques(btn.querySelector('span'), 'Toca otra vez para descartarla')) return;
+      if (b.sucio && !armarDosToques(btn.querySelector('span'), editando ? 'Toca otra vez para descartar los cambios' : 'Toca otra vez para descartarla')) return;
       borrador = null;
       erroresBorrador = {};
       render();
@@ -1070,11 +1117,13 @@ function pintarEditorRutina(raiz) {
       window.scrollTo(0, 0);
     } else if (acc === 'ed-quitar') {
       b.ejercicios.splice(+btn.dataset.idx, 1);
+      b.sucio = true;
       render();
     } else if (acc === 'ed-series') {
       if (btn.getAttribute('aria-disabled') === 'true') return;
       const i = +btn.dataset.idx;
       b.ejercicios[i] = limpiarEjercicioRutina({ ...b.ejercicios[i], series: b.ejercicios[i].series + (+btn.dataset.v) });
+      b.sucio = true;
       render();
     } else if (acc === 'ed-guardar') guardarBorrador(wrap);
   });
@@ -1090,19 +1139,23 @@ function guardarBorrador(wrap) {
     ctx.raiz.querySelector(errores.nombre ? '#en-ed-nombre' : '[data-acc="ed-agregar"]')?.focus();
     return;
   }
+  // Editar reemplaza la misma rutina (mismo id, mismo sitio en la lista).
+  const editando = !!borrador.original;
   const rutina = rutinaDesdeBorrador(borrador, 'R-' + Date.now());
   const guardada = escribir(e => almacen.guardarRutina(e, rutina));
   if (!guardada) { wrap.querySelector('.en-aviso-storage').hidden = false; return; }
   borrador = null;
   erroresBorrador = {};
   subtab = 'rutinas';
-  rutinaAbiertaId = rutina.id;
+  rutinaAbiertaId = String(rutina.id);
+  avisoRutina = editando ? 'Cambios guardados.' : 'Rutina guardada en Tus rutinas.';
   render();
   window.scrollTo(0, 0);
 }
 
 function agregarEjercicioARutina(id, nombre) {
   borrador.ejercicios.push(ejercicioDeRutina(id, nombre));
+  borrador.sucio = true;
   if (erroresBorrador.ejercicios) delete erroresBorrador.ejercicios;
   modoBiblioteca = null;
   render();

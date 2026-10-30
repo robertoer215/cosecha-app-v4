@@ -324,7 +324,10 @@
 
 /* ── Auditoría r4 ────────────────────────────────────────────────────────── */
 .en-rut-notas{margin:0;padding:0 16px 12px;font-size:12px;line-height:1.6;color:var(--muted-ink)}
-.en-rut-borrar{padding:0 16px 8px}
+.en-rut-borrar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 16px 8px}
+/* Editar y Borrar como texto: "Empezar" sigue siendo la acción de la tarjeta. */
+.en-rut-editar{background:none;border:none;min-height:44px;padding:12px 12px 12px 0;color:var(--text);font-family:var(--sans);font-size:13px;font-weight:500;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.en-rut-editar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .en-ej-desc-nota{font-size:12px;color:var(--muted-ink);text-align:right;flex-shrink:0;max-width:120px;line-height:1.35}
 .en-unidad{display:flex;align-items:center;gap:8px;margin:-8px 0 20px;font-size:13px;color:var(--muted-ink)}
 .en-unidad span{margin-right:4px}
