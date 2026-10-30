@@ -162,6 +162,39 @@ function migrarDiario(d) {
 // PRESENTES (un respaldo bien formado vuelve idéntico); el tipo incorrecto se
 // sustituye por su valor neutro.
 const TIPOS_SERIE = { reps: 'n0', pesoKg: 'n0', rir: 'nnull', tsHecha: 'nnull', durS: 'nnull', hecha: 'bool' };
+// Técnicas por serie (Entrenar, 30-oct-2026): `tipo` desconocido → serie
+// normal; `partes` (mini-series o bajadas) saneadas y con tope de 5.
+const TECNICAS_SERIE = ['normal', 'calentamiento', 'restpause', 'drop'];
+function serieSegura(x) {
+  const s = tipar(x, TIPOS_SERIE);
+  if ('tipo' in s && !TECNICAS_SERIE.includes(s.tipo)) delete s.tipo;
+  if ('partes' in s) {
+    // Solo rest-pause y drop set tienen partes; el peso de la parte solo existe
+    // si venía (en rest-pause se usa el de la serie).
+    s.partes = Array.isArray(s.partes) && (s.tipo === 'restpause' || s.tipo === 'drop')
+      ? s.partes.filter(esObjeto).slice(0, 5).map(p => tipar({ reps: p.reps, ...('pesoKg' in p ? { pesoKg: p.pesoKg } : {}) }, { reps: 'n0', pesoKg: 'n0' }))
+      : [];
+  }
+  return s;
+}
+
+// Estado vivo de una serie con técnica (parte en curso o micro-descanso): solo
+// números enteros válidos; si no, se descarta. Un respaldo manipulado no
+// puede colar texto en la pantalla por aquí.
+const entero = v => Number.isInteger(v) && v >= 0;
+function parteSegura(p) {
+  if (!esObjeto(p) || !entero(p.idx) || !entero(p.serie) || !entero(p.k)) return null;
+  return tipar({ idx: p.idx, serie: p.serie, k: p.k, inicioMs: p.inicioMs, reps: p.reps, pesoKg: p.pesoKg },
+    { inicioMs: 'nnull', reps: 'n0', pesoKg: 'n0' });
+}
+function descansoSeguro(d) {
+  if (!esObjeto(d)) return undefined;
+  const out = tipar({ finMs: d.finMs, duracionS: d.duracionS, idx: d.idx }, { finMs: 'nnull', duracionS: 'nnull', idx: 'nnull' });
+  if (esObjeto(d.micro) && entero(d.micro.serie) && entero(d.micro.k)) {
+    out.micro = tipar({ serie: d.micro.serie, k: d.micro.k, reps: d.micro.reps, pesoKg: d.micro.pesoKg }, { reps: 'n0', pesoKg: 'n0' });
+  }
+  return out;
+}
 const TIPOS_EJERCICIO = { idEjercicio: 'str', nombre: 'str', descansoS: 'n90', superGrupo: 'nnull' };
 function tipar(o, tipos) {
   const r = { ...o };
@@ -183,12 +216,16 @@ function sesionSegura(s) {
   // Sin id no se puede ver, borrar ni reemplazar: un objeto suelto de un
   // respaldo manipulado se descarta (antes quedaba como sesión "Invalid Date").
   if (!esObjeto(s) || typeof s.id !== 'string' || s.id === '') return null;
+  const viva = {};
+  if ('parteEnCurso' in s) viva.parteEnCurso = parteSegura(s.parteEnCurso);
+  if ('descanso' in s) { const d = descansoSeguro(s.descanso); if (d) viva.descanso = d; else viva.descanso = undefined; }
   return {
     ...s,
+    ...viva,
     ejercicios: Array.isArray(s.ejercicios)
       ? s.ejercicios.filter(esObjeto).map(ej => tipar({
           ...ej,
-          series: Array.isArray(ej.series) ? ej.series.filter(esObjeto).map(x => tipar(x, TIPOS_SERIE)) : []
+          series: Array.isArray(ej.series) ? ej.series.filter(esObjeto).map(serieSegura) : []
         }, TIPOS_EJERCICIO))
       : []
   };

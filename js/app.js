@@ -232,7 +232,8 @@ function renderHoy() {
   if (activa && !activa.finMs) sub.textContent = 'Tienes una sesión en curso';
   else if (sesiones.length) {
     const s = sesiones[sesiones.length - 1];
-    const series = (s.ejercicios || []).reduce((a, e) => a + (e.series || []).filter(x => x.hecha).length, 0);
+    // Series de trabajo: el calentamiento (tipo 'calentamiento') no cuenta, igual que en Entrenar.
+    const series = (s.ejercicios || []).reduce((a, e) => a + (e.series || []).filter(x => x.hecha && x.tipo !== 'calentamiento').length, 0);
     const fechaS = new Date(s.inicioMs).toLocaleDateString('es-MX', { weekday: 'short', day: 'numeric', month: 'short' });
     sub.textContent = `Última sesión: ${fechaS} · ${series} ${series === 1 ? 'serie' : 'series'}`;
   } else sub.textContent = 'Rutinas listas y descansos automáticos';

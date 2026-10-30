@@ -10,7 +10,10 @@ import { epley1RM, volumenSesion, seriesPorGrupo, ultimaVez,
          OPCIONES_DESCANSO, etiquetaDescanso, rangoDescanso, ejercicioDeRutina, limpiarEjercicioRutina,
          validarBorrador, rutinaDesdeBorrador, borradorDesdeRutina,
          moverEjercicio, normalizarGrupos, MAX_SUPERSERIE,
-         letraGrupo, tramos, puedeUnir, unirConSiguiente, separarDeSiguiente, moverTramo, pasoEjercicio } from '../js/entreno.js';
+         letraGrupo, tramos, puedeUnir, unirConSiguiente, separarDeSiguiente, moverTramo, pasoEjercicio,
+         TECNICAS, limpiarTecnica, normalizarPlan, planEsNormal, repsDeSerie, volumenDeSerie, pesoBajada,
+         siguienteParte, textoSerie, planDesdeSeries, agregarCalentamiento, previasPorSerie } from '../js/entreno.js';
+import { migrar, importarJSON } from '../js/almacen.js';
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -537,4 +540,162 @@ test('pasoEjercicio: dos sueltos se intercambian; fuera de los extremos no hace 
 test('borradorDesdeRutina: la primera superserie de una rutina guardada es la A', () => {
   const r = { id: 'R-1', nombre: 'X', dias: [{ nombre: 'Día 1', bloques: [[{ idEjercicio: 'x', nombre: 'X' }], [{ idEjercicio: 'a', nombre: 'A' }, { idEjercicio: 'b', nombre: 'B' }]] }] };
   assert.deepEqual(borradorDesdeRutina(r).ejercicios.map(e => letraGrupo(e.grupo)), ['', 'A', 'A']);
+});
+
+// ── Técnicas por serie (fase 3) ──────────────────────────────────────────────
+
+test('limpiarTecnica: tipo desconocido = normal; parámetros por defecto y dentro de rango', () => {
+  assert.deepEqual(limpiarTecnica({ tipo: 'superman' }), { tipo: 'normal' });
+  assert.deepEqual(limpiarTecnica({ tipo: 'restpause' }), { tipo: 'restpause', mini: 2, microS: 15 });
+  assert.deepEqual(limpiarTecnica({ tipo: 'restpause', mini: 9, microS: 3 }), { tipo: 'restpause', mini: 4, microS: 10 });
+  assert.deepEqual(limpiarTecnica({ tipo: 'drop', pct: 23 }), { tipo: 'drop', bajadas: 1, pct: 25 });
+  assert.equal(TECNICAS.calentamiento.insignia, 'W');
+});
+
+test('normalizarPlan y planEsNormal', () => {
+  assert.deepEqual(normalizarPlan(3, [{ tipo: 'calentamiento' }]).map(t => t.tipo), ['calentamiento', 'normal', 'normal']);
+  assert.equal(planEsNormal(undefined), true);
+  assert.equal(planEsNormal([{ tipo: 'normal' }, {}]), true);
+  assert.equal(planEsNormal([{ tipo: 'drop' }]), false);
+});
+
+test('limpiarEjercicioRutina: el plan sigue al número de series', () => {
+  const ej = { ...ejercicioDeRutina('a', 'A'), plan: [{ tipo: 'calentamiento' }, { tipo: 'normal' }, { tipo: 'restpause' }] };
+  assert.deepEqual(limpiarEjercicioRutina({ ...ej, series: 4 }).plan.map(t => t.tipo), ['calentamiento', 'normal', 'restpause', 'normal']);
+  assert.deepEqual(limpiarEjercicioRutina({ ...ej, series: 2 }).plan.map(t => t.tipo), ['calentamiento', 'normal']);
+  assert.equal('plan' in limpiarEjercicioRutina(ejercicioDeRutina('a', 'A')), false);   // sin plan, sin campo
+});
+
+test('agregarCalentamiento: una W al principio, hasta 10 series', () => {
+  const r = agregarCalentamiento(ejercicioDeRutina('a', 'A'));
+  assert.equal(r.series, 4);
+  assert.deepEqual(r.plan.map(t => t.tipo), ['calentamiento', 'normal', 'normal', 'normal']);
+  assert.equal(agregarCalentamiento({ ...r, series: 10 }).series, 10);
+});
+
+test('volumen: el calentamiento no cuenta; rest-pause y drop suman sus partes', () => {
+  const ses = { ejercicios: [{ series: [
+    { reps: 12, pesoKg: 20, hecha: true, tipo: 'calentamiento' },
+    { reps: 8, pesoKg: 60, hecha: true, tipo: 'restpause', partes: [{ reps: 3, pesoKg: 60 }, { reps: 2, pesoKg: 60 }] },
+    { reps: 10, pesoKg: 60, hecha: true, tipo: 'drop', partes: [{ reps: 8, pesoKg: 47.5 }] },
+    { reps: 10, pesoKg: 60, hecha: false }
+  ] }] };
+  assert.equal(volumenSesion(ses), 13 * 60 + 600 + 8 * 47.5);
+  assert.equal(repsDeSerie(ses.ejercicios[0].series[1]), 13);
+  assert.equal(volumenDeSerie({ reps: 5, pesoKg: 10, partes: [{ reps: 2 }] }), 70);   // parte sin peso: el de la serie
+  assert.deepEqual(seriesPorGrupo(ses, new Map()), { otros: 2 });
+});
+
+test('récords: solo la parte principal de las series de trabajo', () => {
+  const series = [
+    { reps: 3, pesoKg: 100, hecha: true, tipo: 'calentamiento' },
+    { reps: 8, pesoKg: 60, hecha: true, tipo: 'restpause', partes: [{ reps: 5, pesoKg: 60 }] },
+    { reps: 6, pesoKg: 70, hecha: true }
+  ];
+  assert.deepEqual(mejorSerie(series), series[2]);
+  const r = resumenEjercicio({ series });
+  assert.equal(r.series.length, 2);
+  assert.equal(r.totalReps, 8 + 5 + 6);
+  assert.equal(r.volumen, 13 * 60 + 6 * 70);
+});
+
+test('pesoBajada: −20 % redondeado a 2,5 kg o 5 lb; siempre baja y nunca llega a cero', () => {
+  assert.equal(pesoBajada(60, 20), 47.5);
+  assert.equal(pesoBajada(100, 25), 75);
+  assert.equal(pesoBajada(0, 20), 0);
+  assert.equal(pesoBajada(aKg(135, 'lb'), 20, 'lb'), aKg(110, 'lb'));
+  // cargas pequeñas (revisión adversarial): antes 5→5 y 2→2,5
+  assert.equal(pesoBajada(5, 20), 2.5);
+  assert.equal(pesoBajada(2, 20), 1.5);
+  assert.equal(pesoBajada(2.5, 40), 1.5);
+  assert.equal(pesoBajada(10, 10), 7.5);
+  assert.equal(pesoBajada(aKg(10, 'lb'), 20, 'lb'), aKg(5, 'lb'));
+  let p = 10;
+  for (let k = 0; k < 3; k++) { const q = pesoBajada(p, 20); assert.ok(q < p && q > 0, `${p} → ${q}`); p = q; }
+});
+
+test('siguienteParte: rest-pause pide micro-descanso por mini-serie; drop, sus bajadas', () => {
+  assert.deepEqual(siguienteParte({ tipo: 'restpause', mini: 2, microS: 15, partes: [] }), { fase: 'micro', k: 0, total: 2, microS: 15 });
+  assert.deepEqual(siguienteParte({ tipo: 'restpause', mini: 2, partes: [{ reps: 3 }, { reps: 2 }] }), { fase: 'fin' });
+  assert.deepEqual(siguienteParte({ tipo: 'drop', bajadas: 2, pct: 20, partes: [{ reps: 8 }] }), { fase: 'parte', k: 1, total: 2, pct: 20 });
+  assert.deepEqual(siguienteParte({ reps: 10 }), { fase: 'fin' });
+  assert.deepEqual(siguienteParte({ tipo: 'calentamiento' }), { fase: 'fin' });
+});
+
+test('textoSerie: formato del resumen y del historial', () => {
+  assert.equal(textoSerie({ reps: 8, pesoKg: 60, tipo: 'restpause', partes: [{ reps: 3 }, { reps: 2 }] }), '8×60 + 3 + 2 RP');
+  assert.equal(textoSerie({ reps: 10, pesoKg: 60, tipo: 'drop', partes: [{ reps: 8, pesoKg: 47.5 }] }), '10×60 + 8×47.5 D');
+  assert.equal(textoSerie({ reps: 12, pesoKg: 20, tipo: 'calentamiento' }), '12×20 W');
+  assert.equal(textoSerie({ reps: 15, pesoKg: 0 }), '15 reps');
+});
+
+test('planDesdeSeries y la ida y vuelta editor → rutina conservan el plan', () => {
+  assert.equal(planDesdeSeries([{ reps: 8 }, { reps: 8 }]), null);
+  assert.deepEqual(planDesdeSeries([{ tipo: 'calentamiento' }, { reps: 8 }]).map(t => t.tipo), ['calentamiento', 'normal']);
+  const b = { nombre: 'P', ejercicios: [{ ...agregarCalentamiento(ejercicioDeRutina('a', 'A')), grupo: null }] };
+  const r = rutinaDesdeBorrador(b, 'R-1');
+  assert.deepEqual(r.dias[0].bloques[0][0].plan.map(t => t.tipo), ['calentamiento', 'normal', 'normal', 'normal']);
+  assert.deepEqual(borradorDesdeRutina(r).ejercicios[0].plan.map(t => t.tipo), ['calentamiento', 'normal', 'normal', 'normal']);
+  const sinPlan = rutinaDesdeBorrador({ nombre: 'P', ejercicios: [ejercicioDeRutina('a', 'A')] }, 'R-2');
+  assert.equal('plan' in sinPlan.dias[0].bloques[0][0], false);
+});
+
+test('almacén: técnica desconocida se descarta y las partes se sanean (respaldo editado)', () => {
+  const e = migrar({ version: 1, entreno: { rutinas: [], sesiones: [{ id: 'S-1', inicioMs: 1, ejercicios: [{ idEjercicio: 'a', nombre: 'A', series: [
+    { reps: 8, pesoKg: 60, hecha: true, tipo: 'hack', partes: 'x' },
+    { reps: 8, pesoKg: 60, hecha: true, tipo: 'restpause', partes: [{ reps: '3', pesoKg: null }, 7, { reps: 2, pesoKg: 60 }, {}, {}, {}, {}] }
+  ] }] }] } });
+  const [s1, s2] = e.entreno.sesiones[0].ejercicios[0].series;
+  assert.equal('tipo' in s1, false);
+  assert.deepEqual(s1.partes, []);
+  assert.equal(s2.tipo, 'restpause');
+  assert.equal(s2.partes.length, 5);
+  assert.deepEqual(s2.partes[0], { reps: 0, pesoKg: 0 });
+});
+
+// ── Revisión adversarial de las técnicas (30-oct) ────────────────────────────
+
+test('limpiarTecnica: los nombres del prototipo no son técnicas', () => {
+  for (const tipo of ['constructor', 'toString', '__proto__', 'hasOwnProperty']) assert.deepEqual(limpiarTecnica({ tipo }), { tipo: 'normal' });
+  assert.equal(planEsNormal(normalizarPlan(1, [{ tipo: 'constructor' }])), true);
+});
+
+test('previasPorSerie: W con W y trabajo con trabajo, aunque cambie el calentamiento', () => {
+  const previas = [{ reps: 8, pesoKg: 60 }, { reps: 6, pesoKg: 62.5 }];
+  assert.deepEqual(previasPorSerie(['calentamiento', 'normal', 'normal', 'normal'], previas).map(p => p?.pesoKg ?? null), [null, 60, 62.5, 62.5]);
+  const conW = [{ reps: 12, pesoKg: 20, tipo: 'calentamiento' }, { reps: 8, pesoKg: 60 }];
+  assert.deepEqual(previasPorSerie(['normal', 'normal'], conW).map(p => p.pesoKg), [60, 60]);
+  assert.deepEqual(previasPorSerie(['calentamiento', 'restpause'], conW).map(p => p.pesoKg), [20, 60]);
+  assert.deepEqual(previasPorSerie(['normal'], null), [null]);
+});
+
+test('rest-pause: la mini-serie usa el peso de la serie aunque se corrija después', () => {
+  const s = { reps: 8, pesoKg: 80, tipo: 'restpause', partes: [{ reps: 3 }] };
+  assert.equal(volumenDeSerie(s), 11 * 80);
+  assert.equal(textoSerie(s), '8×80 + 3 RP');
+});
+
+test('almacén: las partes sin peso se quedan sin peso; las partes de una serie sin técnica se quitan', () => {
+  const e = migrar({ version: 1, entreno: { rutinas: [], sesiones: [{ id: 'S-1', inicioMs: 1, ejercicios: [{ idEjercicio: 'a', nombre: 'A', series: [
+    { reps: 8, pesoKg: 60, hecha: true, tipo: 'restpause', partes: [{ reps: 3 }, { reps: 2 }] },
+    { reps: 8, pesoKg: 60, hecha: true, partes: [{ reps: 3 }] }
+  ] }] }] } });
+  const [rp, normal] = e.entreno.sesiones[0].ejercicios[0].series;
+  assert.deepEqual(rp.partes, [{ reps: 3 }, { reps: 2 }]);
+  assert.equal(volumenDeSerie(rp), 13 * 60);
+  assert.deepEqual(normal.partes, []);
+});
+
+test('almacén: el estado vivo de un respaldo manipulado no cuela texto (parte en curso y micro-descanso)', () => {
+  const malo = '<img src=x onerror=alert(1)>';
+  const r = importarJSON(JSON.stringify({ version: 1, entreno: { rutinas: [], sesiones: [], sesionActiva: {
+    id: 'S-1', inicioMs: 1, ejercicios: [{ idEjercicio: 'a', nombre: 'A', series: [{ reps: 8, pesoKg: 60, tipo: 'restpause' }] }],
+    parteEnCurso: { idx: 0, serie: 0, k: 0, reps: malo, pesoKg: malo, inicioMs: malo },
+    descanso: { finMs: 9e12, duracionS: 15, idx: 0, micro: { serie: 0, k: malo, reps: malo } }
+  } } }));
+  const est = r.estado ?? r;
+  const viva = est.entreno.sesionActiva;
+  assert.deepEqual(viva.parteEnCurso, { idx: 0, serie: 0, k: 0, inicioMs: null, reps: 0, pesoKg: 0 });
+  assert.equal('micro' in viva.descanso, false);           // k no es un entero: fuera
+  assert.equal(JSON.stringify(viva).includes('<img'), false);
 });

@@ -175,7 +175,7 @@ La **superserie** agrupa *ejercicios*. Una **técnica** cambia cómo se hace *un
 ## 6. Riesgos
 
 1. **Gesto largo contra scroll en iPhone.** Se mitiga con el umbral de 8 px y el asa. Hay que probarlo en un iPhone real, no solo en Chrome.
-2. **Choque de nombres.** El círculo ya dice «CALENTAMIENTO» antes de la primera serie, y eso choca con «serie de calentamiento». Propuesta: renombrar ese estado inicial a «PREPARADO».
+2. **Choque de nombres.** El círculo decía «CALENTAMIENTO» antes de la primera serie, y eso chocaba con «serie de calentamiento». Hecho: el estado inicial se llama «PREPARADO».
 3. **La sesión en vivo es lo más delicado.** Rest-pause y drop set le añaden dos estados. Cada transición lleva su prueba, y hay que repetir el recorrido completo antes de publicar.
 4. **Técnicas dentro de una superserie.** Se permiten, pero la ronda espera a que termines las partes antes de pasar al siguiente ejercicio.
 5. **Recargar en mitad de un rest-pause.** El micro-descanso se guarda por hora de fin, como el descanso normal, así que sobrevive a bloquear la pantalla y a recargar.
@@ -190,8 +190,8 @@ Cada fase se publica por separado, con su OK.
 |---|---|---|
 | **1** ✅ | Reordenar: asa, mantener presionado, teclado y menú Subir/Bajar (publicada el 30-oct) | Bajo |
 | **2** ✅ | Superseries en el editor: Unir/Separar, A1/A2 y arrastrar la cabecera. Reusa la sesión en vivo de hoy (publicada el 30-oct, tras revisión adversarial) | Bajo |
-| **3** | Técnicas, parte de datos y editor: píldoras, hoja y `plan`. Corrige volumen y récords | Medio |
-| **4** | Técnicas, parte de la sesión en vivo: micro-descanso, mini-series, bajadas, historial y resumen | Medio-alto |
+| **3** ✅ | Técnicas, parte de datos y editor: píldoras, hoja y `plan`. Corrige volumen y récords (publicada el 30-oct con la 4) | Medio |
+| **4** ✅ | Técnicas, parte de la sesión en vivo: micro-descanso, mini-series, bajadas, historial y resumen (publicada el 30-oct, tras revisión adversarial) | Medio-alto |
 
 **En cada fase:**
 - pruebas de las funciones puras;
