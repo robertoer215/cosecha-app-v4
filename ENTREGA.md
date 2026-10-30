@@ -68,7 +68,8 @@ Los datos del usuario viven SOLO en el dispositivo (`localStorage`, esquema vers
 - **Crear rutina** (acción principal): editor con nombre, ejercicios de la Biblioteca, series (1–10) y repeticiones (rango); se guarda en «Tus rutinas» como rutina de un día. «Empezar sesión vacía» queda como secundaria.
 - Al empezar **cualquier** rutina se elige el descanso entre series (1 min, 1 min 30 s, 2 min, 3 min o «lo que sugiere la rutina» si varía por ejercicio); se aplica a todos los ejercicios y se sigue ajustando por ejercicio en la sesión.
 - Sesión en vivo: los ±15 van a la derecha del círculo; círculo, tarjeta y botón no se mueven entre activo y descanso (medido a 375 y 320 px).
-- 193 tests. Pendiente: editar una rutina ya creada y rutinas de varios días.
+- **Editar** una de «Tus rutinas»: mismo editor, cargado; guarda en el mismo sitio (mismo id). Conserva superseries, otros días y notas; salir con cambios pide doble toque.
+- 196 tests. Pendiente: rutinas de varios días en el editor y «Copiar y editar» las rutinas COSECHA.
 
 ## Backlog de pulido (S3 de la ronda 5, no bloquean el lanzamiento)
 

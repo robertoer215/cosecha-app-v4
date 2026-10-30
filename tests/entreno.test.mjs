@@ -8,7 +8,7 @@ import { epley1RM, volumenSesion, seriesPorGrupo, ultimaVez,
          debeArrancarDescanso, aKg, siguientePendiente, mejorSerie, resumenEjercicio, historialEjercicio,
          recordsEjercicio, prsPorEjercicio, estadisticasPeriodo, cambioPct, PESTANAS,
          OPCIONES_DESCANSO, etiquetaDescanso, rangoDescanso, ejercicioDeRutina, limpiarEjercicioRutina,
-         validarBorrador, rutinaDesdeBorrador } from '../js/entreno.js';
+         validarBorrador, rutinaDesdeBorrador, borradorDesdeRutina } from '../js/entreno.js';
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -365,4 +365,45 @@ test('rutinaDesdeBorrador: un día, un bloque por ejercicio, nombre recortado', 
   assert.equal(r.dias.length, 1);
   assert.deepEqual(r.dias[0].bloques.map(b => b.length), [1, 1]);
   assert.deepEqual(r.dias[0].bloques[1][0], { idEjercicio: 'peso-muerto', nombre: 'Peso muerto', series: 5, repsMin: 3, repsMax: 5, descansoS: 90 });
+});
+
+// ── Editar una de "Tus rutinas" ──────────────────────────────────────────────
+
+const RUTINA_PROPIA = {
+  id: 'R-7', nombre: 'Torso', nivel: null, objetivo: null, equipo: null, diasSemana: null, notas: 'mis notas',
+  dias: [
+    { nombre: 'Día 1', bloques: [
+      [{ idEjercicio: 'press-banca', nombre: 'Press banca', series: 4, repsMin: 6, repsMax: 8, descansoS: 150 }],
+      [{ idEjercicio: 'remo', nombre: 'Remo', series: 3, repsMin: 10, repsMax: 12, descansoS: 60 },
+       { idEjercicio: 'fondos', nombre: 'Fondos', series: 3, repsMin: 8, repsMax: 10, descansoS: 60 }]
+    ] },
+    { nombre: 'Día 2', bloques: [[{ idEjercicio: 'sentadilla', nombre: 'Sentadilla', series: 5, repsMin: 5, repsMax: 5, descansoS: 180 }]] }
+  ]
+};
+
+test('editar sin cambios devuelve la MISMA rutina (superseries, otros días, notas e id)', () => {
+  const b = borradorDesdeRutina(RUTINA_PROPIA);
+  assert.equal(b.id, 'R-7');
+  assert.deepEqual(b.ejercicios.map(e => e.grupo), [null, 1, 1]);
+  assert.deepEqual(rutinaDesdeBorrador(b, 'R-otro'), RUTINA_PROPIA);
+});
+
+test('editar: cambiar nombre y series, quitar uno de la superserie y agregar uno nuevo', () => {
+  const b = borradorDesdeRutina(RUTINA_PROPIA);
+  b.nombre = ' Torso fuerte ';
+  b.ejercicios[0] = { ...b.ejercicios[0], series: 5 };
+  b.ejercicios.splice(2, 1);                                   // fuera "Fondos"
+  b.ejercicios.push(ejercicioDeRutina('dominadas', 'Dominadas'));
+  const r = rutinaDesdeBorrador(b, 'R-otro');
+  assert.equal(r.id, 'R-7');
+  assert.equal(r.nombre, 'Torso fuerte');
+  assert.equal(r.notas, 'mis notas');
+  assert.deepEqual(r.dias[0].bloques.map(bl => bl.map(x => x.idEjercicio)), [['press-banca'], ['remo'], ['dominadas']]);
+  assert.equal(r.dias[0].bloques[0][0].series, 5);
+  assert.deepEqual(r.dias[1], RUTINA_PROPIA.dias[1]);
+});
+
+test('editar una rutina guardada desde una sesión sin reps: toma valores por defecto válidos', () => {
+  const b = borradorDesdeRutina({ id: 'R-9', nombre: 'Rápida', dias: [{ nombre: 'Día 1', bloques: [[{ idEjercicio: 'x', nombre: 'X', series: 2, repsMin: null, repsMax: null, descansoS: 90 }]] }] });
+  assert.deepEqual([b.ejercicios[0].series, b.ejercicios[0].repsMin, b.ejercicios[0].repsMax], [2, 8, 12]);
 });
