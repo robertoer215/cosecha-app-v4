@@ -8,7 +8,8 @@ import { epley1RM, volumenSesion, seriesPorGrupo, ultimaVez,
          debeArrancarDescanso, aKg, siguientePendiente, mejorSerie, resumenEjercicio, historialEjercicio,
          recordsEjercicio, prsPorEjercicio, estadisticasPeriodo, cambioPct, PESTANAS,
          OPCIONES_DESCANSO, etiquetaDescanso, rangoDescanso, ejercicioDeRutina, limpiarEjercicioRutina,
-         validarBorrador, rutinaDesdeBorrador, borradorDesdeRutina } from '../js/entreno.js';
+         validarBorrador, rutinaDesdeBorrador, borradorDesdeRutina,
+         moverEjercicio, normalizarGrupos, MAX_SUPERSERIE } from '../js/entreno.js';
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -406,4 +407,48 @@ test('editar: cambiar nombre y series, quitar uno de la superserie y agregar uno
 test('editar una rutina guardada desde una sesión sin reps: toma valores por defecto válidos', () => {
   const b = borradorDesdeRutina({ id: 'R-9', nombre: 'Rápida', dias: [{ nombre: 'Día 1', bloques: [[{ idEjercicio: 'x', nombre: 'X', series: 2, repsMin: null, repsMax: null, descansoS: 90 }]] }] });
   assert.deepEqual([b.ejercicios[0].series, b.ejercicios[0].repsMin, b.ejercicios[0].repsMax], [2, 8, 12]);
+});
+
+// ── Reordenar en el editor ───────────────────────────────────────────────────
+
+const er = (id, grupo = null) => ({ ...ejercicioDeRutina(id, id), grupo });
+const ids = l => l.map(e => e.idEjercicio).join(' ');
+const grupos = l => l.map(e => e.grupo === null ? '·' : e.grupo).join('');
+
+test('moverEjercicio: mueve hacia abajo y hacia arriba sin tocar la lista original', () => {
+  const l = [er('a'), er('b'), er('c'), er('d')];
+  assert.equal(ids(moverEjercicio(l, 0, 2)), 'b c a d');
+  assert.equal(ids(moverEjercicio(l, 3, 1)), 'a d b c');
+  assert.equal(ids(l), 'a b c d');
+  assert.equal(ids(moverEjercicio(l, 1, 1)), 'a b c d');
+  assert.equal(ids(moverEjercicio(l, 0, 9)), 'a b c d');   // fuera de rango: no hace nada
+});
+
+test('moverEjercicio: reordenar DENTRO de una superserie la conserva', () => {
+  const l = [er('a1', 5), er('a2', 5), er('x')];
+  const r = moverEjercicio(l, 0, 1);
+  assert.equal(ids(r), 'a2 a1 x');
+  assert.equal(grupos(r), '00·');
+});
+
+test('moverEjercicio: soltar entre dos de una superserie la une; sacarlo la deshace', () => {
+  const l = [er('a1', 0), er('a2', 0), er('x')];
+  const dentro = moverEjercicio(l, 2, 1);
+  assert.equal(ids(dentro), 'a1 x a2');
+  assert.equal(grupos(dentro), '000');
+  const fuera = moverEjercicio([er('a1', 0), er('a2', 0), er('x')], 0, 2);
+  assert.equal(ids(fuera), 'a2 x a1');
+  assert.equal(grupos(fuera), '···');      // a2 se queda sola: ya no es superserie
+});
+
+test('moverEjercicio: una superserie llena (4) no admite un quinto', () => {
+  assert.equal(MAX_SUPERSERIE, 4);
+  const l = [er('a1', 0), er('a2', 0), er('a3', 0), er('a4', 0), er('x')];
+  const r = moverEjercicio(l, 4, 2);
+  assert.equal(ids(r), 'a1 a2 x a3 a4');
+  assert.equal(grupos(r), '00·11');        // x queda suelta y parte la superserie en dos de 2
+});
+
+test('normalizarGrupos: renumera por orden y quita superseries de un solo ejercicio', () => {
+  assert.equal(grupos(normalizarGrupos([er('a', 7), er('b', 7), er('c', 3), er('d'), er('e', 9), er('f', 9)])), '00··11');
 });

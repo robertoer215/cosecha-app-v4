@@ -71,6 +71,10 @@ Los datos del usuario viven SOLO en el dispositivo (`localStorage`, esquema vers
 - **Editar** una de «Tus rutinas»: mismo editor, cargado; guarda en el mismo sitio (mismo id). Conserva superseries, otros días y notas; salir con cambios pide doble toque.
 - 196 tests. Pendiente: rutinas de varios días en el editor y «Copiar y editar» las rutinas COSECHA.
 
+## Rutinas avanzadas (arquitectura aprobada el 30-oct: `docs/arquitectura-rutinas-avanzadas.md`)
+
+- **Fase 1 — Reordenar (publicada):** asa ≡ (arrastrar), mantener presionada la tarjeta 400 ms (umbral 8 px contra el scroll), autoscroll acotado, teclado (Enter/flechas/Escape con anuncios) y menú «⋯» con Subir, Bajar y Quitar. Las superseries se conservan al reordenar (`moverEjercicio`, `normalizarGrupos`, tope de 4). 201 tests. Pendiente de verificar en iPhone real el gesto largo.
+
 ## Backlog de pulido (S3 de la ronda 5, no bloquean el lanzamiento)
 
 - qrcodejs desde cdnjs sin SRI (heredado de Pedir).

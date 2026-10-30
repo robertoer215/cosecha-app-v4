@@ -71,11 +71,33 @@
 .en-ed-nombre{display:block;width:100%}
 .en-ed-err{font-size:12px;line-height:1.5;color:var(--danger);margin:8px 0 0}
 .en-ed-lista{list-style:none;margin:0;padding:0}
-.en-ed-ej-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
-.en-ed-quitar{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px;margin:-10px -10px -10px 0;background:none;border:none;border-radius:var(--r-pill);color:var(--muted-ink);cursor:pointer;transition:color .2s}
-.en-ed-quitar svg{width:18px;height:18px}
-.en-ed-quitar:hover{color:var(--danger)}
-.en-ed-quitar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* Tarjeta: asa (≡) · nombre · menú (⋯). Mantener presionada la tarjeta no
+   selecciona texto ni abre el menú del sistema; los campos sí se seleccionan. */
+.en-ed-ej{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.en-ed-ej input{-webkit-user-select:text;user-select:text}
+.en-ed-ej-top{display:flex;align-items:center;gap:2px}
+.en-ed-ej-top .en-card-nombre{flex:1;min-width:0}
+.en-ed-asa,.en-ed-mas{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;min-width:44px;min-height:44px;background:none;border:none;border-radius:var(--r-sm);color:var(--muted-ink);cursor:pointer;transition:color .2s,background-color .2s}
+.en-ed-asa{margin:-10px 2px -10px -12px;cursor:grab;touch-action:none}
+.en-ed-mas{margin:-10px -10px -10px 0}
+.en-ed-asa svg{width:20px;height:20px}
+.en-ed-mas svg{width:20px;height:20px}
+.en-ed-asa:hover,.en-ed-mas:hover{color:var(--text)}
+.en-ed-asa[aria-pressed="true"]{color:var(--accent-ink);background:var(--accent-soft)}
+.en-ed-mas[aria-expanded="true"]{color:var(--text);background:var(--surface)}
+.en-ed-asa:focus-visible,.en-ed-mas:focus-visible,.en-ed-op:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.en-ed-menu{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px;padding-top:12px;border-top:1px solid var(--border)}
+.en-ed-menu[hidden]{display:none}
+.en-ed-op{min-height:44px;padding:10px 18px;border:1px solid var(--border-strong);border-radius:var(--r-pill);background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;cursor:pointer}
+.en-ed-op[aria-disabled="true"]{opacity:.4;cursor:default}
+.en-ed-op-quitar{margin-left:auto}
+.en-ed-pista{font-size:12px;line-height:1.5;color:var(--muted-ink);margin:-2px 0 12px}
+/* Reordenar: la tarjeta levantada sigue al dedo; las demás se apartan solo
+   con transform (nunca top/height). Con prefers-reduced-motion, el barrido
+   global de styles.css apaga la transición y el cambio es instantáneo. */
+.en-ed-desplazable{transition:transform .2s ease}
+.en-ed-arrastrando{position:relative;z-index:6;box-shadow:var(--lift-cta);cursor:grabbing}
+.en-ed-levantada{outline:2px solid var(--accent);outline-offset:2px}
 .en-ed-campos{display:flex;flex-wrap:wrap;gap:14px 28px;margin-top:12px}
 .en-ed-campo .en-ed-lbl{margin-bottom:8px}
 .en-ed-step{display:flex;align-items:center;gap:12px}
