@@ -121,6 +121,50 @@
 .en-ed-unir-on{border-style:solid;border-color:transparent;color:var(--accent-ink)}
 .en-ed-unir:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .en-ed-unir-lleno{font-size:12px;color:var(--muted-ink)}
+
+/* ── Técnicas por serie en el editor (fase 3) ────────────────────────────────
+   Una píldora por serie (número + insignia W/RP/D); la técnica se ve por
+   texto, nunca solo por color. */
+.en-ed-tecnicas{margin-top:14px}
+.en-ed-pildoras{display:flex;flex-wrap:wrap;gap:8px}
+.en-ed-pildora{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:44px;min-height:44px;padding:0 12px;border:1px solid var(--border-strong);border-radius:var(--r-pill);background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;font-variant-numeric:tabular-nums;cursor:pointer;transition:background-color .2s,border-color .2s}
+.en-ed-pildora:hover{background:var(--surface)}
+.en-ed-pildora-con{border-color:var(--accent-ink);background:var(--accent-soft)}
+.en-ed-pildora-ins{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--accent-ink)}
+.en-ed-cal{min-height:44px;padding:0 14px;border:1px dashed var(--border-strong);border-radius:var(--r-pill);background:none;color:var(--muted-ink);font-family:var(--sans);font-size:12px;cursor:pointer;transition:color .2s,border-color .2s}
+.en-ed-cal:hover{color:var(--text);border-color:var(--text)}
+.en-ed-pildora:focus-visible,.en-ed-cal:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ── Hoja inferior: técnica de una serie ───────────────────────────────────
+   Velo con el mismo marrón derivado de --clay que los de styles.css; la hoja
+   entra desde abajo solo con transform (y el barrido de reduced-motion la
+   deja aparecer sin animación). */
+.en-hoja-fondo{position:fixed;inset:0;z-index:190;background:rgba(95,45,14,.45)}
+.en-hoja{position:fixed;left:0;right:0;bottom:0;z-index:200;max-width:720px;margin:0 auto;max-height:86dvh;overflow-y:auto;overscroll-behavior:contain;padding:18px var(--gutter) calc(18px + env(safe-area-inset-bottom));background:var(--bg);border-radius:var(--r-md) var(--r-md) 0 0;box-shadow:var(--lift-sticky);animation:en-hoja-entra .25s ease-out}
+@keyframes en-hoja-entra{from{transform:translateY(100%)}to{transform:none}}
+.en-hoja-cab{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
+.en-hoja-cab .en-ed-mas{margin:-6px -10px 0 0}
+.en-hoja-tit{margin:0;font-size:20px;font-weight:400;letter-spacing:-.4px;color:var(--text)}
+.en-hoja-sub{margin:2px 0 0;font-size:13px;color:var(--muted-ink)}
+.en-hoja-ops{display:grid;gap:8px;margin:0;padding:0;border:0}
+/* Las reglas globales de label e input de styles.css (rótulo de 9 px en
+   mayúsculas; input sin apariencia y con subrayado) no aplican aquí: son
+   opciones de radio y una casilla nativas. */
+.en-hoja-op,.en-hoja-todas{font-family:var(--sans);font-size:13px;letter-spacing:normal;text-transform:none;color:var(--text)}
+.en-hoja-op input,.en-hoja-todas input{-webkit-appearance:auto;appearance:auto;width:20px;height:20px;padding:0;border:0;background:none;font-size:inherit}
+.en-hoja-op{display:flex;align-items:flex-start;gap:12px;min-height:44px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--r-md);cursor:pointer;transition:background-color .2s,border-color .2s}
+.en-hoja-op-on{border-color:var(--accent-ink);background:var(--accent-soft)}
+.en-hoja-op input{flex-shrink:0;width:20px;height:20px;margin:2px 0 0;accent-color:var(--accent-ink)}
+.en-hoja-op input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.en-hoja-op-txt{display:flex;flex-direction:column;gap:2px}
+.en-hoja-op-nom{font-size:15px;font-weight:500;color:var(--text)}
+.en-hoja-op-desc{font-size:12px;line-height:1.5;color:var(--muted-ink)}
+.en-hoja-params{display:flex;flex-wrap:wrap;gap:14px 24px;padding:4px 14px 10px}
+.en-hoja-val{min-width:56px}
+.en-hoja-todas{display:flex;align-items:center;gap:10px;min-height:44px;margin-top:10px;font-size:13px;color:var(--text);cursor:pointer}
+.en-hoja-todas input{width:20px;height:20px;accent-color:var(--accent-ink)}
+.en-hoja-todas input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.en-hoja-listo{margin-top:12px}
 .en-ed-levantada{outline:2px solid var(--accent);outline-offset:2px}
 .en-ed-campos{display:flex;flex-wrap:wrap;gap:14px 20px;margin-top:12px}
 .en-ed-campo .en-ed-lbl{margin-bottom:8px}
@@ -467,6 +511,21 @@
 .en-foco-in:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
 .en-foco-in[aria-invalid="true"]{border-color:var(--danger)}
 .en-foco-rango,.en-ej-rango{margin:0;padding:0 12px 10px;font-size:12px;color:var(--muted-ink);text-align:center}
+/* ── Técnicas en la sesión en vivo (fase 4) ──────────────────────────────────
+   El círculo no se mueve: micro-descanso con el mismo anillo de progreso que
+   el descanso; mini-serie o bajada en verde, como una serie activa. */
+.en-foco-anillo[data-estado="micro"]{background:conic-gradient(var(--accent) calc(var(--p) * 1turn),var(--border) 0)}
+.en-foco-anillo[data-estado="micro"] .en-foco-lbl{color:var(--accent-ink)}
+.en-foco-anillo[data-estado="parte"]{background:var(--green)}
+.en-foco-anillo[data-estado="parte"] .en-foco-lbl{color:var(--green)}
+.en-tec{display:inline-block;padding:1px 6px;border-radius:var(--r-pill);background:var(--accent-soft);color:var(--accent-ink);font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.04em;vertical-align:middle}
+/* --accent-deep y no --accent-ink: sobre --surface, accent-ink se queda en 4,42:1. */
+.en-foco-tecnica{margin:0;padding:0 12px 10px;font-size:12px;line-height:1.5;color:var(--accent-deep);text-align:center}
+/* El peso de la mini-serie es el de la serie: se ve como dato, no como campo. */
+.en-foco-in[readonly]{border-color:transparent;background:none;cursor:default}
+.en-foco-partes{margin:0;padding:0 12px 10px;font-size:12px;color:var(--muted-ink);text-align:center;font-variant-numeric:tabular-nums}
+.en-foco-salida{width:100%;margin-top:-6px}
+.en-fila-partes{margin:0;padding:4px 0 8px 24px;font-size:11px;color:var(--muted-ink);border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
 .en-ej-rango{text-align:left;padding:0 0 6px}
 .en-foco-error{margin:0;padding:0 12px 10px;font-size:13px;color:var(--danger);text-align:center}
 .en-foco-error:empty{display:none}

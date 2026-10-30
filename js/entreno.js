@@ -54,7 +54,8 @@ export function volumenSesion(sesion) {
   let v = 0;
   for (const ej of sesion.ejercicios) {
     for (const s of ej.series || []) {
-      if (s.hecha && Number.isFinite(s.reps) && Number.isFinite(s.pesoKg)) v += s.reps * s.pesoKg;
+      // El calentamiento no cuenta; rest-pause y drop set suman sus partes.
+      if (s.hecha && !esCalentamiento(s) && Number.isFinite(s.reps) && Number.isFinite(s.pesoKg)) v += volumenDeSerie(s);
     }
   }
   return Math.round(v * 100) / 100;
@@ -69,7 +70,7 @@ export function seriesPorGrupo(sesion, porId) {
   const out = {};
   if (!sesion || !Array.isArray(sesion.ejercicios)) return out;
   for (const ej of sesion.ejercicios) {
-    const n = (ej.series || []).filter(s => s.hecha).length;
+    const n = (ej.series || []).filter(s => s.hecha && !esCalentamiento(s)).length;
     if (!n) continue;
     const info = ficha(ej.idEjercicio);
     const grupo = info?.musculosPrimarios?.[0] || 'otros';
@@ -90,7 +91,7 @@ export function ultimaVez(sesiones, idEjercicio) {
     const hechas = (ej.series || []).filter(s => s.hecha);
     // Una sesión donde estaba el ejercicio pero no se hizo ninguna serie no
     // es "la última vez": se sigue buscando hacia atrás.
-    if (hechas.length) return hechas.map(s => ({ reps: s.reps, pesoKg: s.pesoKg }));
+    if (hechas.length) return hechas.map(s => ({ reps: s.reps, pesoKg: s.pesoKg, ...(s.tipo ? { tipo: s.tipo } : {}) }));
   }
   return null;
 }
@@ -143,13 +144,27 @@ export function siguientePendiente(ejercicios) {
   return null;
 }
 
+// La referencia de «la última vez» de cada serie de hoy: los calentamientos se
+// comparan con los calentamientos y las series de trabajo con las de trabajo,
+// cada uno por su orden. Si una lista se acaba, se repite su último valor.
+// `tipos` es el tipo de cada serie de hoy ('calentamiento' o cualquier otro).
+export function previasPorSerie(tipos, previas) {
+  const w = (previas || []).filter(esCalentamiento), t = (previas || []).filter(p => !esCalentamiento(p));
+  let iw = 0, it = 0;
+  return (tipos || []).map(tipo => tipo === 'calentamiento'
+    ? (w[iw++] ?? (w.length ? w[w.length - 1] : null))
+    : (t[it++] ?? (t.length ? t[t.length - 1] : null)));
+}
+
 // ── Progreso: cálculos puros (sin DOM, testeados) ─────────────────────────────
 //
 // "Mejor serie" = la de MÁS PESO; a igual peso, la de más repeticiones. En
 // peso corporal (todo a 0 kg) manda la de más repeticiones. Es el criterio
 // con el que la gente cuenta sus récords en el gym ("¿cuánto levantaste?").
 export function mejorSerie(series) {
-  const hechas = (series || []).filter(s => s && s.hecha && (s.reps || 0) > 0);
+  // El récord es de la parte principal de una serie de trabajo: el
+  // calentamiento no compite y las partes (mini-series, bajadas) no suman.
+  const hechas = (series || []).filter(s => s && s.hecha && !esCalentamiento(s) && (s.reps || 0) > 0);
   if (!hechas.length) return null;
   return hechas.reduce((a, s) => ((s.pesoKg || 0) > (a.pesoKg || 0)
     || ((s.pesoKg || 0) === (a.pesoKg || 0) && s.reps > a.reps)) ? s : a);
@@ -158,12 +173,12 @@ export function mejorSerie(series) {
 // Un ejercicio dentro de una sesión: sus series hechas, su mejor serie,
 // cuántas repeticiones y cuánto volumen (Σ reps × kg) movió.
 export function resumenEjercicio(ej) {
-  const hechas = (ej?.series || []).filter(s => s && s.hecha);
+  const hechas = (ej?.series || []).filter(s => s && s.hecha && !esCalentamiento(s));
   return {
     series: hechas,
     mejor: mejorSerie(hechas),
-    totalReps: hechas.reduce((a, s) => a + (s.reps || 0), 0),
-    volumen: hechas.reduce((a, s) => a + (s.reps || 0) * (s.pesoKg || 0), 0)
+    totalReps: hechas.reduce((a, s) => a + repsDeSerie(s), 0),
+    volumen: hechas.reduce((a, s) => a + volumenDeSerie(s), 0)
   };
 }
 
@@ -228,6 +243,116 @@ export function aKg(valor, unidad) {
   return Math.round(kg * 100) / 100;
 }
 
+// ── Técnicas por serie: cálculos puros (testeados) ───────────────────────────
+// Decisión de Roberto (30-oct-2026): calentamiento, rest-pause y drop set, con
+// parámetros editables. El calentamiento no cuenta en volumen ni en récords; en
+// rest-pause y drop set el volumen suma todas las partes, pero el récord (1RM
+// estimado) usa SOLO la parte principal (si no, se inflaría).
+export const TECNICAS = {
+  normal: { nombre: 'Normal', insignia: '', descripcion: 'Una serie como siempre.' },
+  calentamiento: { nombre: 'Calentamiento', insignia: 'W', descripcion: 'Serie ligera para preparar el músculo. No cuenta en volumen ni en récords.' },
+  restpause: { nombre: 'Rest-pause', insignia: 'RP', descripcion: 'Llegas al fallo, descansas unos segundos y haces mini-series con el mismo peso.' },
+  drop: { nombre: 'Drop set', insignia: 'D', descripcion: 'Al terminar bajas el peso y sigues sin descansar.' },
+};
+export const PARAMS_TECNICA = {
+  restpause: {
+    mini: { min: 1, max: 4, paso: 1, def: 2, nombre: 'Mini-series' },
+    microS: { min: 10, max: 30, paso: 5, def: 15, nombre: 'Micro-descanso', unidad: 's' },
+  },
+  drop: {
+    bajadas: { min: 1, max: 3, paso: 1, def: 1, nombre: 'Bajadas' },
+    pct: { min: 10, max: 40, paso: 5, def: 20, nombre: 'Bajar el peso', unidad: '%' },
+  },
+};
+
+// Una técnica saneada: tipo conocido y parámetros dentro de su rango.
+export function limpiarTecnica(t) {
+  const tipo = typeof t?.tipo === 'string' && Object.hasOwn(TECNICAS, t.tipo) ? t.tipo : 'normal';
+  const out = { tipo };
+  for (const [k, r] of Object.entries(PARAMS_TECNICA[tipo] || {})) {
+    const v = Number.isFinite(t?.[k]) ? Math.round(t[k] / r.paso) * r.paso : r.def;
+    out[k] = Math.min(r.max, Math.max(r.min, v));
+  }
+  return out;
+}
+
+// El plan de N series: una técnica por serie; lo que falta, normal.
+export function normalizarPlan(n, plan) {
+  return Array.from({ length: Math.max(0, n) }, (_, i) => limpiarTecnica(plan?.[i]));
+}
+
+export function planEsNormal(plan) {
+  return !Array.isArray(plan) || plan.every(t => (t?.tipo ?? 'normal') === 'normal');
+}
+
+export const esCalentamiento = s => s?.tipo === 'calentamiento';
+
+// Repeticiones y volumen de UNA serie: la parte principal más sus partes
+// (mini-series del rest-pause con el mismo peso, o bajadas del drop set).
+export function repsDeSerie(s) {
+  return (s?.reps || 0) + (s?.partes || []).reduce((a, p) => a + (p?.reps || 0), 0);
+}
+export function volumenDeSerie(s) {
+  const base = (s?.reps || 0) * (s?.pesoKg || 0);
+  return base + (s?.partes || []).reduce((a, p) => a + (p?.reps || 0) * (p?.pesoKg ?? s?.pesoKg ?? 0), 0);
+}
+
+// Peso de una bajada del drop set: `pct` menos que el anterior, redondeado a
+// lo que se puede cargar en el gym (2,5 kg o 5 lb). Nunca llega a cero.
+export function pesoBajada(pesoKg, pct, unidad = 'kg') {
+  if (!(pesoKg > 0)) return 0;
+  const lb = unidad === 'lb';
+  const paso = lb ? 5 : 2.5;
+  const actual = lb ? pesoKg / 0.45359237 : pesoKg;
+  const crudo = actual * (1 - pct / 100);
+  let v = Math.round(crudo / paso) * paso;
+  // Con cargas pequeñas el redondeo puede dejar el mismo peso (o más): un
+  // escalón por debajo; si eso llega a cero, medio kilo (o una libra) de
+  // precisión, que es lo que traen las mancuernas ligeras.
+  // (Se compara con medio escalón de margen: 10 lb guardadas como 4,54 kg
+  // vuelven como 10,009 lb y el redondeo creía haber bajado.)
+  if (v > actual - paso / 2) v = Math.floor((actual - paso / 2) / paso) * paso;
+  if (v <= 0) v = Math.round(crudo * 2) / 2;
+  if (v <= 0 || v > actual - 0.25) return pesoKg;
+  return lb ? aKg(v, 'lb') : v;
+}
+
+// Qué toca en una serie con técnica después de su parte principal:
+// 'micro' (rest-pause: micro-descanso antes de la mini-serie k), 'parte'
+// (drop set: la bajada k) o 'fin'. Para una serie normal o de calentamiento,
+// siempre 'fin'.
+export function siguienteParte(s) {
+  const t = limpiarTecnica(s);
+  const hechas = (s?.partes || []).length;
+  if (t.tipo === 'restpause') return hechas < t.mini ? { fase: 'micro', k: hechas, total: t.mini, microS: t.microS } : { fase: 'fin' };
+  if (t.tipo === 'drop') return hechas < t.bajadas ? { fase: 'parte', k: hechas, total: t.bajadas, pct: t.pct } : { fase: 'fin' };
+  return { fase: 'fin' };
+}
+
+// Una serie como texto para resumen e historial: «8×60 + 3 + 2 RP»,
+// «10×60 + 8×47.5 D», «12×20 W», «15 reps».
+export function textoSerie(s, unidad = 'kg') {
+  const base = s?.pesoKg > 0 ? `${s.reps}×${fmtPeso(s.pesoKg, unidad)}` : `${s?.reps ?? 0} reps`;
+  const partes = (s?.partes || []).map(p => s.tipo === 'drop' && p.pesoKg > 0 ? `${p.reps}×${fmtPeso(p.pesoKg, unidad)}` : `${p.reps}`);
+  const cuerpo = partes.length ? `${base} + ${partes.join(' + ')}` : base;
+  const ins = TECNICAS[s?.tipo]?.insignia;
+  return ins ? `${cuerpo} ${ins}` : cuerpo;
+}
+
+// «Guardar como rutina»: las técnicas de las series pasan al plan (o nada si
+// todas eran normales, para no cambiar la forma de las rutinas de siempre).
+export function planDesdeSeries(series) {
+  const plan = (series || []).map(limpiarTecnica);
+  return planEsNormal(plan) ? null : plan;
+}
+
+// «+ Calentamiento» del editor: una serie W al principio (hasta 10 series).
+export function agregarCalentamiento(ej) {
+  const series = ej.series || 0;
+  if (series >= 10) return ej;
+  return { ...ej, series: series + 1, plan: [{ tipo: 'calentamiento' }, ...normalizarPlan(series, ej.plan)] };
+}
+
 // ── Crear rutina y elegir descanso: cálculos puros (testeados) ───────────────
 
 // Descanso entre series que se elige al empezar CUALQUIER rutina (pedido de
@@ -262,7 +387,9 @@ const entre = (v, min, max, def) => Number.isFinite(v) ? Math.min(max, Math.max(
 export function limpiarEjercicioRutina(ej) {
   const series = entre(ej.series, 1, 10, 3);
   const a = entre(ej.repsMin, 1, 50, 8), b = entre(ej.repsMax, 1, 50, Number.isFinite(ej.repsMin) ? a : 12);
-  return { ...ej, series, repsMin: Math.min(a, b), repsMax: Math.max(a, b) };
+  // El plan de técnicas sigue al número de series: «+» añade una normal al
+  // final y «−» quita la última.
+  return { ...ej, series, repsMin: Math.min(a, b), repsMax: Math.max(a, b), ...(ej.plan ? { plan: normalizarPlan(series, ej.plan) } : {}) };
 }
 
 export function validarBorrador(b) {
@@ -281,7 +408,8 @@ export function borradorDesdeRutina(r) {
   const ejercicios = bloques.flatMap((bloque, g) => bloque.map(it => ({
     ...limpiarEjercicioRutina({
       idEjercicio: it.idEjercicio, nombre: it.nombre ?? it.idEjercicio,
-      series: it.series, repsMin: it.repsMin ?? it.repsMax, repsMax: it.repsMax ?? it.repsMin, descansoS: it.descansoS ?? 90
+      series: it.series, repsMin: it.repsMin ?? it.repsMax, repsMax: it.repsMax ?? it.repsMin, descansoS: it.descansoS ?? 90,
+      ...(Array.isArray(it.plan) ? { plan: it.plan } : {})
     }),
     grupo: bloque.length > 1 ? g : null
   })));
@@ -296,7 +424,9 @@ export function rutinaDesdeBorrador(b, id) {
   let previo;
   for (const ej of b.ejercicios) {
     const e = limpiarEjercicioRutina(ej);
-    const item = { idEjercicio: e.idEjercicio, nombre: e.nombre, series: e.series, repsMin: e.repsMin, repsMax: e.repsMax, descansoS: e.descansoS ?? 90 };
+    const item = { idEjercicio: e.idEjercicio, nombre: e.nombre, series: e.series, repsMin: e.repsMin, repsMax: e.repsMax, descansoS: e.descansoS ?? 90,
+      // El plan solo se guarda si hay alguna técnica: las rutinas de siempre no cambian de forma.
+      ...(planEsNormal(e.plan) ? {} : { plan: normalizarPlan(e.series, e.plan) }) };
     if (ej.grupo != null && ej.grupo === previo) bloques[bloques.length - 1].push(item);
     else bloques.push([item]);
     previo = ej.grupo;
@@ -488,6 +618,7 @@ const SVG_LUPA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const SVG_VOLVER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg>';
 const SVG_ASA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg>';
 const SVG_MAS = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg>';
+const SVG_CERRAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
 const SVG_ESLABON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/></svg>';
 
 // ── Estado del módulo ────────────────────────────────────────────────────────
@@ -517,6 +648,8 @@ let menuEjIdx = null;        // ejercicio del editor con su menú "⋯" abierto
 let asaLevantada = null;     // reordenar con teclado: { tipo: 'ej'|'grupo', idx, idxInicio, inicio, sucioAntes }
 let arrastrando = false;     // hay un arrastre con el dedo en curso (bloquea el scroll del navegador)
 let finArrastreMs = 0;       // cuándo terminó el último arrastre (el click que lo sigue no cuenta)
+let hojaTecnica = null;      // hoja inferior abierta: { idx, serie, todas, planInicial } (técnica de una serie)
+let escapeHojaInstalado = false;
 let repintandoAsa = false;   // el teclado está repintando: perder el foco aquí no suelta nada
 let verSesionId = null;      // sesión del historial abierta en modo lectura
 let verProgresoId = null;    // ejercicio abierto en "progreso"
@@ -605,6 +738,11 @@ function restaurarDescanso() {
   const d = sesion?.descanso;
   if (!d || !Number.isFinite(d.finMs)) return;
   const restanteS = (d.finMs - Date.now()) / 1000;
+  if (restanteS <= 0 && d.micro) {
+    empezarParteTrasMicro();
+    persistir();
+    return;
+  }
   if (restanteS <= 0) {
     delete sesion.descanso;
     sesion.listoDesdeMs = d.finMs;
@@ -627,16 +765,24 @@ function serieVacia(prev) {
   return { reps: prev?.reps ?? 0, pesoKg: prev?.pesoKg ?? 0, rir: null, hecha: false, tsHecha: null };
 }
 
-function ejercicioDeSesion(idEjercicio, nombre, descansoS, superGrupo, nSeries, repsBase, rango = null) {
-  const previas = ultimaVez(estado.entreno.sesiones, idEjercicio);
+function ejercicioDeSesion(idEjercicio, nombre, descansoS, superGrupo, nSeries, repsBase, rango = null, plan = null) {
+  const tecnicas = planEsNormal(plan) ? null : normalizarPlan(nSeries, plan);
+  // La última vez, emparejada por tipo: un calentamiento nuevo no le roba el
+  // peso de trabajo a la primera serie (ni al revés).
+  const previas = previasPorSerie(Array.from({ length: nSeries }, (_, i) => tecnicas?.[i]?.tipo ?? 'normal'),
+    ultimaVez(estado.entreno.sesiones, idEjercicio));
   const series = [];
   for (let i = 0; i < nSeries; i++) {
+    // Solo las series con técnica llevan `tipo` (y sus parámetros): una serie
+    // normal conserva la forma de siempre.
+    const t = tecnicas?.[i];
     series.push({
-      reps: repsBase ?? previas?.[i]?.reps ?? 0,
-      // El peso se precarga de la última vez (misma posición de serie): la
+      reps: repsBase ?? previas[i]?.reps ?? 0,
+      // El peso se precarga de la última vez (misma serie del mismo tipo): la
       // referencia ya está en el input y solo se corrige si hoy cambia.
-      pesoKg: previas?.[i]?.pesoKg ?? previas?.[previas.length - 1]?.pesoKg ?? 0,
-      rir: null, hecha: false, tsHecha: null
+      pesoKg: previas[i]?.pesoKg ?? 0,
+      rir: null, hecha: false, tsHecha: null,
+      ...(t && t.tipo !== 'normal' ? t : {})
     });
   }
   // El rango de la rutina (8–12) se muestra: varias rutinas progresan "al
@@ -680,7 +826,7 @@ async function empezarDesdeRutina(rutina, dia, descansoS = null) {
       const f = porId.get(b.idEjercicio);
       sesion.ejercicios.push(ejercicioDeSesion(
         b.idEjercicio, f?.nombre ?? b.nombre ?? b.idEjercicio, descansoS ?? b.descansoS ?? 90, g, b.series ?? 3, b.repsMin ?? null,
-        b.repsMax ? { min: b.repsMin ?? b.repsMax, max: b.repsMax } : null));
+        b.repsMax ? { min: b.repsMin ?? b.repsMax, max: b.repsMax } : null, b.plan ?? null));
     }
   }
   persistir();
@@ -712,6 +858,14 @@ function ultimoDelGrupo(g) {
 function alPalomear(idxEj, idxSerie, fila) {
   const ej = sesion.ejercicios[idxEj];
   const serie = ej.series[idxSerie];
+  // Palomear a mano (esta u otra serie) a mitad de un rest-pause o un drop set
+  // cierra antes esa serie con sus partes hechas.
+  const pend = parteEnCursoValida() || (sesion.descanso?.micro ? { idx: sesion.descanso.idx, serie: sesion.descanso.micro.serie } : null);
+  if (pend) {
+    const mismo = pend.idx === idxEj && pend.serie === idxSerie;
+    cerrarTecnicaPendiente();
+    if (mismo) { persistir(); render(); return; }
+  }
   // La fila se LEE en el toque: en móvil el blur del input no siempre llega
   // antes del tap y palomear con el teclado abierto perdía lo tecleado.
   leerFila(fila, serie);
@@ -745,6 +899,7 @@ function leerFila(fila, serie) {
 }
 
 function terminarSesion() {
+  cerrarTecnicaPendiente();
   sesion.finMs = Date.now();
   delete sesion.descanso;
   sesion.serieEnCurso = null;
@@ -793,14 +948,17 @@ function sesionARutina(ses, nombre) {
   const bloques = [];
   let grupoAbierto = null;
   for (const ej of ses.ejercicios) {
-    const reps = ej.series.filter(s => s.hecha).map(s => s.reps).filter(r => r > 0);
+    const hechas = ej.series.filter(s => s.hecha);
+    const reps = hechas.filter(s => !esCalentamiento(s)).map(s => s.reps).filter(r => r > 0);
+    const plan = planDesdeSeries(hechas.length ? hechas : ej.series);
     const item = {
       idEjercicio: ej.idEjercicio,
       nombre: ej.nombre,
-      series: ej.series.filter(s => s.hecha).length || ej.series.length,
+      series: hechas.length || ej.series.length,
       repsMin: reps.length ? Math.min(...reps) : null,
       repsMax: reps.length ? Math.max(...reps) : null,
-      descansoS: ej.descansoS
+      descansoS: ej.descansoS,
+      ...(plan ? { plan } : {})
     };
     if (ej.superGrupo != null && grupoAbierto === ej.superGrupo) {
       bloques[bloques.length - 1].push(item);
@@ -817,14 +975,15 @@ function sesionARutina(ses, nombre) {
 
 // ── Descanso ─────────────────────────────────────────────────────────────────
 
-function arrancarDescanso(idx) {
+function arrancarDescanso(idx, duracionS) {
   const ej = sesion.ejercicios[idx];
-  descansoObj = crearDescanso({ duracionS: ej.descansoS });
+  const dur = duracionS ?? ej.descansoS;
+  descansoObj = crearDescanso({ duracionS: dur });
   avisadoFin = false;
   if (timerOcultar) { clearTimeout(timerOcultar); timerOcultar = null; }
   // Se guarda la hora de FIN: tras un reload (o 2 min con la pestaña dormida)
   // el restante se deriva de ella y es exacto sin hacer nada.
-  sesion.descanso = { finMs: descansoObj.finMs, duracionS: ej.descansoS, idx };
+  sesion.descanso = { finMs: descansoObj.finMs, duracionS: dur, idx };
 }
 
 function ajustarDescanso(deltaS) {
@@ -840,6 +999,16 @@ function saltarDescanso() {
   // Saltar es una decisión consciente: no merece la alarma de fin (doble
   // beep + vibración), que es para avisar a quien está esperando.
   avisadoFin = true;
+  if (sesion?.descanso?.micro) {
+    // En un rest-pause, saltar el micro-descanso es empezar la mini-serie.
+    const k = sesion.descanso.micro.k;
+    empezarParteTrasMicro();
+    cerrarBarraDescanso();
+    persistir();
+    anunciar(`Mini-serie ${k + 1}: ¡a darle!`);
+    render();
+    return;
+  }
   descansoObj.saltar();
   // Persistir el salto: sin esto el descanso saltado resucitaba (con alarma)
   // al volver a la pestaña o recargar, porque el disco guardaba su fin viejo.
@@ -1094,6 +1263,7 @@ function pintarPanelRutinas(panel) {
       if (!r) return;
       borrador = borradorDesdeRutina(r);
       erroresBorrador = {};
+      hojaTecnica = null;
       menuEjIdx = null;
       asaLevantada = null;
       render();
@@ -1103,6 +1273,7 @@ function pintarPanelRutinas(panel) {
     if (b.dataset.acc === 'crear-rutina') {
       borrador = { nombre: '', ejercicios: [] };
       erroresBorrador = {};
+      hojaTecnica = null;
       menuEjIdx = null;
       asaLevantada = null;
       render();
@@ -1231,6 +1402,17 @@ function pintarEditorRutina(raiz) {
             </div>
           </div>
         </div>
+        <div class="en-ed-tecnicas">
+          <span class="en-ed-lbl" id="en-ed-tec-${i}">Técnica por serie</span>
+          <div class="en-ed-pildoras" role="group" aria-labelledby="en-ed-tec-${i}">
+            ${normalizarPlan(ej.series, ej.plan).map((t, j) => {
+              const T = TECNICAS[t.tipo];
+              return `<button type="button" class="en-ed-pildora${t.tipo !== 'normal' ? ' en-ed-pildora-con' : ''}" data-acc="ed-tecnica" data-idx="${i}" data-serie="${j}"
+                aria-haspopup="dialog" aria-label="Serie ${j + 1}: ${T.nombre}. Cambiar técnica">${j + 1}${T.insignia ? `<span class="en-ed-pildora-ins" aria-hidden="true">${T.insignia}</span>` : ''}</button>`;
+            }).join('')}
+            ${ej.series < 10 ? `<button type="button" class="en-ed-cal" data-acc="ed-calentamiento" data-idx="${i}" aria-label="Agregar una serie de calentamiento al principio de ${nombre}">+ Calentamiento</button>` : ''}
+          </div>
+        </div>
       </div>
       ${sig ? `<div class="en-ed-enlace">${unidoSig
         ? `<button type="button" class="en-ed-unir en-ed-unir-on" data-acc="ed-separar" data-idx="${i}"
@@ -1242,8 +1424,9 @@ function pintarEditorRutina(raiz) {
               ? `Superserie llena · máximo ${MAX_SUPERSERIE}` : `Juntas pasarían de ${MAX_SUPERSERIE} ejercicios`}</span>`}</div>` : ''}
     </li>`;
   };
+  if (hojaTecnica && !l[hojaTecnica.idx]) { hojaTecnica = null; inertesFuera(false); }
   raiz.innerHTML = `
-  <div class="en-wrap en-editor">
+  <div class="en-wrap en-editor"${hojaTecnica ? ' inert' : ''}>
     <button type="button" class="en-volver" data-acc="ed-cancelar">${SVG_VOLVER}<span>Rutinas</span></button>
     <div class="en-ey">${editando ? 'Tus rutinas' : 'Nueva rutina'}</div>
     <h2 class="en-titulo">${editando ? 'Editar rutina' : 'Crear rutina'}</h2>
@@ -1269,8 +1452,10 @@ function pintarEditorRutina(raiz) {
 
     <button type="button" class="en-btn en-btn-main en-ed-guardar" data-acc="ed-guardar">${editando ? 'Guardar cambios' : 'Guardar rutina'}</button>
     <p class="en-aviso-storage" hidden>No se pudo guardar en este dispositivo. Exporta un respaldo desde Diario antes de cerrar.</p>
-  </div>`;
+  </div>
+  ${hojaTecnica ? htmlHojaTecnica() : ''}`;
 
+  if (hojaTecnica) conectarHojaTecnica(raiz);
   const wrap = raiz.querySelector('.en-wrap');
   wrap.querySelector('#en-ed-nombre').addEventListener('input', e => {
     soltarSinRepintar();
@@ -1382,6 +1567,17 @@ function pintarEditorRutina(raiz) {
       b.ejercicios[i] = limpiarEjercicioRutina({ ...b.ejercicios[i], series: b.ejercicios[i].series + (+btn.dataset.v) });
       b.sucio = true;
       render();
+    } else if (acc === 'ed-tecnica') {
+      hojaTecnica = { idx: i, serie: +btn.dataset.serie, todas: false, planInicial: normalizarPlan(b.ejercicios[i].series, b.ejercicios[i].plan) };
+      menuEjIdx = null;
+      render();
+      ctx.raiz.querySelector('.en-hoja input[name="en-tecnica"]:checked')?.focus();
+    } else if (acc === 'ed-calentamiento') {
+      b.ejercicios[i] = limpiarEjercicioRutina(agregarCalentamiento(b.ejercicios[i]));
+      b.sucio = true;
+      render();
+      enfocar(`[data-acc="ed-tecnica"][data-idx="${i}"][data-serie="0"]`);
+      anunciarEditor(`Serie de calentamiento agregada al principio de ${b.ejercicios[i].nombre}.`);
     } else if (acc === 'ed-guardar') guardarBorrador(wrap);
   });
   wrap.addEventListener('keydown', teclaAsa);
@@ -1667,6 +1863,152 @@ function iniciarArrastre(p, clientY) {
   a.raf = requestAnimationFrame(autoscroll);
 }
 
+// ── Hoja inferior: técnica de una serie ─────────────────────────────────────
+// Diálogo modal: el editor queda inerte detrás, el foco no sale de la hoja,
+// Escape, la X, «Listo» o tocar fuera la cierran, y el foco vuelve a la
+// píldora. Los cambios se aplican en el acto: cerrar nunca pierde nada.
+
+function htmlHojaTecnica() {
+  const { idx, serie, todas } = hojaTecnica;
+  const ej = borrador.ejercicios[idx];
+  const t = normalizarPlan(ej.series, ej.plan)[serie];
+  const opciones = Object.entries(TECNICAS).map(([k, T]) => {
+    const on = t.tipo === k;
+    const params = on && PARAMS_TECNICA[k] ? `
+      <div class="en-hoja-params">${Object.entries(PARAMS_TECNICA[k]).map(([pk, r]) => `
+        <div class="en-hoja-param">
+          <span class="en-ed-lbl" id="en-hp-${pk}">${r.nombre}</span>
+          <div class="en-ed-step" role="group" aria-labelledby="en-hp-${pk}">
+            <button type="button" class="en-d-aj" data-acc="hoja-param" data-campo="${pk}" data-v="-1" aria-label="${r.nombre}: menos"${t[pk] <= r.min ? ' aria-disabled="true"' : ''}>−</button>
+            <output class="en-ed-val en-hoja-val" aria-live="polite">${t[pk]}${r.unidad ? ` ${r.unidad}` : ''}</output>
+            <button type="button" class="en-d-aj" data-acc="hoja-param" data-campo="${pk}" data-v="1" aria-label="${r.nombre}: más"${t[pk] >= r.max ? ' aria-disabled="true"' : ''}>+</button>
+          </div>
+        </div>`).join('')}
+      </div>` : '';
+    return `
+      <label class="en-hoja-op${on ? ' en-hoja-op-on' : ''}" for="en-tec-${k}">
+        <input type="radio" name="en-tecnica" id="en-tec-${k}" value="${k}"${on ? ' checked' : ''}>
+        <span class="en-hoja-op-txt">
+          <span class="en-hoja-op-nom">${T.nombre}${T.insignia ? ` <span class="en-ed-etq">${T.insignia}</span>` : ''}</span>
+          <span class="en-hoja-op-desc">${T.descripcion}</span>
+        </span>
+      </label>${params}`;
+  }).join('');
+  return `
+  <div class="en-hoja-fondo" data-acc="hoja-cerrar"></div>
+  <div class="en-hoja" role="dialog" aria-modal="true" aria-labelledby="en-hoja-tit" aria-describedby="en-hoja-sub" tabindex="-1">
+    <div class="en-hoja-cab">
+      <div>
+        <h3 class="en-hoja-tit" id="en-hoja-tit">Serie ${serie + 1}</h3>
+        <p class="en-hoja-sub" id="en-hoja-sub">${esc(ej.nombre)}</p>
+      </div>
+      <button type="button" class="en-ed-mas" data-acc="hoja-cerrar" aria-label="Cerrar">${SVG_CERRAR}</button>
+    </div>
+    <fieldset class="en-hoja-ops">
+      <legend class="en-sr">Técnica de la serie ${serie + 1}</legend>
+      ${opciones}
+    </fieldset>
+    ${ej.series > 1 ? `<label class="en-hoja-todas" for="en-hoja-todas">
+      <input type="checkbox" id="en-hoja-todas"${todas ? ' checked' : ''}> Aplicar a todas las series de trabajo
+    </label>` : ''}
+    <p class="en-sr" id="en-hoja-anuncio" role="status"></p>
+    <button type="button" class="en-btn en-btn-main en-hoja-listo" data-acc="hoja-cerrar" id="en-hoja-listo">Listo</button>
+  </div>`;
+}
+
+// Aplica un cambio a la serie abierta, o a todas si está marcada la casilla.
+// «Todas» son las series de TRABAJO: las que eran calentamiento al abrir la
+// hoja se respetan (si no, marcar la casilla borraba la W sin aviso).
+function aplicarTecnica(cambio) {
+  const { idx, serie, todas, planInicial } = hojaTecnica;
+  const ej = borrador.ejercicios[idx];
+  const plan = normalizarPlan(ej.series, ej.plan);
+  const base = limpiarTecnica(cambio(plan[serie]));
+  const deTrabajo = j => planInicial?.[j]?.tipo !== 'calentamiento';
+  borrador.ejercicios[idx] = { ...ej, plan: plan.map((t, j) => j === serie || (todas && deTrabajo(j)) ? { ...base } : t) };
+  borrador.sucio = true;
+}
+
+// Aviso dentro de la hoja (el del editor queda detrás, inerte).
+function anunciarHoja(texto) {
+  setTimeout(() => { const el = ctx.raiz.querySelector('#en-hoja-anuncio'); if (el) el.textContent = texto; }, 60);
+}
+
+// Con la hoja abierta, lo de fuera del módulo (cabecera y tabbar) también queda inerte.
+function inertesFuera(on) {
+  document.querySelectorAll('.app > .header, .tabbar').forEach(el => el.toggleAttribute('inert', on));
+}
+
+function cerrarHojaTecnica() {
+  const { idx, serie } = hojaTecnica;
+  hojaTecnica = null;
+  inertesFuera(false);
+  render();
+  enfocar(`[data-acc="ed-tecnica"][data-idx="${idx}"][data-serie="${serie}"]`);
+  const t = normalizarPlan(borrador.ejercicios[idx].series, borrador.ejercicios[idx].plan)[serie];
+  anunciarEditor(`Serie ${serie + 1}: ${TECNICAS[t.tipo].nombre}.`);
+}
+
+function conectarHojaTecnica(raiz) {
+  const hoja = raiz.querySelector('.en-hoja');
+  inertesFuera(true);
+  // Escape cierra aunque el foco haya caído fuera de la hoja (tocar un área
+  // vacía lo manda a <body>): un solo listener de documento, instalado una vez.
+  if (!escapeHojaInstalado) {
+    escapeHojaInstalado = true;
+    document.addEventListener('keydown', e => {
+      if (hojaTecnica && e.key === 'Escape' && !e.target.closest?.('.en-hoja')) { e.preventDefault(); cerrarHojaTecnica(); }
+    });
+  }
+  raiz.querySelector('.en-hoja-fondo').addEventListener('click', cerrarHojaTecnica);
+  hoja.addEventListener('click', e => {
+    const b = e.target.closest('[data-acc]');
+    if (!b) return;
+    if (b.dataset.acc === 'hoja-cerrar') { cerrarHojaTecnica(); return; }
+    if (b.dataset.acc === 'hoja-param') {
+      if (b.getAttribute('aria-disabled') === 'true') return;
+      const pk = b.dataset.campo;
+      const tipo = normalizarPlan(borrador.ejercicios[hojaTecnica.idx].series, borrador.ejercicios[hojaTecnica.idx].plan)[hojaTecnica.serie].tipo;
+      const r = PARAMS_TECNICA[tipo]?.[pk];
+      aplicarTecnica(t => ({ ...t, [pk]: t[pk] + (+b.dataset.v) * (r?.paso ?? 1) }));
+      render();
+      const t2 = normalizarPlan(borrador.ejercicios[hojaTecnica.idx].series, borrador.ejercicios[hojaTecnica.idx].plan)[hojaTecnica.serie];
+      anunciarHoja(`${r?.nombre}: ${t2[pk]}${r?.unidad ? ' ' + (r.unidad === 's' ? 'segundos' : 'por ciento') : ''}.`);
+    }
+  });
+  hoja.addEventListener('change', e => {
+    if (e.target.name === 'en-tecnica') {
+      const v = e.target.value;
+      aplicarTecnica(t => t.tipo === v ? t : { tipo: v });
+      render();
+      anunciarHoja(`${TECNICAS[v].nombre}${hojaTecnica.todas ? ', en todas las series de trabajo' : ''}.`);
+    } else if (e.target.id === 'en-hoja-todas') {
+      hojaTecnica.todas = e.target.checked;
+      if (hojaTecnica.todas) {
+        aplicarTecnica(t => t);   // la técnica de esta serie pasa a las de trabajo
+      } else {
+        // Desmarcar devuelve las demás series a como estaban al abrir la hoja.
+        const { idx, serie, planInicial } = hojaTecnica;
+        const ej = borrador.ejercicios[idx];
+        const plan = normalizarPlan(ej.series, ej.plan);
+        borrador.ejercicios[idx] = { ...ej, plan: plan.map((t, j) => j === serie ? t : (planInicial?.[j] ?? t)) };
+      }
+      render();
+      anunciarHoja(hojaTecnica.todas ? 'Se aplica a todas las series de trabajo.' : 'Solo a esta serie.');
+    }
+  });
+  // Escape cierra; Tab no sale de la hoja (el editor de detrás está inerte).
+  hoja.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); cerrarHojaTecnica(); return; }
+    if (e.key !== 'Tab') return;
+    const focos = [...hoja.querySelectorAll('button:not([aria-disabled="true"]), input')].filter(x => !(x.type === 'radio' && !x.checked));
+    if (!focos.length) return;
+    const primero = focos[0], ultimo = focos[focos.length - 1];
+    if (e.shiftKey && document.activeElement === primero) { e.preventDefault(); ultimo.focus(); }
+    else if (!e.shiftKey && document.activeElement === ultimo) { e.preventDefault(); primero.focus(); }
+  });
+}
+
 function guardarBorrador(wrap) {
   const { ok, errores } = validarBorrador(borrador);
   erroresBorrador = errores;
@@ -1686,6 +2028,7 @@ function guardarBorrador(wrap) {
   erroresBorrador = {};
   menuEjIdx = null;
   asaLevantada = null;
+  hojaTecnica = null;
   subtab = 'rutinas';
   rutinaAbiertaId = String(rutina.id);
   avisoRutina = editando ? 'Cambios guardados.' : 'Rutina guardada en Tus rutinas.';
@@ -1934,14 +2277,14 @@ function pintarPanelHistorial(panel) {
   const vistos = new Map();
   for (let i = sesiones.length - 1; i >= 0; i--) {
     for (const ej of sesiones[i].ejercicios || []) {
-      if (!vistos.has(ej.idEjercicio) && (ej.series || []).some(s => s.hecha)) {
+      if (!vistos.has(ej.idEjercicio) && (ej.series || []).some(s => s.hecha && !esCalentamiento(s))) {
         vistos.set(ej.idEjercicio, ej.nombre ?? ej.idEjercicio);
       }
     }
   }
   panel.innerHTML = `
     ${[...sesiones].reverse().map(s => {
-      const series = (s.ejercicios || []).reduce((a, e) => a + (e.series || []).filter(x => x.hecha).length, 0);
+      const series = (s.ejercicios || []).reduce((a, e) => a + (e.series || []).filter(x => x.hecha && !esCalentamiento(x)).length, 0);
       const min = s.finMs ? Math.max(1, Math.round((s.finMs - s.inicioMs) / 60000)) : null;
       return `
       <button type="button" class="en-card en-card-btn" data-acc="ver" data-sid="${esc(s.id)}">
@@ -2116,7 +2459,7 @@ function htmlSesionEjercicio(h, unidad, n) {
     </summary>
     <div class="en-rec-cuerpo">
       <div class="en-rec-fila en-rec-hd" aria-hidden="true"><span>Reps</span><span>Peso</span></div>
-      ${h.series.map(x => `<div class="en-rec-fila"><span>${x.reps}</span><span>${x.pesoKg > 0 ? `${fmtPeso(x.pesoKg, unidad)} ${unidad}` : 'peso corporal'}${x === pr ? ' <em class="en-rec-pr">mejor serie</em>' : ''}</span></div>`).join('')}
+      ${h.series.map(x => `<div class="en-rec-fila"><span>${x.reps}${x.partes?.length ? ` + ${x.partes.map(pt => pt.reps).join(' + ')}` : ''}${TECNICAS[x.tipo]?.insignia ? ` <span class="en-tec"><span aria-hidden="true">${TECNICAS[x.tipo].insignia}</span><span class="en-sr">${TECNICAS[x.tipo].nombre}</span></span>` : ''}</span><span>${x.pesoKg > 0 ? `${fmtPeso(x.pesoKg, unidad)} ${unidad}` : 'peso corporal'}${x === pr ? ' <em class="en-rec-pr">mejor serie</em>' : ''}</span></div>`).join('')}
       <div class="en-rec-fila en-rec-tot"><span><b>${h.totalReps}</b> reps</span><span>${h.volumen > 0 ? `<b>${fmtNum(h.volumen, unidad)}</b> ${unidad} de volumen` : ''}</span></div>
       <button type="button" class="en-btn en-btn-ghost en-rec-ir" data-acc="ver-sesion" data-sid="${esc(h.sesionId)}">Ver la sesión</button>
     </div>
@@ -2231,11 +2574,44 @@ function serieEnCursoValida() {
   return s && !s.hecha ? c : null;
 }
 
+// La parte en curso de una serie con técnica (mini-serie de rest-pause o
+// bajada de drop set): solo vale si su serie existe, sigue sin cerrar y le
+// toca justo esa parte.
+function parteEnCursoValida() {
+  const p = sesion?.parteEnCurso;
+  if (!p) return null;
+  const s = sesion.ejercicios[p.idx]?.series?.[p.serie];
+  if (!s || s.hecha) return null;
+  const sp = siguienteParte(s);
+  return sp.fase !== 'fin' && sp.k === p.k ? p : null;
+}
+
+// El micro-descanso del rest-pause corre con la misma maquinaria que el
+// descanso (hora de fin), marcado con `micro`.
+function microEnCurso() {
+  const d = sesion?.descanso;
+  if (!d?.micro || !descansoObj || descansoObj.haTerminado()) return null;
+  const s = sesion.ejercicios[d.idx]?.series?.[d.micro.serie];
+  return s && !s.hecha ? { idx: d.idx, ...d.micro } : null;
+}
+
 // Estado del foco, derivado (nunca guardado): qué dice el círculo y qué hace
 // el botón grande.
 function estadoFoco() {
+  const parte = parteEnCursoValida();
+  if (parte) {
+    const s = sesion.ejercicios[parte.idx].series[parte.serie];
+    const total = siguienteParte(s).total;
+    return { tipo: 'parte', lbl: s.tipo === 'drop' ? `Bajada ${parte.k + 1}/${total}` : `Mini-serie ${parte.k + 1}/${total}`,
+      ref: { idx: parte.idx, serie: parte.serie }, desdeMs: parte.inicioMs, parte };
+  }
   const enCurso = serieEnCursoValida();
-  if (enCurso) return { tipo: 'activo', lbl: 'Activo', ref: enCurso, desdeMs: enCurso.inicioMs };
+  if (enCurso) {
+    const s = sesion.ejercicios[enCurso.idx].series[enCurso.serie];
+    return { tipo: 'activo', lbl: esCalentamiento(s) ? 'Calentamiento' : 'Activo', ref: enCurso, desdeMs: enCurso.inicioMs };
+  }
+  const micro = microEnCurso();
+  if (micro) return { tipo: 'micro', lbl: 'Micro-descanso', ref: { idx: micro.idx, serie: micro.serie }, micro };
   const sig = siguientePendiente(sesion.ejercicios);
   // Sin series pendientes no hay "siguiente" que empezar: el foco pasa a
   // "Completa" con Terminar sesión, aunque corriera un descanso.
@@ -2244,11 +2620,11 @@ function estadoFoco() {
   const algunaHecha = sesion.ejercicios.some(e => e.series.some(x => x.hecha));
   return algunaHecha
     ? { tipo: 'listo', lbl: 'Listo', ref: sig, desdeMs: sesion.listoDesdeMs || sesion.inicioMs }
-    : { tipo: 'calentamiento', lbl: 'Calentamiento', ref: sig, desdeMs: sesion.inicioMs };
+    : { tipo: 'calentamiento', lbl: 'Preparado', ref: sig, desdeMs: sesion.inicioMs };
 }
 
 function tiempoFoco(ef) {
-  if (ef.tipo === 'descanso') return formatear(descansoObj.restanteS());
+  if (ef.tipo === 'descanso' || ef.tipo === 'micro') return formatear(descansoObj.restanteS());
   if (ef.desdeMs) return formatear((Date.now() - ef.desdeMs) / 1000);
   return '0:00';
 }
@@ -2277,6 +2653,8 @@ function empezarSerie() {
 function heredarASiguiente(ej, j) {
   const hecha = ej.series[j], sig = ej.series[j + 1];
   if (!sig || sig.hecha) return;
+  // De un calentamiento a una serie de trabajo no se hereda: la carga es otra.
+  if (esCalentamiento(hecha) !== esCalentamiento(sig)) return;
   if (!sig.reps) sig.reps = hecha.reps;
   if (!sig.pesoKg) sig.pesoKg = hecha.pesoKg;
 }
@@ -2304,15 +2682,35 @@ function finDeSerie() {
     persistir();
     return;
   }
+  // Cuánto duró la serie (su parte principal): dato barato para el historial.
+  serie.durS = Math.round((Date.now() - c.inicioMs) / 1000);
+  sesion.serieEnCurso = null;
+  // Rest-pause y drop set: la serie no se cierra hasta hacer sus partes.
+  const sp = siguienteParte({ ...serie, partes: [] });
+  if (sp.fase !== 'fin') {
+    serie.partes = [];
+    iniciarParte(c.idx, c.serie, sp);
+    persistir();
+    render();
+    return;
+  }
+  cerrarSerie(c.idx, c.serie);
+}
+
+// Cierra una serie (con o sin técnica): la marca hecha, pasa lo anotado a la
+// siguiente y decide el descanso. El calentamiento descansa como mucho 1 min.
+function cerrarSerie(idx, j) {
+  const ej = sesion.ejercicios[idx];
+  const serie = ej.series[j];
   serie.hecha = true;
   serie.tsHecha = Date.now();
-  // Cuánto duró la serie: dato barato que enriquece el historial.
-  serie.durS = Math.round((serie.tsHecha - c.inicioMs) / 1000);
-  sesion.serieEnCurso = null;
-  heredarASiguiente(ej, c.serie);
+  sesion.parteEnCurso = null;
+  if (sesion.descanso?.micro) { descansoObj = null; delete sesion.descanso; }
+  heredarASiguiente(ej, j);
   const quedan = siguientePendiente(sesion.ejercicios);
-  if (quedan && debeArrancarDescanso(sesion.ejercicios, c.idx, c.serie)) {
-    arrancarDescanso(ej.superGrupo == null ? c.idx : ultimoDelGrupo(ej.superGrupo));
+  if (quedan && debeArrancarDescanso(sesion.ejercicios, idx, j)) {
+    const fin = ej.superGrupo == null ? idx : ultimoDelGrupo(ej.superGrupo);
+    arrancarDescanso(fin, esCalentamiento(serie) && ej.superGrupo == null ? Math.min(60, sesion.ejercicios[fin].descansoS) : undefined);
     anunciar(`Serie hecha. Descanso de ${formatear(sesion.descanso.duracionS)}.`);
   } else if (!quedan) {
     anunciar('Hiciste todas las series. Termina la sesión para ver tu resumen.');
@@ -2322,6 +2720,75 @@ function finDeSerie() {
   }
   persistir();
   render();
+}
+
+// Siguiente parte de una serie con técnica. Rest-pause: micro-descanso (con
+// aviso al acabar) y luego la mini-serie, con el mismo peso. Drop set: la
+// bajada empieza ya, con el peso calculado (−pct, redondeado al disco).
+function iniciarParte(idx, j, sp) {
+  const s = sesion.ejercicios[idx].series[j];
+  const unidad = unidadPeso();
+  if (sp.fase === 'micro') {
+    descansoObj = crearDescanso({ duracionS: sp.microS });
+    avisadoFin = false;
+    if (timerOcultar) { clearTimeout(timerOcultar); timerOcultar = null; }
+    sesion.descanso = { finMs: descansoObj.finMs, duracionS: sp.microS, idx, micro: { serie: j, k: sp.k, reps: 0, pesoKg: s.pesoKg } };
+    anunciar(`Micro-descanso de ${sp.microS} segundos. Luego, mini-serie ${sp.k + 1} de ${sp.total} con el mismo peso.`);
+  } else {
+    const previo = s.partes?.length ? s.partes[s.partes.length - 1].pesoKg : s.pesoKg;
+    const peso = pesoBajada(previo, sp.pct, unidad);
+    sesion.parteEnCurso = { idx, serie: j, k: sp.k, inicioMs: Date.now(), reps: 0, pesoKg: peso };
+    anunciar(`Drop set: baja a ${fmtPeso(peso, unidad)} ${unidad} y sigue. Bajada ${sp.k + 1} de ${sp.total}.`);
+  }
+}
+
+// Si queda una serie con técnica a medias (en su micro-descanso o en una
+// parte), se cierra con lo hecho hasta aquí, SIN arrancar descanso: al
+// terminar la sesión o al palomear otra serie a mano, la parte principal ya
+// hecha no puede perderse ni quedar un micro-descanso fantasma.
+function cerrarTecnicaPendiente() {
+  const ref = parteEnCursoValida() || (sesion?.descanso?.micro ? { idx: sesion.descanso.idx, serie: sesion.descanso.micro.serie } : null);
+  if (sesion) sesion.parteEnCurso = null;
+  if (sesion?.descanso?.micro) { delete sesion.descanso; descansoObj = null; }
+  if (!ref) return;
+  const s = sesion.ejercicios[ref.idx]?.series?.[ref.serie];
+  if (s && !s.hecha) { s.hecha = true; s.tsHecha = Date.now(); }
+}
+
+// El micro-descanso acabó (o se saltó): empieza la mini-serie con lo que ya
+// se hubiera anotado durante la espera.
+function empezarParteTrasMicro() {
+  const d = sesion?.descanso;
+  if (!d?.micro) return;
+  sesion.parteEnCurso = { idx: d.idx, serie: d.micro.serie, k: d.micro.k, inicioMs: Date.now(), reps: d.micro.reps || 0, pesoKg: d.micro.pesoKg };
+  delete sesion.descanso;
+  descansoObj = null;
+}
+
+function finDeParte() {
+  const p = parteEnCursoValida();
+  if (!p) return;
+  const s = sesion.ejercicios[p.idx].series[p.serie];
+  leerFoco(p);
+  if (!p.reps) {
+    const err = ctx.raiz.querySelector('.en-foco-error');
+    if (err) err.textContent = `¿Cuántas repeticiones hiciste en esta ${s.tipo === 'drop' ? 'bajada' : 'mini-serie'}? Anótalas y vuelve a tocar el botón.`;
+    const r = ctx.raiz.querySelector('.en-foco-in[data-campo="reps"]');
+    if (r) { r.setAttribute('aria-invalid', 'true'); r.focus(); }
+    persistir();
+    return;
+  }
+  // En rest-pause la mini-serie es con el mismo peso; en drop set, el anotado.
+  s.partes = [...(s.partes || []), s.tipo === 'drop' ? { reps: p.reps, pesoKg: p.pesoKg } : { reps: p.reps }];
+  sesion.parteEnCurso = null;
+  const sp = siguienteParte(s);
+  if (sp.fase !== 'fin') {
+    iniciarParte(p.idx, p.serie, sp);
+    persistir();
+    render();
+    return;
+  }
+  cerrarSerie(p.idx, p.serie);
 }
 
 function pintarVivo(raiz) {
@@ -2356,6 +2823,24 @@ function pintarVivo(raiz) {
     if (acc === 'ficha') { fichaId = b.dataset.id; render(); window.scrollTo(0, 0); return; }
     if (acc === 'empezar-serie') { empezarSerie(); return; }
     if (acc === 'fin-serie') { finDeSerie(); return; }
+    if (acc === 'fin-parte') { finDeParte(); return; }
+    if (acc === 'saltar-micro') {
+      const m = sesion.descanso?.micro;
+      if (!m) return;
+      leerFoco(m);   // en iPhone tocar el botón no siempre quita el foco del campo
+      avisadoFin = true;
+      empezarParteTrasMicro();
+      persistir();
+      anunciar(`Mini-serie ${m.k + 1}: ¡a darle!`);
+      render();
+      return;
+    }
+    if (acc === 'cerrar-tecnica') {
+      // Salida: dejar la serie con las partes hechas hasta aquí.
+      const ref = parteEnCursoValida() || microEnCurso();
+      if (ref) cerrarSerie(ref.idx, ref.serie);
+      return;
+    }
     if (acc === 'f-aj') { ajustarDescanso(+b.dataset.d); return; }
     if (acc === 'editar') { vistaVivo = 'ejercicios'; render(); return; }
     if (acc === 'check') {
@@ -2371,6 +2856,10 @@ function pintarVivo(raiz) {
         ej.series.pop();
         const c = sesion.serieEnCurso;
         if (c && c.idx === idx && c.serie >= ej.series.length) sesion.serieEnCurso = null;
+        // Si la serie quitada estaba a mitad de su técnica, esa parte se va con ella.
+        const pc = sesion.parteEnCurso;
+        if (pc && pc.idx === idx && pc.serie >= ej.series.length) sesion.parteEnCurso = null;
+        if (sesion.descanso?.micro && sesion.descanso.idx === idx && sesion.descanso.micro.serie >= ej.series.length) { descansoObj = null; delete sesion.descanso; }
         persistir();
         render();
       }
@@ -2380,6 +2869,15 @@ function pintarVivo(raiz) {
       sesion.ejercicios.splice(idx, 1);
       const c = sesion.serieEnCurso;
       if (c) { if (c.idx === idx) sesion.serieEnCurso = null; else if (c.idx > idx) c.idx--; }
+      // La parte en curso y el descanso apuntan a un ejercicio por su índice:
+      // se corrigen igual (o se cancelan si eran del que se quitó).
+      const pc = sesion.parteEnCurso;
+      if (pc) { if (pc.idx === idx) sesion.parteEnCurso = null; else if (pc.idx > idx) pc.idx--; }
+      const d = sesion.descanso;
+      if (d) {
+        if (d.idx === idx) { if (d.micro) { descansoObj = null; delete sesion.descanso; } }
+        else if (d.idx > idx) d.idx--;
+      }
       persistir();
       render();
     } else if (acc === 'desc') {
@@ -2407,9 +2905,11 @@ function pintarVivo(raiz) {
   // de sesión no pierde ni la fila a medias.
   wrap.addEventListener('change', e => {
     if (e.target.classList.contains('en-foco-in')) {
-      const ej = sesion.ejercicios[+e.target.dataset.idx];
-      const sr = ej?.series[+e.target.dataset.serie];
-      if (sr) { leerFoco(sr); e.target.removeAttribute('aria-invalid'); persistir(); }
+      // En una parte (o en su micro-descanso) lo anotado es de esa parte,
+      // nunca de la serie principal.
+      const destino = e.target.dataset.parte ? (parteEnCursoValida() || sesion.descanso?.micro)
+        : sesion.ejercicios[+e.target.dataset.idx]?.series[+e.target.dataset.serie];
+      if (destino) { leerFoco(destino); e.target.removeAttribute('aria-invalid'); persistir(); }
       return;
     }
     const fila = e.target.closest('.en-fila');
@@ -2437,7 +2937,22 @@ function htmlFoco(unidad) {
   const ej = ref ? sesion.ejercicios[ref.idx] : null;
   const s = ej ? ej.series[ref.serie] : null;
   const enFicha = ej && porId.has(ej.idEjercicio);
-  const rotulo = ef.tipo === 'activo' ? 'Ahora' : 'Siguiente';
+  const rotulo = ef.tipo === 'activo' || ef.tipo === 'parte' || ef.tipo === 'micro' ? 'Ahora' : 'Siguiente';
+  // En una parte (o su micro-descanso) los campos son los de ESA parte.
+  const borradorParte = ef.tipo === 'parte' ? ef.parte : ef.tipo === 'micro' ? sesion.descanso?.micro : null;
+  const T = s ? TECNICAS[s.tipo] : null;
+  const tp = s ? limpiarTecnica(s) : null;
+  const queParte = s?.tipo === 'drop' ? 'bajada' : 'mini-serie';
+  const kParte = borradorParte ? (Number(borradorParte.k) || 0) : 0;
+  const nParte = borradorParte ? `${queParte} ${kParte + 1}` : '';
+  const lineaTecnica = !s || !T?.insignia ? ''
+    : ef.tipo === 'micro' ? `Rest-pause · prepárate: mini-serie ${kParte + 1} de ${tp.mini}, con el mismo peso.`
+    : ef.tipo === 'parte' ? (s.tipo === 'drop'
+      ? `Drop set · bajada ${kParte + 1} de ${tp.bajadas}: ${Number(borradorParte.pesoKg) > 0 ? `baja a ${fmtPeso(Number(borradorParte.pesoKg), unidad)} ${unidad}` : 'quita carga'} y sigue sin descansar.`
+      : `Rest-pause · mini-serie ${kParte + 1} de ${tp.mini}, con el mismo peso.`)
+    : s.tipo === 'restpause' ? `Rest-pause: al terminar, ${tp.microS} s de micro-descanso y ${tp.mini} ${tp.mini === 1 ? 'mini-serie' : 'mini-series'}.`
+    : s.tipo === 'drop' ? `Drop set: al terminar, bajas un ${tp.pct} % y sigues sin descansar${tp.bajadas > 1 ? ` (${tp.bajadas} bajadas)` : ''}.`
+    : 'Calentamiento: no cuenta en volumen ni en récords.';
   const tarjeta = ej ? `
     <div class="en-foco-card">
       <div class="en-foco-ej">
@@ -2450,16 +2965,28 @@ function htmlFoco(unidad) {
         ${enFicha ? `<button type="button" class="en-foco-info" data-acc="ficha" data-id="${esc(ej.idEjercicio)}" aria-label="Ficha técnica de ${esc(ej.nombre)}">i</button>` : ''}
       </div>
       <div class="en-foco-stats">
-        <span class="en-foco-st"><b>${ref.serie + 1}/${ej.series.length}</b><small>Serie</small></span>
+        <span class="en-foco-st"><b>${ref.serie + 1}/${ej.series.length}${T?.insignia ? ` <span class="en-tec"><span aria-hidden="true">${T.insignia}</span><span class="en-sr">${T.nombre}</span></span>` : ''}</b><small>Serie</small></span>
+        ${borradorParte ? `
+        <label class="en-foco-st"><input class="en-foco-in" data-campo="reps" data-parte="1" data-idx="${ref.idx}" data-serie="${ref.serie}" inputmode="numeric" value="${Number(borradorParte.reps) || ''}" placeholder="0" aria-label="Repeticiones de la ${nParte}"><small>Reps ${queParte}</small></label>
+        <label class="en-foco-st"><input class="en-foco-in" data-campo="peso" data-parte="1" data-idx="${ref.idx}" data-serie="${ref.serie}" inputmode="decimal" value="${Number(borradorParte.pesoKg) > 0 ? fmtPeso(Number(borradorParte.pesoKg), unidad) : ''}" placeholder="0"
+          aria-label="Peso de la ${nParte} en ${unidad}${s.tipo === 'restpause' ? ', el mismo de la serie' : ''}"${s.tipo === 'restpause' ? ' readonly aria-readonly="true"' : ''}><small>${unidad}${s.tipo === 'restpause' ? ' · mismo' : ''}</small></label>` : `
         <label class="en-foco-st"><input class="en-foco-in" data-campo="reps" data-idx="${ref.idx}" data-serie="${ref.serie}" inputmode="numeric" value="${s.reps || ''}" placeholder="0" aria-label="Repeticiones de la serie ${ref.serie + 1}"><small>Reps</small></label>
-        <label class="en-foco-st"><input class="en-foco-in" data-campo="peso" data-idx="${ref.idx}" data-serie="${ref.serie}" inputmode="decimal" value="${s.pesoKg ? fmtPeso(s.pesoKg, unidad) : ''}" placeholder="0" aria-label="Peso de la serie ${ref.serie + 1} en ${unidad}"><small>${unidad}</small></label>
+        <label class="en-foco-st"><input class="en-foco-in" data-campo="peso" data-idx="${ref.idx}" data-serie="${ref.serie}" inputmode="decimal" value="${s.pesoKg ? fmtPeso(s.pesoKg, unidad) : ''}" placeholder="0" aria-label="Peso de la serie ${ref.serie + 1} en ${unidad}"><small>${unidad}</small></label>`}
       </div>
-      ${ej.rango ? `<p class="en-foco-rango">Objetivo de la rutina: ${ej.rango.min === ej.rango.max ? ej.rango.max : `${ej.rango.min}–${ej.rango.max}`} reps</p>` : ''}
+      ${lineaTecnica ? `<p class="en-foco-tecnica">${esc(lineaTecnica)}</p>` : ''}
+      ${s?.partes?.length ? `<p class="en-foco-partes">Hecho: ${esc(textoSerie(s, unidad))}</p>` : ''}
+      ${ej.rango && !borradorParte ? `<p class="en-foco-rango">Objetivo de la rutina: ${ej.rango.min === ej.rango.max ? ej.rango.max : `${ej.rango.min}–${ej.rango.max}`} reps</p>` : ''}
       <p class="en-foco-error" role="alert"></p>
     </div>` : `<p class="en-vacio en-foco-fin">Hiciste todas las series. Termina la sesión para ver tu resumen, o agrega otro ejercicio.</p>`;
 
+  // Salida de una serie con técnica: dejarla con las partes hechas.
+  const salida = '<button type="button" class="en-btn en-btn-ghost en-foco-salida" data-acc="cerrar-tecnica">Terminar la serie aquí</button>';
   const boton = ef.tipo === 'activo'
     ? `<button type="button" id="en-foco-btn" class="en-btn en-btn-main en-foco-btn" data-acc="fin-serie">Fin de la serie</button>`
+    : ef.tipo === 'parte'
+      ? `<button type="button" id="en-foco-btn" class="en-btn en-btn-main en-foco-btn" data-acc="fin-parte">Fin de la ${queParte}</button>${salida}`
+    : ef.tipo === 'micro'
+      ? `<button type="button" id="en-foco-btn" class="en-btn en-btn-main en-foco-btn" data-acc="saltar-micro">Empezar la mini-serie ya</button>${salida}`
     : ef.tipo === 'fin'
       ? `<button type="button" id="en-foco-btn" class="en-btn en-btn-main en-foco-btn" data-acc="terminar">Terminar sesión</button>
          <button type="button" class="en-btn en-btn-ghost en-add-ej" data-acc="agregar">+ Agregar ejercicio</button>`
@@ -2507,7 +3034,7 @@ function pintarFoco() {
 
 function htmlListaVivo(unidad) {
   const previos = new Map(sesion.ejercicios.map(e =>
-    [e.idEjercicio, ultimaVez(estado.entreno.sesiones, e.idEjercicio)]));
+    [e.idEjercicio, previasPorSerie(e.series.map(x => x.tipo ?? 'normal'), ultimaVez(estado.entreno.sesiones, e.idEjercicio))]));
   const enCurso = serieEnCursoValida();
 
   const htmlEjercicio = (ej, idx) => {
@@ -2533,10 +3060,11 @@ function htmlListaVivo(unidad) {
         ${ej.series.map((s, j) => {
           const prev = previos.get(ej.idEjercicio)?.[j];
           const activa = enCurso && enCurso.idx === idx && enCurso.serie === j;
+          const T = TECNICAS[s.tipo];
           return `
           <div class="en-fila${s.hecha ? ' en-hecha' : ''}${activa ? ' en-activa' : ''}" data-serie="${j}">
             <span class="en-num">${j + 1}</span>
-            <span class="en-prev">${prev ? `${prev.reps}×${fmtPeso(prev.pesoKg, unidad)}` : '—'}</span>
+            <span class="en-prev">${T?.insignia ? `<span class="en-tec"><span aria-hidden="true">${T.insignia}</span><span class="en-sr">${T.nombre}</span></span> ` : ''}${prev ? `${prev.reps}×${fmtPeso(prev.pesoKg, unidad)}` : '—'}</span>
             <input class="en-in en-in-peso" inputmode="decimal" value="${s.pesoKg ? fmtPeso(s.pesoKg, unidad) : ''}"
               aria-label="Peso de la serie ${j + 1} en ${unidad}">
             <input class="en-in en-in-reps" inputmode="numeric" value="${s.reps || ''}"
@@ -2545,8 +3073,8 @@ function htmlListaVivo(unidad) {
               aria-label="RIR de la serie ${j + 1}, opcional">
             <button type="button" class="en-check${s.hecha ? ' en-check-on' : ''}" data-acc="check"
               data-idx="${idx}" data-serie="${j}" aria-pressed="${s.hecha}"
-              aria-label="Serie ${j + 1} ${s.hecha ? 'hecha; tócala para desmarcarla' : 'por hacer; tócala al terminarla'}">${SVG_CHECK}</button>
-          </div>`;
+              aria-label="Serie ${j + 1}${T?.insignia ? ` (${T.nombre})` : ''} ${s.hecha ? 'hecha; tócala para desmarcarla' : 'por hacer; tócala al terminarla'}">${SVG_CHECK}</button>
+          </div>${s.partes?.length ? `<p class="en-fila-partes">${esc(textoSerie(s, unidad))}</p>` : ''}`;
         }).join('')}
         <div class="en-ej-pie">
           <button type="button" class="en-mas-serie" data-acc="serie" data-idx="${idx}">+ serie</button>
@@ -2646,6 +3174,14 @@ function revisarFinDescanso() {
   if (!descansoObj || avisadoFin || !descansoObj.haTerminado()) return;
   avisadoFin = true;
   avisarFin();
+  if (sesion?.descanso?.micro) {
+    const k = sesion.descanso.micro.k;
+    empezarParteTrasMicro();
+    cerrarBarraDescanso();
+    anunciar(`Mini-serie ${k + 1}: ¡a darle!`);
+    persistir();
+    return;
+  }
   anunciar('Descanso terminado. A darle.');
   if (sesion) {
     delete sesion.descanso;
@@ -2666,7 +3202,7 @@ function pintarDescanso() {
   const fin = descansoObj.haTerminado();
   barra.querySelector('.en-d-tiempo').textContent = formatear(descansoObj.restanteS());
   barra.classList.toggle('en-d-fin', fin);
-  barra.querySelector('.en-d-lbl').textContent = fin ? '¡A darle!' : 'descanso';
+  barra.querySelector('.en-d-lbl').textContent = fin ? '¡A darle!' : sesion?.descanso?.micro ? 'micro-descanso' : 'descanso';
   barra.querySelector('.en-d-saltar').textContent = fin ? 'Listo' : 'Saltar';
   // Con el descanso terminado los ±15 no significan nada: se ocultan sin
   // soltar su sitio para que la barra no cambie de caja (regla anti-salto).
@@ -2679,7 +3215,7 @@ function pintarResumen(raiz, ses, { editable }) {
   cerrarBarraDescanso();
   const unidad = unidadPeso();
   const min = Math.max(1, Math.round(((ses.finMs ?? Date.now()) - ses.inicioMs) / 60000));
-  const nSeries = (ses.ejercicios || []).reduce((a, e) => a + (e.series || []).filter(s => s.hecha).length, 0);
+  const nSeries = (ses.ejercicios || []).reduce((a, e) => a + (e.series || []).filter(s => s.hecha && !esCalentamiento(s)).length, 0);
   const vol = volumenSesion(ses);
 
   const grupos = Object.entries(seriesPorGrupo(ses, porId)).sort((a, b) => b[1] - a[1]);
@@ -2691,7 +3227,7 @@ function pintarResumen(raiz, ses, { editable }) {
   const records = [];
   for (const ej of ses.ejercicios || []) {
     let mejor = null;
-    for (const s of (ej.series || []).filter(x => x.hecha)) {
+    for (const s of (ej.series || []).filter(x => x.hecha && !esCalentamiento(x))) {
       const rm = epley1RM(s.pesoKg, s.reps);
       if (rm !== null && (mejor === null || rm > mejor)) mejor = rm;
     }
@@ -2700,7 +3236,7 @@ function pintarResumen(raiz, ses, { editable }) {
     for (const vieja of estado.entreno.sesiones) {
       if (vieja.id === ses.id) continue;
       const e2 = (vieja.ejercicios || []).find(x => x.idEjercicio === ej.idEjercicio);
-      for (const s of (e2?.series || []).filter(x => x.hecha)) {
+      for (const s of (e2?.series || []).filter(x => x.hecha && !esCalentamiento(x))) {
         const rm = epley1RM(s.pesoKg, s.reps);
         if (rm !== null && (previo === null || rm > previo)) previo = rm;
       }
@@ -2746,7 +3282,7 @@ function pintarResumen(raiz, ses, { editable }) {
       <div class="en-res-ej">
         <span class="en-res-ej-nombre">${esc(ej.nombre)}</span>
         <span class="en-res-ej-series">${(ej.series || []).filter(s => s.hecha)
-          .map(s => s.pesoKg > 0 ? `${s.reps}×${fmtPeso(s.pesoKg, unidad)}` : `${s.reps} reps`).join(' · ') || 'sin series hechas'}</span>
+          .map(s => textoSerie(s, unidad)).join(' · ') || 'sin series hechas'}</span>
       </div>`).join('')}
 
     ${editable ? `

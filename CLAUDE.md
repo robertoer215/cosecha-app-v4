@@ -31,6 +31,29 @@ solo lectura y aquí `MODO_DEMO` queda encendido (ver "Modo demo").
 - El shell (`app.js`: `goTab`, `renderHoy`, persistencia de perfil,
   `agregarPlatoAlDiario`) lo edita UNA sola persona/agente a la vez.
 
+## Entrenar: rutinas avanzadas (30-oct-2026)
+Detalle y decisiones de Roberto en `docs/arquitectura-rutinas-avanzadas.md`.
+- Entrenar abre siempre en **Rutinas** (`PESTANAS`). «Crear rutina» y «Editar» comparten
+  el editor (`pintarEditorRutina`); al empezar CUALQUIER rutina se elige el descanso entre
+  series (`pintarElegirDescanso`, `OPCIONES_DESCANSO`).
+- **Editor:** el borrador es `{ nombre, ejercicios: [{ ..., grupo, plan }], original? }`.
+  `grupo` = superserie (tramos seguidos con el mismo número; `normalizarGrupos` los
+  renumera A, B, C y deshace los de uno; tope `MAX_SUPERSERIE` = 4). Reordenar: arrastre
+  (asa ≡ o mantener 400 ms), teclado y menú «⋯». Un paso con menú o flechas es
+  `pasoEjercicio` (salta superseries ajenas; desde el borde, primero sale de la suya);
+  soltar un arrastre es `moverEjercicio`; una superserie entera, `moverTramo`.
+- **Técnicas por serie** (`TECNICAS`, `PARAMS_TECNICA`): normal, calentamiento (W),
+  rest-pause (RP: mini-series + micro-descanso) y drop set (D: bajadas −pct). El `plan` de
+  la rutina lleva una técnica por serie y solo se guarda si alguna no es normal. En la
+  sesión, cada serie con técnica lleva `tipo` y sus parámetros; las partes hechas van en
+  `partes: [{ reps, pesoKg }]`. La serie NO se marca hecha hasta cerrar sus partes.
+  Estado vivo: `sesion.parteEnCurso` (mini-serie o bajada) y `sesion.descanso.micro`
+  (micro-descanso con la misma hora de fin que el descanso). `siguienteParte()` decide.
+- **Cuentas:** el calentamiento no cuenta en volumen ni récords; RP y drop suman sus
+  partes al volumen (`volumenDeSerie`), pero el récord (mejor serie, 1RM) usa solo la
+  parte principal. Texto de una serie: `textoSerie()` («7×60 + 3 + 2 RP»).
+- El círculo del foco no se mueve entre estados (los ±15 van a su derecha).
+
 ## Arquitectura de Pedir (heredada)
 - `index.html` — markup, sin lógica inline salvo onclick que llaman funciones globales
 - `css/styles.css` — todos los estilos. Paleta crema + acento naranja (#C05A1F)
