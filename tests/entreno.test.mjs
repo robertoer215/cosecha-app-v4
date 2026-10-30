@@ -6,7 +6,9 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { epley1RM, volumenSesion, seriesPorGrupo, ultimaVez,
          debeArrancarDescanso, aKg, siguientePendiente, mejorSerie, resumenEjercicio, historialEjercicio,
-         recordsEjercicio, prsPorEjercicio, estadisticasPeriodo, cambioPct } from '../js/entreno.js';
+         recordsEjercicio, prsPorEjercicio, estadisticasPeriodo, cambioPct, PESTANAS,
+         OPCIONES_DESCANSO, etiquetaDescanso, rangoDescanso, ejercicioDeRutina, limpiarEjercicioRutina,
+         validarBorrador, rutinaDesdeBorrador } from '../js/entreno.js';
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -314,4 +316,53 @@ test('cambioPct: redondeado; sin periodo anterior no inventa porcentaje', () => 
   assert.equal(cambioPct(12048, 11700), 3);
   assert.equal(cambioPct(85, 100), -15);
   assert.equal(cambioPct(500, 0), null);
+});
+
+test('PESTANAS: Rutinas primero (la que abre Entrenar), luego Progreso e Historial', () => {
+  assert.deepEqual(PESTANAS, ['rutinas', 'progreso', 'historial', 'biblioteca']);
+});
+
+// ── Crear rutina y elegir descanso ──────────────────────────────────────────
+
+test('etiquetaDescanso: minutos y segundos legibles', () => {
+  assert.equal(etiquetaDescanso(45), '45 s');
+  assert.equal(etiquetaDescanso(60), '1 min');
+  assert.equal(etiquetaDescanso(90), '1 min 30 s');
+  assert.equal(etiquetaDescanso(180), '3 min');
+  assert.equal(etiquetaDescanso(0), '—');
+  assert.deepEqual(OPCIONES_DESCANSO, [60, 90, 120, 180]);
+});
+
+test('rangoDescanso: mínimo y máximo del día; null si no trae descansos', () => {
+  const dia = { bloques: [[{ descansoS: 120 }], [{ descansoS: 60 }, { descansoS: 90 }]] };
+  assert.deepEqual(rangoDescanso(dia), { min: 60, max: 120 });
+  assert.equal(rangoDescanso({ bloques: [[{}]] }), null);
+  assert.equal(rangoDescanso(null), null);
+});
+
+test('limpiarEjercicioRutina: topes de series y reps, y el rango se ordena', () => {
+  const base = ejercicioDeRutina('press-banca', 'Press banca');
+  assert.deepEqual(base, { idEjercicio: 'press-banca', nombre: 'Press banca', series: 3, repsMin: 8, repsMax: 12, descansoS: 90 });
+  assert.equal(limpiarEjercicioRutina({ ...base, series: 0 }).series, 1);
+  assert.equal(limpiarEjercicioRutina({ ...base, series: 14 }).series, 10);
+  const inv = limpiarEjercicioRutina({ ...base, repsMin: 12, repsMax: 6 });
+  assert.deepEqual([inv.repsMin, inv.repsMax], [6, 12]);
+  const raro = limpiarEjercicioRutina({ ...base, repsMin: NaN, repsMax: 99 });
+  assert.deepEqual([raro.repsMin, raro.repsMax], [8, 50]);
+});
+
+test('validarBorrador: pide nombre y al menos un ejercicio', () => {
+  assert.deepEqual(Object.keys(validarBorrador({ nombre: '  ', ejercicios: [] }).errores), ['nombre', 'ejercicios']);
+  assert.equal(validarBorrador({ nombre: 'Pierna', ejercicios: [ejercicioDeRutina('sentadilla', 'Sentadilla')] }).ok, true);
+});
+
+test('rutinaDesdeBorrador: un día, un bloque por ejercicio, nombre recortado', () => {
+  const r = rutinaDesdeBorrador({ nombre: '  Pierna  ', ejercicios: [
+    ejercicioDeRutina('sentadilla', 'Sentadilla'), { ...ejercicioDeRutina('peso-muerto', 'Peso muerto'), series: 5, repsMin: 5, repsMax: 3 }
+  ] }, 'R-1');
+  assert.equal(r.id, 'R-1');
+  assert.equal(r.nombre, 'Pierna');
+  assert.equal(r.dias.length, 1);
+  assert.deepEqual(r.dias[0].bloques.map(b => b.length), [1, 1]);
+  assert.deepEqual(r.dias[0].bloques[1][0], { idEjercicio: 'peso-muerto', nombre: 'Peso muerto', series: 5, repsMin: 3, repsMax: 5, descansoS: 90 });
 });
