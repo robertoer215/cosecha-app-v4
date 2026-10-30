@@ -313,6 +313,49 @@ export function rutinaDesdeBorrador(b, id) {
   };
 }
 
+// Superseries de 2 a 4 ejercicios (decisión de Roberto, 30-oct-2026): con
+// más ya es un circuito y en el teléfono no se sigue.
+export const MAX_SUPERSERIE = 4;
+
+// Cada tramo seguido con el mismo `grupo` es UNA superserie: se renumeran por
+// orden de aparición (0, 1, 2…) y un tramo de un solo ejercicio deja de serlo.
+// Así ningún movimiento deja dos superseries partidas con el mismo número.
+export function normalizarGrupos(ejercicios) {
+  const out = ejercicios.map(e => ({ ...e }));
+  let n = 0;
+  for (let i = 0; i < out.length;) {
+    const g = out[i].grupo;
+    let fin = i;
+    while (g != null && fin + 1 < out.length && out[fin + 1].grupo === g) fin++;
+    const nuevo = g != null && fin > i ? n++ : null;
+    for (let k = i; k <= fin; k++) out[k].grupo = nuevo;
+    i = fin + 1;
+  }
+  return out;
+}
+
+// Mueve un ejercicio de `desde` a `hasta` (reordenar del editor). El que se
+// mueve sigue en su superserie si queda junto a ella; si cae ENTRE dos de otra
+// superserie con sitio, se une; en cualquier otro caso queda suelto.
+export function moverEjercicio(ejercicios, desde, hasta) {
+  const n = ejercicios.length;
+  if (!(desde >= 0 && desde < n) || !(hasta >= 0 && hasta < n) || desde === hasta) return ejercicios.map(e => ({ ...e }));
+  const lista = ejercicios.map(e => ({ ...e }));
+  const [ej] = lista.splice(desde, 1);
+  lista.splice(hasta, 0, ej);
+  const prev = lista[hasta - 1], next = lista[hasta + 1];
+  const propio = ej.grupo;
+  if (propio != null && (prev?.grupo === propio || next?.grupo === propio)) {
+    // sigue junto a su superserie
+  } else if (prev && next && prev.grupo != null && prev.grupo === next.grupo
+    && lista.filter(e => e !== ej && e.grupo === prev.grupo).length < MAX_SUPERSERIE) {
+    ej.grupo = prev.grupo;
+  } else {
+    ej.grupo = null;
+  }
+  return normalizarGrupos(lista);
+}
+
 // ── Helpers puros internos ───────────────────────────────────────────────────
 
 const LB_POR_KG = 1 / 0.45359237;
@@ -352,6 +395,8 @@ function capital(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 const SVG_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const SVG_LUPA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M15.8 15.8L20.5 20.5"/></svg>';
 const SVG_VOLVER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg>';
+const SVG_ASA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg>';
+const SVG_MAS = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg>';
 
 // ── Estado del módulo ────────────────────────────────────────────────────────
 // `sesion` apunta al MISMO objeto que estado.entreno.sesionActiva: se edita en
@@ -376,6 +421,8 @@ let erroresBorrador = {};    // errores del último intento de guardar (se ven j
 let inicioPendiente = null;  // { rutina, dia }: falta elegir el descanso antes de empezar
 let rutinaAbiertaId = null;  // rutina recién guardada: su tarjeta se pinta abierta una vez
 let avisoRutina = '';        // "Rutina guardada" / "Cambios guardados" para lectores de pantalla
+let menuEjIdx = null;        // ejercicio del editor con su menú "⋯" abierto
+let asaLevantada = null;     // reordenar con teclado: { idx, inicio, sucioAntes } mientras está levantado
 let verSesionId = null;      // sesión del historial abierta en modo lectura
 let verProgresoId = null;    // ejercicio abierto en "progreso"
 let fichaId = null;          // ejercicio abierto en su ficha (Biblioteca o sesión)
@@ -952,6 +999,8 @@ function pintarPanelRutinas(panel) {
       if (!r) return;
       borrador = borradorDesdeRutina(r);
       erroresBorrador = {};
+      menuEjIdx = null;
+      asaLevantada = null;
       render();
       window.scrollTo(0, 0);
       return;
@@ -959,6 +1008,8 @@ function pintarPanelRutinas(panel) {
     if (b.dataset.acc === 'crear-rutina') {
       borrador = { nombre: '', ejercicios: [] };
       erroresBorrador = {};
+      menuEjIdx = null;
+      asaLevantada = null;
       render();
       window.scrollTo(0, 0);
       return;
@@ -1025,13 +1076,20 @@ function pintarEditorRutina(raiz) {
   const b = borrador;
   const err = erroresBorrador;
   const editando = !!b.original;   // editar una de "Tus rutinas" o crear una nueva
+  const n = b.ejercicios.length;
   const tarjeta = (ej, i) => `
-    <li class="en-card en-ed-ej" data-idx="${i}">
+    <li class="en-card en-ed-ej${asaLevantada?.idx === i ? ' en-ed-levantada' : ''}" data-idx="${i}">
       <div class="en-ed-ej-top">
+        <button type="button" class="en-ed-asa" data-acc="ed-asa" data-idx="${i}" aria-pressed="${asaLevantada?.idx === i}"
+          aria-label="Mover ${esc(ej.nombre)}, posición ${i + 1} de ${n}" aria-describedby="en-ed-asa-ayuda">${SVG_ASA}</button>
         <span class="en-card-nombre">${esc(ej.nombre)}</span>
-        <button type="button" class="en-ed-quitar" data-acc="ed-quitar" data-idx="${i}" aria-label="Quitar ${esc(ej.nombre)}">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>
-        </button>
+        <button type="button" class="en-ed-mas" data-acc="ed-menu" data-idx="${i}" aria-expanded="${menuEjIdx === i}"
+          aria-controls="en-ed-menu-${i}" aria-label="Más opciones de ${esc(ej.nombre)}">${SVG_MAS}</button>
+      </div>
+      <div class="en-ed-menu" id="en-ed-menu-${i}"${menuEjIdx === i ? '' : ' hidden'}>
+        <button type="button" class="en-ed-op" data-acc="ed-subir" data-idx="${i}"${i === 0 ? ' aria-disabled="true"' : ''}>Subir</button>
+        <button type="button" class="en-ed-op" data-acc="ed-bajar" data-idx="${i}"${i === n - 1 ? ' aria-disabled="true"' : ''}>Bajar</button>
+        <button type="button" class="en-peligro en-ed-op-quitar" data-acc="ed-quitar" data-idx="${i}">Quitar</button>
       </div>
       <div class="en-ed-campos">
         <div class="en-ed-campo">
@@ -1069,9 +1127,12 @@ function pintarEditorRutina(raiz) {
     ${err.nombre ? `<p class="en-ed-err" id="en-ed-nombre-err">${esc(err.nombre)}</p>` : ''}
 
     <div class="en-sec-lbl">Ejercicios</div>
-    ${b.ejercicios.length
+    ${n > 1 ? '<p class="en-ed-pista">Mantén presionado un ejercicio para cambiar el orden.</p>' : ''}
+    ${n
       ? `<ol class="en-ed-lista">${b.ejercicios.map(tarjeta).join('')}</ol>`
       : '<p class="en-vacio">Todavía no hay ejercicios. Agrega el primero desde la biblioteca.</p>'}
+    <p class="en-sr" id="en-ed-asa-ayuda">Mantén presionada la tarjeta o arrastra este botón. Con teclado: Enter para levantar, flechas para mover, Enter para soltar y Escape para cancelar.</p>
+    <p class="en-sr" id="en-ed-anuncio" role="status"></p>
     ${err.ejercicios ? `<p class="en-ed-err" id="en-ed-ej-err">${esc(err.ejercicios)}</p>` : ''}
     <button type="button" class="en-btn en-btn-ghost en-ed-agregar" data-acc="ed-agregar"
       ${err.ejercicios ? 'aria-describedby="en-ed-ej-err"' : ''}>Agregar ejercicio</button>
@@ -1103,21 +1164,43 @@ function pintarEditorRutina(raiz) {
     const btn = e.target.closest('[data-acc]');
     if (!btn) return;
     const acc = btn.dataset.acc;
+    // El asa se maneja con arrastre (puntero) o con teclado (keydown); el
+    // click que deja un arrastre no debe hacer nada más.
+    if (acc === 'ed-asa') return;
+    if (acc !== 'ed-menu' && !acc.startsWith('ed-subir') && !acc.startsWith('ed-bajar')) asaLevantada = null;
     if (acc === 'ed-cancelar') {
       // Perder una rutina a medio armar por un toque en "volver" dolería:
       // con algo escrito, doble toque, igual que los demás descartes.
       if (b.sucio && !armarDosToques(btn.querySelector('span'), editando ? 'Toca otra vez para descartar los cambios' : 'Toca otra vez para descartarla')) return;
       borrador = null;
       erroresBorrador = {};
+      menuEjIdx = null;
       render();
     } else if (acc === 'ed-agregar') {
       modoBiblioteca = 'rutina';
       consultaBib = '';
+      menuEjIdx = null;
       render();
       window.scrollTo(0, 0);
+    } else if (acc === 'ed-menu') {
+      const i = +btn.dataset.idx;
+      menuEjIdx = menuEjIdx === i ? null : i;
+      render();
+    } else if (acc === 'ed-subir' || acc === 'ed-bajar') {
+      if (btn.getAttribute('aria-disabled') === 'true') return;
+      const i = +btn.dataset.idx, j = acc === 'ed-subir' ? i - 1 : i + 1;
+      moverEnEditor(i, j);
+      menuEjIdx = j;
+      render();
+      // El foco sigue al ejercicio movido, en el mismo botón, para poder
+      // seguir subiendo o bajando sin buscarlo.
+      const sig = ctx.raiz.querySelector(`[data-acc="${acc}"][data-idx="${j}"]`);
+      (sig?.getAttribute('aria-disabled') === 'true' ? ctx.raiz.querySelector(`[data-acc="ed-menu"][data-idx="${j}"]`) : sig)?.focus();
+      anunciarPosicion(j);
     } else if (acc === 'ed-quitar') {
-      b.ejercicios.splice(+btn.dataset.idx, 1);
+      b.ejercicios = normalizarGrupos(b.ejercicios.filter((_, k) => k !== +btn.dataset.idx));
       b.sucio = true;
+      menuEjIdx = null;
       render();
     } else if (acc === 'ed-series') {
       if (btn.getAttribute('aria-disabled') === 'true') return;
@@ -1127,6 +1210,173 @@ function pintarEditorRutina(raiz) {
       render();
     } else if (acc === 'ed-guardar') guardarBorrador(wrap);
   });
+  wrap.addEventListener('keydown', teclaAsa);
+  wrap.addEventListener('pointerdown', empezarPresion);
+  // Mantener presionado no debe abrir el menú contextual del sistema (Android).
+  wrap.addEventListener('contextmenu', e => { if (e.target.closest('.en-ed-ej') && !e.target.closest('input')) e.preventDefault(); });
+}
+
+// ── Reordenar en el editor: teclado, menú y arrastre ─────────────────────────
+
+function moverEnEditor(desde, hasta) {
+  borrador.ejercicios = moverEjercicio(borrador.ejercicios, desde, hasta);
+  borrador.sucio = true;
+}
+
+// Un aviso para lectores de pantalla tras repintar: se escribe un instante
+// después para que la región viva nueva lo anuncie.
+function anunciarPosicion(i, prefijo = '') {
+  const ej = borrador?.ejercicios[i];
+  if (!ej) return;
+  const texto = `${prefijo}${ej.nombre}, posición ${i + 1} de ${borrador.ejercicios.length}.`;
+  setTimeout(() => { const el = ctx.raiz.querySelector('#en-ed-anuncio'); if (el) el.textContent = texto; }, 60);
+}
+
+function focoAsa(i) { ctx.raiz.querySelector(`[data-acc="ed-asa"][data-idx="${i}"]`)?.focus(); }
+
+// Teclado (patrón de arrastrar y soltar accesible): Enter o Espacio levanta,
+// flechas mueven, Enter o Espacio suelta, Escape devuelve todo como estaba.
+function teclaAsa(e) {
+  const asa = e.target.closest?.('.en-ed-asa');
+  if (!asa) return;
+  const i = +asa.dataset.idx;
+  const tecla = e.key;
+  if (tecla === 'Enter' || tecla === ' ') {
+    e.preventDefault();
+    if (asaLevantada) {
+      const fin = asaLevantada.idx;
+      asaLevantada = null;
+      render(); focoAsa(fin);
+      anunciarPosicion(fin, 'Soltado. ');
+    } else {
+      asaLevantada = { idx: i, inicio: borrador.ejercicios.map(x => ({ ...x })), sucioAntes: !!borrador.sucio };
+      render(); focoAsa(i);
+      anunciarPosicion(i, 'Levantado. Usa las flechas para moverlo. ');
+    }
+  } else if ((tecla === 'ArrowUp' || tecla === 'ArrowDown') && asaLevantada) {
+    e.preventDefault();
+    const j = tecla === 'ArrowUp' ? i - 1 : i + 1;
+    if (j < 0 || j >= borrador.ejercicios.length) return;
+    moverEnEditor(i, j);
+    asaLevantada.idx = j;
+    render(); focoAsa(j);
+    anunciarPosicion(j);
+  } else if (tecla === 'Escape' && asaLevantada) {
+    e.preventDefault();
+    const { inicio, sucioAntes } = asaLevantada;
+    const original = inicio.findIndex(x => x.idEjercicio === borrador.ejercicios[i].idEjercicio);
+    borrador.ejercicios = inicio;
+    borrador.sucio = sucioAntes;
+    asaLevantada = null;
+    render(); focoAsa(Math.max(0, original));
+    anunciarPosicion(Math.max(0, original), 'Cancelado. ');
+  }
+}
+
+// Arrastre con el dedo o el ratón (Pointer Events, sin librerías). Desde el
+// asa empieza al mover; desde la tarjeta, tras mantenerla presionada 400 ms
+// sin moverse más de 8 px (si se mueve antes, era scroll). Mientras se
+// arrastra solo se anima transform: las demás tarjetas se apartan en sitio.
+const PRESION_MS = 400, UMBRAL_PX = 8, BORDE_AUTOSCROLL = 90;
+
+function empezarPresion(e) {
+  if (e.button !== 0 || !borrador || borrador.ejercicios.length < 2) return;
+  const li = e.target.closest('.en-ed-ej');
+  if (!li) return;
+  const desdeAsa = !!e.target.closest('.en-ed-asa');
+  if (!desdeAsa && e.target.closest('button, input, .en-ed-menu')) return;
+  const p = { idx: +li.dataset.idx, li, id: e.pointerId, x0: e.clientX, y0: e.clientY, ultimoY: e.clientY, timer: null };
+  const limpiar = () => {
+    clearTimeout(p.timer);
+    document.removeEventListener('pointermove', mover);
+    document.removeEventListener('pointerup', limpiar);
+    document.removeEventListener('pointercancel', limpiar);
+  };
+  const mover = ev => {
+    if (ev.pointerId !== p.id) return;
+    p.ultimoY = ev.clientY;
+    const lejos = Math.hypot(ev.clientX - p.x0, ev.clientY - p.y0) > (desdeAsa ? 3 : UMBRAL_PX);
+    if (!lejos) return;
+    limpiar();
+    if (desdeAsa) iniciarArrastre(p, ev.clientY);   // desde la tarjeta, moverse antes de tiempo = scroll
+  };
+  document.addEventListener('pointermove', mover);
+  document.addEventListener('pointerup', limpiar);
+  document.addEventListener('pointercancel', limpiar);
+  if (!desdeAsa) p.timer = setTimeout(() => { limpiar(); iniciarArrastre(p, p.ultimoY); }, PRESION_MS);
+}
+
+function iniciarArrastre(p, clientY) {
+  const lista = [...ctx.raiz.querySelectorAll('.en-ed-ej')];
+  const desdeScroll = window.scrollY;
+  const cajas = lista.map(el => { const r = el.getBoundingClientRect(); return { top: r.top + desdeScroll, alto: r.height }; });
+  const hueco = lista.length > 1 ? cajas[1].top - (cajas[0].top + cajas[0].alto) : 10;
+  // Límites: la tarjeta no sale de la zona de la lista y la página no se
+  // desplaza más allá de su final real. Sin esto, la tarjeta movida alargaba
+  // la página y el autoscroll no paraba nunca.
+  const c0 = cajas[p.idx], ultima = cajas[cajas.length - 1];
+  const centroDe = c => c.top + c.alto / 2;
+  // …pero siempre puede llevar su centro hasta el del primero y el del último.
+  const minDy = Math.min(cajas[0].top - c0.top, centroDe(cajas[0]) - centroDe(c0));
+  const maxDy = Math.max(ultima.top + ultima.alto - c0.alto - c0.top, centroDe(ultima) - centroDe(c0));
+  const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+  const a = { ...p, lista, cajas, hueco, y0Pagina: p.y0 + desdeScroll, hasta: p.idx, yCliente: clientY, raf: 0 };
+  menuEjIdx = null;
+  a.li.classList.add('en-ed-arrastrando');
+  lista.forEach((el, k) => { if (k !== a.idx) el.classList.add('en-ed-desplazable'); });
+  navigator.vibrate?.(12);   // Android; Safari de iPhone no vibra desde la web
+  const pintar = () => {
+    const dy = Math.min(maxDy, Math.max(minDy, a.yCliente + window.scrollY - a.y0Pagina));
+    a.li.style.transform = `translateY(${dy}px) scale(1.02)`;
+    const c = a.cajas[a.idx];
+    const centro = c.top + c.alto / 2 + dy;
+    let hasta = a.idx;
+    for (let k = a.idx + 1; k < cajas.length; k++) if (centro >= centroDe(cajas[k])) hasta = k;
+    for (let k = a.idx - 1; k >= 0; k--) if (centro <= centroDe(cajas[k])) hasta = k;
+    a.hasta = hasta;
+    const paso = c.alto + a.hueco;
+    lista.forEach((el, k) => {
+      if (k === a.idx) return;
+      const t = a.idx < hasta && k > a.idx && k <= hasta ? -paso : hasta < a.idx && k >= hasta && k < a.idx ? paso : 0;
+      el.style.transform = t ? `translateY(${t}px)` : '';
+    });
+  };
+  // Cerca de los bordes (o de la tabbar) la página se desplaza sola.
+  const autoscroll = () => {
+    const abajo = window.innerHeight - BORDE_AUTOSCROLL - 64;
+    let v = a.yCliente < BORDE_AUTOSCROLL ? -Math.ceil((BORDE_AUTOSCROLL - a.yCliente) / 6)
+      : a.yCliente > abajo ? Math.ceil((a.yCliente - abajo) / 6) : 0;
+    if ((v > 0 && window.scrollY >= maxScroll) || (v < 0 && window.scrollY <= 0)) v = 0;
+    if (v) { window.scrollTo(0, Math.min(maxScroll, Math.max(0, window.scrollY + v))); pintar(); }
+    a.raf = requestAnimationFrame(autoscroll);
+  };
+  const mover = ev => { if (ev.pointerId !== a.id) return; a.yCliente = ev.clientY; pintar(); };
+  // Sin esto, Safari de iPhone convierte el arrastre en scroll a mitad de gesto.
+  const sinScroll = ev => ev.preventDefault();
+  const terminar = (aplicar) => {
+    cancelAnimationFrame(a.raf);
+    document.removeEventListener('pointermove', mover);
+    document.removeEventListener('pointerup', soltar);
+    document.removeEventListener('pointercancel', cancelar);
+    document.removeEventListener('keydown', escape, true);
+    document.removeEventListener('touchmove', sinScroll);
+    lista.forEach(el => { el.style.transform = ''; el.classList.remove('en-ed-desplazable', 'en-ed-arrastrando'); });
+    if (aplicar && a.hasta !== a.idx) {
+      moverEnEditor(a.idx, a.hasta);
+      render();
+      anunciarPosicion(a.hasta, 'Movido. ');
+    }
+  };
+  const soltar = ev => { if (ev.pointerId === a.id) terminar(true); };
+  const cancelar = ev => { if (ev.pointerId === a.id) terminar(false); };
+  const escape = ev => { if (ev.key === 'Escape') { ev.preventDefault(); terminar(false); } };
+  document.addEventListener('pointermove', mover);
+  document.addEventListener('pointerup', soltar);
+  document.addEventListener('pointercancel', cancelar);
+  document.addEventListener('keydown', escape, true);
+  document.addEventListener('touchmove', sinScroll, { passive: false });
+  pintar();
+  a.raf = requestAnimationFrame(autoscroll);
 }
 
 function guardarBorrador(wrap) {
@@ -1146,6 +1396,8 @@ function guardarBorrador(wrap) {
   if (!guardada) { wrap.querySelector('.en-aviso-storage').hidden = false; return; }
   borrador = null;
   erroresBorrador = {};
+  menuEjIdx = null;
+  asaLevantada = null;
   subtab = 'rutinas';
   rutinaAbiertaId = String(rutina.id);
   avisoRutina = editando ? 'Cambios guardados.' : 'Rutina guardada en Tus rutinas.';
