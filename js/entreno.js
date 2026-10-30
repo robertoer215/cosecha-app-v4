@@ -1568,7 +1568,7 @@ function pintarEditorRutina(raiz) {
       b.sucio = true;
       render();
     } else if (acc === 'ed-tecnica') {
-      hojaTecnica = { idx: i, serie: +btn.dataset.serie, todas: false, planInicial: normalizarPlan(b.ejercicios[i].series, b.ejercicios[i].plan) };
+      hojaTecnica = { idx: i, serie: +btn.dataset.serie, todas: false, animar: true, planInicial: normalizarPlan(b.ejercicios[i].series, b.ejercicios[i].plan) };
       menuEjIdx = null;
       render();
       ctx.raiz.querySelector('.en-hoja input[name="en-tecnica"]:checked')?.focus();
@@ -1896,7 +1896,7 @@ function htmlHojaTecnica() {
   }).join('');
   return `
   <div class="en-hoja-fondo" data-acc="hoja-cerrar"></div>
-  <div class="en-hoja" role="dialog" aria-modal="true" aria-labelledby="en-hoja-tit" aria-describedby="en-hoja-sub" tabindex="-1">
+  <div class="en-hoja${hojaTecnica.animar ? ' en-hoja-anim' : ''}" role="dialog" aria-modal="true" aria-labelledby="en-hoja-tit" aria-describedby="en-hoja-sub" tabindex="-1">
     <div class="en-hoja-cab">
       <div>
         <h3 class="en-hoja-tit" id="en-hoja-tit">Serie ${serie + 1}</h3>
@@ -1949,9 +1949,37 @@ function cerrarHojaTecnica() {
   anunciarEditor(`Serie ${serie + 1}: ${TECNICAS[t.tipo].nombre}.`);
 }
 
+// Repinta conservando el desplazamiento de la hoja: sin esto cada toque en
+// − o + la devolvía arriba y el siguiente toque caía en otra opción.
+function repintarHoja() {
+  const y = ctx.raiz.querySelector('.en-hoja')?.scrollTop ?? 0;
+  render();
+  const h = ctx.raiz.querySelector('.en-hoja');
+  if (h) h.scrollTop = y;
+}
+
 function conectarHojaTecnica(raiz) {
   const hoja = raiz.querySelector('.en-hoja');
+  hojaTecnica.animar = false;   // la entrada se anima una sola vez, al abrir
   inertesFuera(true);
+  // Deslizar la cabecera hacia abajo cierra la hoja (gesto estándar de iOS);
+  // la X, «Listo», el fondo y Escape siguen ahí.
+  const cab = hoja.querySelector('.en-hoja-cab');
+  cab.addEventListener('pointerdown', ev => {
+    if (ev.target.closest('button')) return;
+    const y0 = ev.clientY;
+    let dy = 0;
+    const mover = e2 => { dy = Math.max(0, e2.clientY - y0); hoja.style.transform = dy ? `translateY(${dy}px)` : ''; };
+    const soltar = () => {
+      document.removeEventListener('pointermove', mover);
+      document.removeEventListener('pointerup', soltar);
+      document.removeEventListener('pointercancel', soltar);
+      if (dy > 80) cerrarHojaTecnica(); else hoja.style.transform = '';
+    };
+    document.addEventListener('pointermove', mover);
+    document.addEventListener('pointerup', soltar);
+    document.addEventListener('pointercancel', soltar);
+  });
   // Escape cierra aunque el foco haya caído fuera de la hoja (tocar un área
   // vacía lo manda a <body>): un solo listener de documento, instalado una vez.
   if (!escapeHojaInstalado) {
@@ -1971,7 +1999,7 @@ function conectarHojaTecnica(raiz) {
       const tipo = normalizarPlan(borrador.ejercicios[hojaTecnica.idx].series, borrador.ejercicios[hojaTecnica.idx].plan)[hojaTecnica.serie].tipo;
       const r = PARAMS_TECNICA[tipo]?.[pk];
       aplicarTecnica(t => ({ ...t, [pk]: t[pk] + (+b.dataset.v) * (r?.paso ?? 1) }));
-      render();
+      repintarHoja();
       const t2 = normalizarPlan(borrador.ejercicios[hojaTecnica.idx].series, borrador.ejercicios[hojaTecnica.idx].plan)[hojaTecnica.serie];
       anunciarHoja(`${r?.nombre}: ${t2[pk]}${r?.unidad ? ' ' + (r.unidad === 's' ? 'segundos' : 'por ciento') : ''}.`);
     }
@@ -1980,7 +2008,7 @@ function conectarHojaTecnica(raiz) {
     if (e.target.name === 'en-tecnica') {
       const v = e.target.value;
       aplicarTecnica(t => t.tipo === v ? t : { tipo: v });
-      render();
+      repintarHoja();
       anunciarHoja(`${TECNICAS[v].nombre}${hojaTecnica.todas ? ', en todas las series de trabajo' : ''}.`);
     } else if (e.target.id === 'en-hoja-todas') {
       hojaTecnica.todas = e.target.checked;
@@ -1993,7 +2021,7 @@ function conectarHojaTecnica(raiz) {
         const plan = normalizarPlan(ej.series, ej.plan);
         borrador.ejercicios[idx] = { ...ej, plan: plan.map((t, j) => j === serie ? t : (planInicial?.[j] ?? t)) };
       }
-      render();
+      repintarHoja();
       anunciarHoja(hojaTecnica.todas ? 'Se aplica a todas las series de trabajo.' : 'Solo a esta serie.');
     }
   });
@@ -2459,7 +2487,7 @@ function htmlSesionEjercicio(h, unidad, n) {
     </summary>
     <div class="en-rec-cuerpo">
       <div class="en-rec-fila en-rec-hd" aria-hidden="true"><span>Reps</span><span>Peso</span></div>
-      ${h.series.map(x => `<div class="en-rec-fila"><span>${x.reps}${x.partes?.length ? ` + ${x.partes.map(pt => pt.reps).join(' + ')}` : ''}${TECNICAS[x.tipo]?.insignia ? ` <span class="en-tec"><span aria-hidden="true">${TECNICAS[x.tipo].insignia}</span><span class="en-sr">${TECNICAS[x.tipo].nombre}</span></span>` : ''}</span><span>${x.pesoKg > 0 ? `${fmtPeso(x.pesoKg, unidad)} ${unidad}` : 'peso corporal'}${x === pr ? ' <em class="en-rec-pr">mejor serie</em>' : ''}</span></div>`).join('')}
+      ${h.series.map(x => `<div class="en-rec-fila"><span>${x.reps}${x.partes?.length ? ` + ${x.partes.map(pt => x.tipo === 'drop' && pt.pesoKg > 0 ? `${pt.reps}×${fmtPeso(pt.pesoKg, unidad)}` : pt.reps).join(' + ')}` : ''}${TECNICAS[x.tipo]?.insignia ? ` <span class="en-tec"><span aria-hidden="true">${TECNICAS[x.tipo].insignia}</span><span class="en-sr">${TECNICAS[x.tipo].nombre}</span></span>` : ''}</span><span>${x.pesoKg > 0 ? `${fmtPeso(x.pesoKg, unidad)} ${unidad}` : 'peso corporal'}${x === pr ? ' <em class="en-rec-pr">mejor serie</em>' : ''}</span></div>`).join('')}
       <div class="en-rec-fila en-rec-tot"><span><b>${h.totalReps}</b> reps</span><span>${h.volumen > 0 ? `<b>${fmtNum(h.volumen, unidad)}</b> ${unidad} de volumen` : ''}</span></div>
       <button type="button" class="en-btn en-btn-ghost en-rec-ir" data-acc="ver-sesion" data-sid="${esc(h.sesionId)}">Ver la sesión</button>
     </div>
@@ -2836,7 +2864,9 @@ function pintarVivo(raiz) {
       return;
     }
     if (acc === 'cerrar-tecnica') {
-      // Salida: dejar la serie con las partes hechas hasta aquí.
+      // Salida: dejar la serie con las partes hechas hasta aquí. Doble toque,
+      // como los demás botones que terminan algo.
+      if (!armarDosToques(b, 'Toca otra vez para terminarla')) return;
       const ref = parteEnCursoValida() || microEnCurso();
       if (ref) cerrarSerie(ref.idx, ref.serie);
       return;
@@ -2941,6 +2971,10 @@ function htmlFoco(unidad) {
   // En una parte (o su micro-descanso) los campos son los de ESA parte.
   const borradorParte = ef.tipo === 'parte' ? ef.parte : ef.tipo === 'micro' ? sesion.descanso?.micro : null;
   const T = s ? TECNICAS[s.tipo] : null;
+  // Si el ejercicio tiene alguna serie con técnica, la tarjeta reserva sus
+  // líneas en TODAS sus series y estados: así no cambia de alto ni empuja el
+  // botón entre activo, micro-descanso, mini-serie y bajada.
+  const conTecnicas = !!ej && ej.series.some(x => TECNICAS[x.tipo]?.insignia);
   const tp = s ? limpiarTecnica(s) : null;
   const queParte = s?.tipo === 'drop' ? 'bajada' : 'mini-serie';
   const kParte = borradorParte ? (Number(borradorParte.k) || 0) : 0;
@@ -2965,28 +2999,31 @@ function htmlFoco(unidad) {
         ${enFicha ? `<button type="button" class="en-foco-info" data-acc="ficha" data-id="${esc(ej.idEjercicio)}" aria-label="Ficha técnica de ${esc(ej.nombre)}">i</button>` : ''}
       </div>
       <div class="en-foco-stats">
-        <span class="en-foco-st"><b>${ref.serie + 1}/${ej.series.length}${T?.insignia ? ` <span class="en-tec"><span aria-hidden="true">${T.insignia}</span><span class="en-sr">${T.nombre}</span></span>` : ''}</b><small>Serie</small></span>
+        <span class="en-foco-st"><b>${ref.serie + 1}/${ej.series.length}${T?.insignia ? ` <span class="en-tec"><span aria-hidden="true">${T.insignia}</span><span class="en-sr">${T.nombre}</span></span>`
+          : conTecnicas ? ' <span class="en-tec en-tec-hueco" aria-hidden="true">W</span>' : ''}</b><small>Serie</small></span>
         ${borradorParte ? `
-        <label class="en-foco-st"><input class="en-foco-in" data-campo="reps" data-parte="1" data-idx="${ref.idx}" data-serie="${ref.serie}" inputmode="numeric" value="${Number(borradorParte.reps) || ''}" placeholder="0" aria-label="Repeticiones de la ${nParte}"><small>Reps ${queParte}</small></label>
+        <label class="en-foco-st"><input class="en-foco-in" data-campo="reps" data-parte="1" data-idx="${ref.idx}" data-serie="${ref.serie}" inputmode="numeric" value="${Number(borradorParte.reps) || ''}" placeholder="0" aria-label="Repeticiones de la ${nParte}"><small>Reps</small></label>
         <label class="en-foco-st"><input class="en-foco-in" data-campo="peso" data-parte="1" data-idx="${ref.idx}" data-serie="${ref.serie}" inputmode="decimal" value="${Number(borradorParte.pesoKg) > 0 ? fmtPeso(Number(borradorParte.pesoKg), unidad) : ''}" placeholder="0"
-          aria-label="Peso de la ${nParte} en ${unidad}${s.tipo === 'restpause' ? ', el mismo de la serie' : ''}"${s.tipo === 'restpause' ? ' readonly aria-readonly="true"' : ''}><small>${unidad}${s.tipo === 'restpause' ? ' · mismo' : ''}</small></label>` : `
+          aria-label="Peso de la ${nParte} en ${unidad}${s.tipo === 'restpause' ? ', el mismo de la serie' : ''}"${s.tipo === 'restpause' ? ' readonly aria-readonly="true"' : ''}><small>${unidad}</small></label>` : `
         <label class="en-foco-st"><input class="en-foco-in" data-campo="reps" data-idx="${ref.idx}" data-serie="${ref.serie}" inputmode="numeric" value="${s.reps || ''}" placeholder="0" aria-label="Repeticiones de la serie ${ref.serie + 1}"><small>Reps</small></label>
         <label class="en-foco-st"><input class="en-foco-in" data-campo="peso" data-idx="${ref.idx}" data-serie="${ref.serie}" inputmode="decimal" value="${s.pesoKg ? fmtPeso(s.pesoKg, unidad) : ''}" placeholder="0" aria-label="Peso de la serie ${ref.serie + 1} en ${unidad}"><small>${unidad}</small></label>`}
       </div>
-      ${lineaTecnica ? `<p class="en-foco-tecnica">${esc(lineaTecnica)}</p>` : ''}
-      ${s?.partes?.length ? `<p class="en-foco-partes">Hecho: ${esc(textoSerie(s, unidad))}</p>` : ''}
-      ${ej.rango && !borradorParte ? `<p class="en-foco-rango">Objetivo de la rutina: ${ej.rango.min === ej.rango.max ? ej.rango.max : `${ej.rango.min}–${ej.rango.max}`} reps</p>` : ''}
+      ${conTecnicas ? `
+      <p class="en-foco-tecnica">${esc(lineaTecnica)}</p>
+      <p class="en-foco-partes"${borradorParte || s?.partes?.length ? '' : ' aria-hidden="true"'}>${borradorParte || s?.partes?.length ? `Hecho: ${esc(textoSerie(s, unidad))}` : '&nbsp;'}</p>
+      <div class="en-foco-salida-caja">
+        <button type="button" class="en-foco-salida" data-acc="cerrar-tecnica"${borradorParte ? '' : ' hidden'}>Terminar la serie aquí</button>
+      </div>` : ''}
+      ${ej.rango ? `<p class="en-foco-rango"${borradorParte ? ' aria-hidden="true" style="visibility:hidden"' : ''}>Objetivo de la rutina: ${ej.rango.min === ej.rango.max ? ej.rango.max : `${ej.rango.min}–${ej.rango.max}`} reps</p>` : ''}
       <p class="en-foco-error" role="alert"></p>
     </div>` : `<p class="en-vacio en-foco-fin">Hiciste todas las series. Termina la sesión para ver tu resumen, o agrega otro ejercicio.</p>`;
 
-  // Salida de una serie con técnica: dejarla con las partes hechas.
-  const salida = '<button type="button" class="en-btn en-btn-ghost en-foco-salida" data-acc="cerrar-tecnica">Terminar la serie aquí</button>';
   const boton = ef.tipo === 'activo'
     ? `<button type="button" id="en-foco-btn" class="en-btn en-btn-main en-foco-btn" data-acc="fin-serie">Fin de la serie</button>`
     : ef.tipo === 'parte'
-      ? `<button type="button" id="en-foco-btn" class="en-btn en-btn-main en-foco-btn" data-acc="fin-parte">Fin de la ${queParte}</button>${salida}`
+      ? `<button type="button" id="en-foco-btn" class="en-btn en-btn-main en-foco-btn" data-acc="fin-parte">Fin de la ${queParte}</button>`
     : ef.tipo === 'micro'
-      ? `<button type="button" id="en-foco-btn" class="en-btn en-btn-main en-foco-btn" data-acc="saltar-micro">Empezar la mini-serie ya</button>${salida}`
+      ? `<button type="button" id="en-foco-btn" class="en-btn en-btn-main en-foco-btn" data-acc="saltar-micro">Empezar la mini-serie ya</button>`
     : ef.tipo === 'fin'
       ? `<button type="button" id="en-foco-btn" class="en-btn en-btn-main en-foco-btn" data-acc="terminar">Terminar sesión</button>
          <button type="button" class="en-btn en-btn-ghost en-add-ej" data-acc="agregar">+ Agregar ejercicio</button>`
@@ -3053,7 +3090,7 @@ function htmlListaVivo(unidad) {
           <button type="button" class="en-mini" data-acc="desc" data-idx="${idx}" data-d="15" aria-label="Sumar 15 segundos al descanso">+15</button>
         </div>`}
       </div>
-      <div class="en-tabla" role="group" aria-label="Series de ${esc(ej.nombre)}">
+      <div class="en-tabla${ej.series.some(x => TECNICAS[x.tipo]?.insignia) ? ' en-tabla-tec' : ''}" role="group" aria-label="Series de ${esc(ej.nombre)}">
         <div class="en-fila en-fila-hd" aria-hidden="true">
           <span>#</span><span>Previa</span><span>${unidad}</span><span>Reps</span><span>RIR</span><span></span>
         </div>
@@ -3063,8 +3100,8 @@ function htmlListaVivo(unidad) {
           const T = TECNICAS[s.tipo];
           return `
           <div class="en-fila${s.hecha ? ' en-hecha' : ''}${activa ? ' en-activa' : ''}" data-serie="${j}">
-            <span class="en-num">${j + 1}</span>
-            <span class="en-prev">${T?.insignia ? `<span class="en-tec"><span aria-hidden="true">${T.insignia}</span><span class="en-sr">${T.nombre}</span></span> ` : ''}${prev ? `${prev.reps}×${fmtPeso(prev.pesoKg, unidad)}` : '—'}</span>
+            <span class="en-num">${j + 1}${T?.insignia ? `<span class="en-tec en-tec-num"><span aria-hidden="true">${T.insignia}</span><span class="en-sr">${T.nombre}</span></span>` : ''}</span>
+            <span class="en-prev">${prev ? `${prev.reps}×${fmtPeso(prev.pesoKg, unidad)}` : '—'}</span>
             <input class="en-in en-in-peso" inputmode="decimal" value="${s.pesoKg ? fmtPeso(s.pesoKg, unidad) : ''}"
               aria-label="Peso de la serie ${j + 1} en ${unidad}">
             <input class="en-in en-in-reps" inputmode="numeric" value="${s.reps || ''}"

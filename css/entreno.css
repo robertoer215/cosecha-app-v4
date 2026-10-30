@@ -140,7 +140,8 @@
    entra desde abajo solo con transform (y el barrido de reduced-motion la
    deja aparecer sin animación). */
 .en-hoja-fondo{position:fixed;inset:0;z-index:190;background:rgba(95,45,14,.45)}
-.en-hoja{position:fixed;left:0;right:0;bottom:0;z-index:200;max-width:720px;margin:0 auto;max-height:86dvh;overflow-y:auto;overscroll-behavior:contain;padding:18px var(--gutter) calc(18px + env(safe-area-inset-bottom));background:var(--bg);border-radius:var(--r-md) var(--r-md) 0 0;box-shadow:var(--lift-sticky);animation:en-hoja-entra .25s ease-out}
+.en-hoja{position:fixed;left:0;right:0;bottom:0;z-index:200;max-width:720px;margin:0 auto;max-height:86dvh;overflow-y:auto;overscroll-behavior:contain;padding:18px var(--gutter) calc(18px + env(safe-area-inset-bottom));background:var(--bg);border-radius:var(--r-md) var(--r-md) 0 0;box-shadow:var(--lift-sticky);transition:transform .2s ease}
+.en-hoja-anim{animation:en-hoja-entra .25s ease-out}
 @keyframes en-hoja-entra{from{transform:translateY(100%)}to{transform:none}}
 .en-hoja-cab{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
 .en-hoja-cab .en-ed-mas{margin:-6px -10px 0 0}
@@ -151,20 +152,21 @@
    mayúsculas; input sin apariencia y con subrayado) no aplican aquí: son
    opciones de radio y una casilla nativas. */
 .en-hoja-op,.en-hoja-todas{font-family:var(--sans);font-size:13px;letter-spacing:normal;text-transform:none;color:var(--text)}
-.en-hoja-op input,.en-hoja-todas input{-webkit-appearance:auto;appearance:auto;width:20px;height:20px;padding:0;border:0;background:none;font-size:inherit}
+.en-hoja-op input,.en-hoja-todas input{-webkit-appearance:auto;appearance:auto;flex-shrink:0;width:20px;height:20px;padding:0;border:0;background:none;font-size:inherit;accent-color:var(--accent-ink)}
+.en-hoja-op input:focus-visible,.en-hoja-todas input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .en-hoja-op{display:flex;align-items:flex-start;gap:12px;min-height:44px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--r-md);cursor:pointer;transition:background-color .2s,border-color .2s}
 .en-hoja-op-on{border-color:var(--accent-ink);background:var(--accent-soft)}
-.en-hoja-op input{flex-shrink:0;width:20px;height:20px;margin:2px 0 0;accent-color:var(--accent-ink)}
-.en-hoja-op input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.en-hoja-op input{margin:2px 0 0}
 .en-hoja-op-txt{display:flex;flex-direction:column;gap:2px}
 .en-hoja-op-nom{font-size:15px;font-weight:500;color:var(--text)}
 .en-hoja-op-desc{font-size:12px;line-height:1.5;color:var(--muted-ink)}
 .en-hoja-params{display:flex;flex-wrap:wrap;gap:14px 24px;padding:4px 14px 10px}
 .en-hoja-val{min-width:56px}
-.en-hoja-todas{display:flex;align-items:center;gap:10px;min-height:44px;margin-top:10px;font-size:13px;color:var(--text);cursor:pointer}
-.en-hoja-todas input{width:20px;height:20px;accent-color:var(--accent-ink)}
-.en-hoja-todas input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.en-hoja-listo{margin-top:12px}
+.en-hoja-todas{display:flex;align-items:center;gap:10px;min-height:44px;margin-top:10px;cursor:pointer}
+.en-hoja-listo{position:sticky;bottom:0;margin-top:12px}
+/* La cabecera queda arriba aunque la hoja se desplace: es el «tirador» que se
+   arrastra hacia abajo para cerrar. */
+.en-hoja-cab{position:sticky;top:-18px;z-index:1;margin:-18px calc(-1 * var(--gutter)) 10px;padding:18px var(--gutter) 8px;background:var(--bg);touch-action:none;cursor:grab}
 .en-ed-levantada{outline:2px solid var(--accent);outline-offset:2px}
 .en-ed-campos{display:flex;flex-wrap:wrap;gap:14px 20px;margin-top:12px}
 .en-ed-campo .en-ed-lbl{margin-bottom:8px}
@@ -220,10 +222,17 @@
 /* La tabla de series: rejilla fija para que las columnas no bailen entre
    filas. A 375 px (335 de contenido) la previa se queda ~70 px: "12×110" cabe. */
 .en-fila{display:grid;grid-template-columns:16px minmax(0,1fr) 60px 46px 36px 44px;gap:8px;align-items:center;min-height:48px;border-bottom:1px solid var(--border)}
+/* Ejercicio con técnicas: la columna # lleva la insignia (W/RP/D) bajo el número. */
+.en-tabla-tec .en-fila{grid-template-columns:28px minmax(0,1fr) 60px 46px 36px 44px}
 .en-fila:last-of-type{border-bottom:none}
 .en-fila-hd{min-height:24px;border-bottom:1px solid var(--border)}
 .en-fila-hd span{font-family:var(--mono);font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--muted-ink)}
 .en-num{font-size:11px;color:var(--muted-ink);font-variant-numeric:tabular-nums}
+.en-tabla-tec .en-num{display:flex;flex-direction:column;align-items:center;gap:2px}
+.en-tec-num{padding:0 4px;font-size:11px}
+/* En una serie normal de un ejercicio con técnicas, el hueco de la insignia se
+   reserva (invisible) para que la tarjeta no cambie de alto entre series. */
+.en-tec-hueco{visibility:hidden}
 /* La previa es referencia, no dato de hoy: tinta secundaria a propósito. */
 .en-prev{font-size:11px;color:var(--muted-ink);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
 .en-in{width:100%;min-height:44px;background:transparent;border:none;border-bottom:1px solid var(--border-strong);color:var(--text);font-family:var(--sans);font-size:16px;font-variant-numeric:tabular-nums;text-align:center;outline:none;transition:border-color .2s}
@@ -305,6 +314,7 @@
 /* En pantallas anchas la tabla de series respira más; nada cambia de sitio. */
 @media (min-width:561px){
   .en-fila{grid-template-columns:20px minmax(0,1fr) 84px 64px 48px 44px;gap:12px}
+  .en-tabla-tec .en-fila{grid-template-columns:30px minmax(0,1fr) 84px 64px 48px 44px}
 }
 
 /* ── Barrido final de marca (patrón styles.css:688): TODOS los micro-rótulos
@@ -372,8 +382,8 @@
 .en-foco-nombre{font-size:15px;font-weight:500;color:var(--text);line-height:1.3}
 .en-foco-info{width:44px;height:44px;flex-shrink:0;border-radius:50%;border:1px solid var(--border-strong);background:var(--bg);font-family:var(--sans);font-size:15px;font-weight:600;font-style:italic;color:var(--muted-ink);cursor:pointer}
 .en-foco-stats{display:grid;grid-template-columns:repeat(3,1fr);width:100%;border:0;border-top:1px solid var(--border);background:none;padding:12px 0;cursor:pointer;font-family:var(--sans)}
-.en-foco-stats span{display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid var(--border)}
-.en-foco-stats span:last-child{border-right:0}
+.en-foco-stats > span{display:flex;flex-direction:column;align-items:center;gap:2px;border-right:1px solid var(--border)}
+.en-foco-stats > span:last-child{border-right:0}
 .en-foco-stats b{font-size:22px;font-weight:500;color:var(--text);font-variant-numeric:tabular-nums}
 .en-foco-stats small{font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-ink)}
 .en-foco-btn{min-height:56px;font-size:15px}
@@ -520,11 +530,16 @@
 .en-foco-anillo[data-estado="parte"] .en-foco-lbl{color:var(--green)}
 .en-tec{display:inline-block;padding:1px 6px;border-radius:var(--r-pill);background:var(--accent-soft);color:var(--accent-ink);font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.04em;vertical-align:middle}
 /* --accent-deep y no --accent-ink: sobre --surface, accent-ink se queda en 4,42:1. */
-.en-foco-tecnica{margin:0;padding:0 12px 10px;font-size:12px;line-height:1.5;color:var(--accent-deep);text-align:center}
+.en-foco-tecnica{margin:0;padding:0 12px 6px;min-height:calc(2 * 1.5em + 6px);font-size:12px;line-height:1.5;color:var(--accent-deep);text-align:center}
 /* El peso de la mini-serie es el de la serie: se ve como dato, no como campo. */
 .en-foco-in[readonly]{border-color:transparent;background:none;cursor:default}
-.en-foco-partes{margin:0;padding:0 12px 10px;font-size:12px;color:var(--muted-ink);text-align:center;font-variant-numeric:tabular-nums}
-.en-foco-salida{width:100%;margin-top:-6px}
+.en-foco-partes{margin:0;padding:0 12px 4px;min-height:1.5em;font-size:12px;line-height:1.5;color:var(--muted-ink);text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* La salida vive DENTRO de la tarjeta (lejos del botón grande) y su hueco se
+   reserva siempre: aparecer o irse no mueve nada. */
+.en-foco-salida-caja{display:flex;align-items:center;justify-content:center;height:48px}
+.en-foco-salida{min-height:44px;padding:10px 12px;background:none;border:none;color:var(--muted-ink);font-family:var(--sans);font-size:12px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.en-foco-salida[hidden]{display:inline-block;visibility:hidden}
+.en-foco-salida:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .en-fila-partes{margin:0;padding:4px 0 8px 24px;font-size:11px;color:var(--muted-ink);border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
 .en-ej-rango{text-align:left;padding:0 0 6px}
 .en-foco-error{margin:0;padding:0 12px 10px;font-size:13px;color:var(--danger);text-align:center}
