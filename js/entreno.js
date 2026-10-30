@@ -285,7 +285,7 @@ export function borradorDesdeRutina(r) {
     }),
     grupo: bloque.length > 1 ? g : null
   })));
-  return { id: r.id, nombre: r.nombre ?? '', ejercicios, original: r };
+  return { id: r.id, nombre: r.nombre ?? '', ejercicios: normalizarGrupos(ejercicios), original: r };
 }
 
 // Borrador del editor → rutina con la misma forma que sesionARutina:
@@ -332,6 +332,97 @@ export function normalizarGrupos(ejercicios) {
     i = fin + 1;
   }
   return out;
+}
+
+// Letra de cada superserie en el editor y en la sesión: A, B, C… por orden de
+// aparición (los grupos ya vienen renumerados por normalizarGrupos).
+export function letraGrupo(g) { return g == null ? '' : String.fromCharCode(65 + (g % 26)); }
+
+// Tramos [ini, fin] de la lista: cada superserie es UN tramo y cada ejercicio
+// suelto, otro. Es la unidad que se mueve al arrastrar una superserie entera.
+export function tramos(ejercicios) {
+  const out = [];
+  for (let i = 0; i < ejercicios.length;) {
+    const g = ejercicios[i].grupo;
+    let fin = i;
+    while (g != null && fin + 1 < ejercicios.length && ejercicios[fin + 1].grupo === g) fin++;
+    out.push([i, fin]);
+    i = fin + 1;
+  }
+  return out;
+}
+
+const tamGrupo = (l, e) => e.grupo == null ? 1 : l.filter(x => x.grupo === e.grupo).length;
+
+// ¿Se pueden unir el ejercicio i y el siguiente sin pasar de 4 por superserie?
+export function puedeUnir(ejercicios, i) {
+  const a = ejercicios[i], b = ejercicios[i + 1];
+  if (!a || !b) return false;
+  if (a.grupo != null && a.grupo === b.grupo) return true;
+  return tamGrupo(ejercicios, a) + tamGrupo(ejercicios, b) <= MAX_SUPERSERIE;
+}
+
+// Une el ejercicio i con el siguiente: dos sueltos forman una superserie; uno
+// suelto se suma a la superserie de al lado; dos superseries seguidas se
+// funden. Nunca pasa de 4 (devuelve `error` y la lista sin cambios).
+export function unirConSiguiente(ejercicios, i) {
+  const l = normalizarGrupos(ejercicios);
+  const a = l[i], b = l[i + 1];
+  if (!a || !b) return { ejercicios: l, error: 'No hay un ejercicio siguiente para unir.' };
+  if (a.grupo != null && a.grupo === b.grupo) return { ejercicios: l };
+  if (!puedeUnir(l, i)) return { ejercicios: l, error: `Una superserie lleva como máximo ${MAX_SUPERSERIE} ejercicios.` };
+  const nuevo = a.grupo ?? b.grupo ?? Math.max(-1, ...l.map(e => e.grupo ?? -1)) + 1;
+  const deB = b.grupo;
+  return {
+    ejercicios: normalizarGrupos(l.map((e, k) =>
+      k === i || k === i + 1 || (deB != null && e.grupo === deB) ? { ...e, grupo: nuevo } : e))
+  };
+}
+
+// Separa la superserie entre i e i+1: lo de después forma otra (o queda suelto
+// si es uno solo; lo de antes, igual).
+export function separarDeSiguiente(ejercicios, i) {
+  const l = normalizarGrupos(ejercicios);
+  const a = l[i], b = l[i + 1];
+  if (!a || !b || a.grupo == null || a.grupo !== b.grupo) return { ejercicios: l };
+  const nuevo = Math.max(...l.map(e => e.grupo ?? -1)) + 1;
+  return { ejercicios: normalizarGrupos(l.map((e, k) => k > i && e.grupo === a.grupo ? { ...e, grupo: nuevo } : e)) };
+}
+
+// Mueve un tramo entero (una superserie o un suelto) a la posición `hasta`,
+// contada en tramos: nunca cae dentro de otra superserie.
+export function moverTramo(ejercicios, desde, hasta) {
+  const l = normalizarGrupos(ejercicios);
+  const ts = tramos(l);
+  if (!(desde >= 0 && desde < ts.length) || !(hasta >= 0 && hasta < ts.length) || desde === hasta) return l;
+  const bloques = ts.map(([a, b]) => l.slice(a, b + 1));
+  const [mov] = bloques.splice(desde, 1);
+  bloques.splice(hasta, 0, mov);
+  return normalizarGrupos(bloques.flat());
+}
+
+// Un paso arriba (dir -1) o abajo (+1) desde el menú «⋯» o con las flechas.
+// Nunca mete un ejercicio en una superserie ajena por el camino: la salta
+// entera. Si estaba en el borde de la suya, el primer paso lo saca de ella sin
+// moverlo; dentro de la suya, cambia de sitio con su vecino.
+// → { ejercicios, idx (dónde queda), cambio: 'dentro'|'salio'|'salto'|'paso'|null }
+export function pasoEjercicio(ejercicios, i, dir) {
+  const l = normalizarGrupos(ejercicios);
+  const j = i + dir;
+  const e = l[i];
+  if (!e) return { ejercicios: l, idx: i, cambio: null };
+  if (e.grupo != null) {
+    if (l[j]?.grupo === e.grupo) { [l[i], l[j]] = [l[j], l[i]]; return { ejercicios: normalizarGrupos(l), idx: j, cambio: 'dentro' }; }
+    l[i] = { ...e, grupo: null };
+    return { ejercicios: normalizarGrupos(l), idx: i, cambio: 'salio' };
+  }
+  if (j < 0 || j >= l.length) return { ejercicios: l, idx: i, cambio: null };
+  if (l[j].grupo == null) { [l[i], l[j]] = [l[j], l[i]]; return { ejercicios: normalizarGrupos(l), idx: j, cambio: 'paso' }; }
+  const [ini, fin] = tramos(l).find(([a, z]) => j >= a && j <= z);
+  const [mov] = l.splice(i, 1);
+  const destino = dir > 0 ? fin : ini;
+  l.splice(destino, 0, mov);
+  return { ejercicios: normalizarGrupos(l), idx: destino, cambio: 'salto' };
 }
 
 // Mueve un ejercicio de `desde` a `hasta` (reordenar del editor). El que se
@@ -397,6 +488,7 @@ const SVG_LUPA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" str
 const SVG_VOLVER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg>';
 const SVG_ASA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg>';
 const SVG_MAS = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg>';
+const SVG_ESLABON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/></svg>';
 
 // ── Estado del módulo ────────────────────────────────────────────────────────
 // `sesion` apunta al MISMO objeto que estado.entreno.sesionActiva: se edita en
@@ -422,7 +514,10 @@ let inicioPendiente = null;  // { rutina, dia }: falta elegir el descanso antes 
 let rutinaAbiertaId = null;  // rutina recién guardada: su tarjeta se pinta abierta una vez
 let avisoRutina = '';        // "Rutina guardada" / "Cambios guardados" para lectores de pantalla
 let menuEjIdx = null;        // ejercicio del editor con su menú "⋯" abierto
-let asaLevantada = null;     // reordenar con teclado: { idx, inicio, sucioAntes } mientras está levantado
+let asaLevantada = null;     // reordenar con teclado: { tipo: 'ej'|'grupo', idx, idxInicio, inicio, sucioAntes }
+let arrastrando = false;     // hay un arrastre con el dedo en curso (bloquea el scroll del navegador)
+let finArrastreMs = 0;       // cuándo terminó el último arrastre (el click que lo sigue no cuenta)
+let repintandoAsa = false;   // el teclado está repintando: perder el foco aquí no suelta nada
 let verSesionId = null;      // sesión del historial abierta en modo lectura
 let verProgresoId = null;    // ejercicio abierto en "progreso"
 let fichaId = null;          // ejercicio abierto en su ficha (Biblioteca o sesión)
@@ -839,7 +934,7 @@ function selectorFoco(el) {
   if (!el || el === document.body || !ctx.raiz.contains(el)) return null;
   if (el.id) return '#' + CSS.escape(el.id);
   const d = el.dataset || {};
-  const attrs = ['acc', 'id', 'idx', 'tab', 'sid', 'ej', 'serie', 'v', 'campo', 'dtab', 'periodo'].filter(k => d[k] !== undefined)
+  const attrs = ['acc', 'id', 'idx', 'tramo', 'tab', 'sid', 'ej', 'serie', 'v', 'campo', 'dtab', 'periodo'].filter(k => d[k] !== undefined)
     .map(k => `[data-${k}="${CSS.escape(d[k])}"]`).join('');
   return attrs ? el.tagName.toLowerCase() + attrs : null;
 }
@@ -1076,42 +1171,77 @@ function pintarEditorRutina(raiz) {
   const b = borrador;
   const err = erroresBorrador;
   const editando = !!b.original;   // editar una de "Tus rutinas" o crear una nueva
-  const n = b.ejercicios.length;
-  const tarjeta = (ej, i) => `
-    <li class="en-card en-ed-ej${asaLevantada?.idx === i ? ' en-ed-levantada' : ''}" data-idx="${i}">
-      <div class="en-ed-ej-top">
-        <button type="button" class="en-ed-asa" data-acc="ed-asa" data-idx="${i}" aria-pressed="${asaLevantada?.idx === i}"
-          aria-label="Mover ${esc(ej.nombre)}, posición ${i + 1} de ${n}" aria-describedby="en-ed-asa-ayuda">${SVG_ASA}</button>
-        <span class="en-card-nombre">${esc(ej.nombre)}</span>
-        <button type="button" class="en-ed-mas" data-acc="ed-menu" data-idx="${i}" aria-expanded="${menuEjIdx === i}"
-          aria-controls="en-ed-menu-${i}" aria-label="Más opciones de ${esc(ej.nombre)}">${SVG_MAS}</button>
-      </div>
-      <div class="en-ed-menu" id="en-ed-menu-${i}"${menuEjIdx === i ? '' : ' hidden'}>
-        <button type="button" class="en-ed-op" data-acc="ed-subir" data-idx="${i}"${i === 0 ? ' aria-disabled="true"' : ''}>Subir</button>
-        <button type="button" class="en-ed-op" data-acc="ed-bajar" data-idx="${i}"${i === n - 1 ? ' aria-disabled="true"' : ''}>Bajar</button>
-        <button type="button" class="en-peligro en-ed-op-quitar" data-acc="ed-quitar" data-idx="${i}">Quitar</button>
-      </div>
-      <div class="en-ed-campos">
-        <div class="en-ed-campo">
-          <span class="en-ed-lbl" id="en-ed-series-${i}">Series</span>
-          <div class="en-ed-step" role="group" aria-labelledby="en-ed-series-${i}">
-            <button type="button" class="en-d-aj" data-acc="ed-series" data-idx="${i}" data-v="-1" aria-label="Una serie menos de ${esc(ej.nombre)}"${ej.series <= 1 ? ' aria-disabled="true"' : ''}>−</button>
-            <output class="en-ed-val" aria-live="polite">${ej.series}</output>
-            <button type="button" class="en-d-aj" data-acc="ed-series" data-idx="${i}" data-v="1" aria-label="Una serie más de ${esc(ej.nombre)}"${ej.series >= 10 ? ' aria-disabled="true"' : ''}>+</button>
+  const l = b.ejercicios;
+  const n = l.length;
+  const ts = tramos(l);
+  const tramoDe = i => ts.findIndex(([a, z]) => i >= a && i <= z);
+  const lev = asaLevantada;
+  const tarjeta = (ej, i) => {
+    const enGrupo = ej.grupo != null;
+    const t = tramoDe(i);
+    const inicioGrupo = enGrupo && ts[t][0] === i;
+    const tam = enGrupo ? ts[t][1] - ts[t][0] + 1 : 1;
+    const letra = letraGrupo(ej.grupo);
+    const etiqueta = enGrupo ? `${letra}${i - ts[t][0] + 1}` : '';
+    const sig = l[i + 1];
+    const unidoSig = enGrupo && sig?.grupo === ej.grupo;
+    const levantado = lev && (lev.tipo === 'grupo' ? lev.idx === t : lev.idx === i);
+    const nombre = esc(ej.nombre);
+    return `
+    <li class="en-ed-item${enGrupo ? ' en-ed-en-grupo' : ''}${unidoSig ? ' en-ed-unido' : ''}" data-idx="${i}">
+      ${inicioGrupo ? `<div class="en-ed-grupo-cab">
+        ${ts.length > 1 ? `<button type="button" class="en-ed-asa" data-acc="ed-asa-grupo" data-tramo="${t}" aria-pressed="${lev?.tipo === 'grupo' && lev.idx === t}"
+          aria-label="Mover la superserie ${letra} completa, posición ${t + 1} de ${ts.length}" aria-describedby="en-ed-asa-ayuda">${SVG_ASA}</button>` : ''}
+        <span class="en-ed-grupo-tit">Superserie ${letra} · ${tam} ejercicios</span>
+      </div>` : ''}
+      <div class="en-card en-ed-ej${levantado ? ' en-ed-levantada' : ''}">
+        <div class="en-ed-ej-top">
+          ${n > 1 ? `<button type="button" class="en-ed-asa" data-acc="ed-asa" data-idx="${i}" aria-pressed="${lev?.tipo === 'ej' && lev.idx === i}"
+            aria-label="Mover ${etiqueta ? etiqueta + ', ' : ''}${nombre}, posición ${i + 1} de ${n}" aria-describedby="en-ed-asa-ayuda">${SVG_ASA}</button>` : ''}
+          ${etiqueta ? `<span class="en-ed-etq" aria-hidden="true">${etiqueta}</span>` : ''}
+          <span class="en-card-nombre">${nombre}</span>
+          <button type="button" class="en-ed-mas" data-acc="ed-menu" data-idx="${i}" aria-expanded="${menuEjIdx === i}"
+            aria-controls="en-ed-menu-${i}" aria-label="Más opciones de ${nombre}">${SVG_MAS}</button>
+        </div>
+        <div class="en-ed-menu" id="en-ed-menu-${i}"${menuEjIdx === i ? '' : ' hidden'}>
+          <button type="button" class="en-ed-op" data-acc="ed-subir" data-idx="${i}"${i === 0 && !enGrupo ? ' aria-disabled="true"' : ''}>Subir</button>
+          <button type="button" class="en-ed-op" data-acc="ed-bajar" data-idx="${i}"${i === n - 1 && !enGrupo ? ' aria-disabled="true"' : ''}>Bajar</button>
+          ${enGrupo ? `
+          <button type="button" class="en-ed-op" data-acc="ed-subir-grupo" data-idx="${i}"${t === 0 ? ' aria-disabled="true"' : ''}>Subir superserie</button>
+          <button type="button" class="en-ed-op" data-acc="ed-bajar-grupo" data-idx="${i}"${t === ts.length - 1 ? ' aria-disabled="true"' : ''}>Bajar superserie</button>` : ''}
+          <button type="button" class="en-peligro en-ed-op-quitar" data-acc="ed-quitar" data-idx="${i}">Quitar</button>
+        </div>
+        <div class="en-ed-campos">
+          <div class="en-ed-campo">
+            <span class="en-ed-lbl" id="en-ed-series-${i}">Series</span>
+            <div class="en-ed-step" role="group" aria-labelledby="en-ed-series-${i}">
+              <button type="button" class="en-d-aj" data-acc="ed-series" data-idx="${i}" data-v="-1" aria-label="Una serie menos de ${nombre}"${ej.series <= 1 ? ' aria-disabled="true"' : ''}>−</button>
+              <output class="en-ed-val" aria-live="polite">${ej.series}</output>
+              <button type="button" class="en-d-aj" data-acc="ed-series" data-idx="${i}" data-v="1" aria-label="Una serie más de ${nombre}"${ej.series >= 10 ? ' aria-disabled="true"' : ''}>+</button>
+            </div>
+          </div>
+          <div class="en-ed-campo">
+            <span class="en-ed-lbl" id="en-ed-reps-${i}">Repeticiones</span>
+            <div class="en-ed-reps" role="group" aria-labelledby="en-ed-reps-${i}">
+              <input class="en-in en-ed-in" inputmode="numeric" maxlength="2" value="${ej.repsMin}"
+                data-campo="repsMin" data-idx="${i}" aria-label="Mínimo de repeticiones de ${nombre}">
+              <span aria-hidden="true">–</span>
+              <input class="en-in en-ed-in" inputmode="numeric" maxlength="2" value="${ej.repsMax}"
+                data-campo="repsMax" data-idx="${i}" aria-label="Máximo de repeticiones de ${nombre}">
+            </div>
           </div>
         </div>
-        <div class="en-ed-campo">
-          <span class="en-ed-lbl" id="en-ed-reps-${i}">Repeticiones</span>
-          <div class="en-ed-reps" role="group" aria-labelledby="en-ed-reps-${i}">
-            <input class="en-in en-ed-in" inputmode="numeric" maxlength="2" value="${ej.repsMin}"
-              data-campo="repsMin" data-idx="${i}" aria-label="Mínimo de repeticiones de ${esc(ej.nombre)}">
-            <span aria-hidden="true">–</span>
-            <input class="en-in en-ed-in" inputmode="numeric" maxlength="2" value="${ej.repsMax}"
-              data-campo="repsMax" data-idx="${i}" aria-label="Máximo de repeticiones de ${esc(ej.nombre)}">
-          </div>
-        </div>
       </div>
+      ${sig ? `<div class="en-ed-enlace">${unidoSig
+        ? `<button type="button" class="en-ed-unir en-ed-unir-on" data-acc="ed-separar" data-idx="${i}"
+            aria-label="Separar ${nombre} y ${esc(sig.nombre)}">${SVG_ESLABON}<span>Separar</span></button>`
+        : puedeUnir(l, i)
+          ? `<button type="button" class="en-ed-unir" data-acc="ed-unir" data-idx="${i}"
+              aria-label="Unir en superserie ${nombre} y ${esc(sig.nombre)}">${SVG_ESLABON}<span>Unir en superserie</span></button>`
+          : `<span class="en-ed-unir-lleno">${tamGrupo(l, ej) >= MAX_SUPERSERIE || tamGrupo(l, sig) >= MAX_SUPERSERIE
+              ? `Superserie llena · máximo ${MAX_SUPERSERIE}` : `Juntas pasarían de ${MAX_SUPERSERIE} ejercicios`}</span>`}</div>` : ''}
     </li>`;
+  };
   raiz.innerHTML = `
   <div class="en-wrap en-editor">
     <button type="button" class="en-volver" data-acc="ed-cancelar">${SVG_VOLVER}<span>Rutinas</span></button>
@@ -1127,11 +1257,11 @@ function pintarEditorRutina(raiz) {
     ${err.nombre ? `<p class="en-ed-err" id="en-ed-nombre-err">${esc(err.nombre)}</p>` : ''}
 
     <div class="en-sec-lbl">Ejercicios</div>
-    ${n > 1 ? '<p class="en-ed-pista">Mantén presionado un ejercicio para cambiar el orden.</p>' : ''}
+    ${n > 1 ? '<p class="en-ed-pista">Mantén presionado un ejercicio para cambiar el orden. «Unir en superserie» alterna dos o más ejercicios y descansas al terminar la ronda.</p>' : ''}
     ${n
-      ? `<ol class="en-ed-lista">${b.ejercicios.map(tarjeta).join('')}</ol>`
+      ? `<ol class="en-ed-lista">${l.map(tarjeta).join('')}</ol>`
       : '<p class="en-vacio">Todavía no hay ejercicios. Agrega el primero desde la biblioteca.</p>'}
-    <p class="en-sr" id="en-ed-asa-ayuda">Mantén presionada la tarjeta o arrastra este botón. Con teclado: Enter para levantar, flechas para mover, Enter para soltar y Escape para cancelar.</p>
+    <p class="en-sr" id="en-ed-asa-ayuda">Arrastra este botón o mantén presionada la tarjeta. Al tocarlo se abren Subir y Bajar. Con teclado: Enter para levantar, flechas para mover, Enter para soltar y Escape para cancelar.</p>
     <p class="en-sr" id="en-ed-anuncio" role="status"></p>
     ${err.ejercicios ? `<p class="en-ed-err" id="en-ed-ej-err">${esc(err.ejercicios)}</p>` : ''}
     <button type="button" class="en-btn en-btn-ghost en-ed-agregar" data-acc="ed-agregar"
@@ -1143,6 +1273,7 @@ function pintarEditorRutina(raiz) {
 
   const wrap = raiz.querySelector('.en-wrap');
   wrap.querySelector('#en-ed-nombre').addEventListener('input', e => {
+    soltarSinRepintar();
     b.nombre = e.target.value;
     b.sucio = true;
     if (erroresBorrador.nombre && b.nombre.trim()) {
@@ -1155,6 +1286,7 @@ function pintarEditorRutina(raiz) {
   // "1" camino de "12" no debe saltar a otro valor. Se corrigen en sitio, sin
   // repintar: el foco ya va camino del siguiente campo.
   wrap.querySelectorAll('.en-ed-in').forEach(inp => inp.addEventListener('change', () => {
+    soltarSinRepintar();
     const i = +inp.dataset.idx;
     b.ejercicios[i] = limpiarEjercicioRutina({ ...b.ejercicios[i], [inp.dataset.campo]: parseInt(inp.value, 10) });
     b.sucio = true;
@@ -1164,10 +1296,25 @@ function pintarEditorRutina(raiz) {
     const btn = e.target.closest('[data-acc]');
     if (!btn) return;
     const acc = btn.dataset.acc;
-    // El asa se maneja con arrastre (puntero) o con teclado (keydown); el
-    // click que deja un arrastre no debe hacer nada más.
-    if (acc === 'ed-asa') return;
-    if (acc !== 'ed-menu' && !acc.startsWith('ed-subir') && !acc.startsWith('ed-bajar')) asaLevantada = null;
+    const i = +btn.dataset.idx;
+    if (acc === 'ed-asa' || acc === 'ed-asa-grupo') {
+      // El click que deja un arrastre no hace nada. Un toque sin arrastrar
+      // (o el doble toque de VoiceOver, que no puede arrastrar ni usar
+      // flechas) abre «⋯» de ese ejercicio con Subir y Bajar a mano.
+      if (Date.now() - finArrastreMs < 700) return;
+      const k = acc === 'ed-asa' ? i : tramos(b.ejercicios)[+btn.dataset.tramo]?.[0];
+      if (k == null) return;
+      asaLevantada = null;
+      menuEjIdx = k;
+      render();
+      enfocar(...(acc === 'ed-asa'
+        ? [`[data-acc="ed-subir"][data-idx="${k}"]`, `[data-acc="ed-bajar"][data-idx="${k}"]`]
+        : [`[data-acc="ed-subir-grupo"][data-idx="${k}"]`, `[data-acc="ed-bajar-grupo"][data-idx="${k}"]`]),
+        `[data-acc="ed-menu"][data-idx="${k}"]`);
+      return;
+    }
+    asaLevantada = null;
+    const desactivado = btn.getAttribute('aria-disabled') === 'true';
     if (acc === 'ed-cancelar') {
       // Perder una rutina a medio armar por un toque en "volver" dolería:
       // con algo escrito, doble toque, igual que los demás descartes.
@@ -1183,37 +1330,78 @@ function pintarEditorRutina(raiz) {
       render();
       window.scrollTo(0, 0);
     } else if (acc === 'ed-menu') {
-      const i = +btn.dataset.idx;
       menuEjIdx = menuEjIdx === i ? null : i;
       render();
     } else if (acc === 'ed-subir' || acc === 'ed-bajar') {
-      if (btn.getAttribute('aria-disabled') === 'true') return;
-      const i = +btn.dataset.idx, j = acc === 'ed-subir' ? i - 1 : i + 1;
-      moverEnEditor(i, j);
-      menuEjIdx = j;
+      if (desactivado) return;
+      // Un paso: salta las superseries ajenas, nunca entra en ellas.
+      const r = pasoEjercicio(b.ejercicios, i, acc === 'ed-subir' ? -1 : 1);
+      if (!r.cambio) return;
+      b.ejercicios = r.ejercicios;
+      b.sucio = true;
+      menuEjIdx = r.idx;
       render();
       // El foco sigue al ejercicio movido, en el mismo botón, para poder
       // seguir subiendo o bajando sin buscarlo.
-      const sig = ctx.raiz.querySelector(`[data-acc="${acc}"][data-idx="${j}"]`);
-      (sig?.getAttribute('aria-disabled') === 'true' ? ctx.raiz.querySelector(`[data-acc="ed-menu"][data-idx="${j}"]`) : sig)?.focus();
-      anunciarPosicion(j);
-    } else if (acc === 'ed-quitar') {
-      b.ejercicios = normalizarGrupos(b.ejercicios.filter((_, k) => k !== +btn.dataset.idx));
+      enfocar(`[data-acc="${acc}"][data-idx="${r.idx}"]`, `[data-acc="ed-menu"][data-idx="${r.idx}"]`);
+      anunciarPaso(r);
+    } else if (acc === 'ed-subir-grupo' || acc === 'ed-bajar-grupo') {
+      if (desactivado) return;
+      const t = tramos(b.ejercicios).findIndex(([a, z]) => i >= a && i <= z);
+      const u = acc === 'ed-subir-grupo' ? t - 1 : t + 1;
+      const offset = i - tramos(b.ejercicios)[t][0];
+      moverTramoEnEditor(t, u);
+      const j = tramos(b.ejercicios)[u][0] + offset;
+      menuEjIdx = j;
+      render();
+      enfocar(`[data-acc="${acc}"][data-idx="${j}"]`, `[data-acc="ed-menu"][data-idx="${j}"]`);
+      anunciarTramo(u);
+    } else if (acc === 'ed-unir' || acc === 'ed-separar') {
+      const r = acc === 'ed-unir' ? unirConSiguiente(b.ejercicios, i) : separarDeSiguiente(b.ejercicios, i);
+      if (r.error) { anunciarEditor(r.error); return; }
+      b.ejercicios = r.ejercicios;
       b.sucio = true;
       menuEjIdx = null;
       render();
+      enfocar(`[data-acc="${acc === 'ed-unir' ? 'ed-separar' : 'ed-unir'}"][data-idx="${i}"]`, `[data-acc="ed-menu"][data-idx="${i}"]`);
+      const g = b.ejercicios[i].grupo;
+      anunciarEditor(acc === 'ed-unir'
+        ? `Superserie ${letraGrupo(g)}: ${b.ejercicios.filter(x => x.grupo === g).map(x => x.nombre).join(' y ')}.`
+        : `Separados: ${b.ejercicios[i].nombre} y ${b.ejercicios[i + 1].nombre}.`);
+    } else if (acc === 'ed-quitar') {
+      const quitado = b.ejercicios[i]?.nombre;
+      b.ejercicios = normalizarGrupos(b.ejercicios.filter((_, k) => k !== i));
+      b.sucio = true;
+      menuEjIdx = null;
+      render();
+      // El foco no se pierde: va al ejercicio que ocupa su lugar (o a Agregar).
+      enfocar(`[data-acc="ed-menu"][data-idx="${Math.min(i, b.ejercicios.length - 1)}"]`, '[data-acc="ed-agregar"]');
+      anunciarEditor(`${quitado} quitado.`);
     } else if (acc === 'ed-series') {
-      if (btn.getAttribute('aria-disabled') === 'true') return;
-      const i = +btn.dataset.idx;
+      if (desactivado) return;
       b.ejercicios[i] = limpiarEjercicioRutina({ ...b.ejercicios[i], series: b.ejercicios[i].series + (+btn.dataset.v) });
       b.sucio = true;
       render();
     } else if (acc === 'ed-guardar') guardarBorrador(wrap);
   });
   wrap.addEventListener('keydown', teclaAsa);
+  // Espacio activa los botones al soltar la tecla: en un asa ya actuó keydown.
+  wrap.addEventListener('keyup', e => { if (e.key === ' ' && e.target.closest?.('.en-ed-asa')) e.preventDefault(); });
+  // Si el foco sale del asa levantada (Tab, otro control), queda soltada donde está.
+  wrap.addEventListener('focusout', e => {
+    if (!asaLevantada || repintandoAsa) return;
+    const lev = asaLevantada;
+    const sigue = e.relatedTarget?.matches?.(lev.tipo === 'grupo'
+      ? `[data-acc="ed-asa-grupo"][data-tramo="${lev.idx}"]` : `[data-acc="ed-asa"][data-idx="${lev.idx}"]`);
+    if (!sigue) { soltarSinRepintar(); anunciarEditor('Soltado.'); }
+  });
   wrap.addEventListener('pointerdown', empezarPresion);
+  // Registrado ANTES de cualquier gesto y no pasivo: Safari de iPhone trata como
+  // pasivos los listeners de touch añadidos a mitad del gesto, y sin esto el
+  // arrastre se convertía en scroll. Solo bloquea mientras se arrastra.
+  wrap.addEventListener('touchmove', e => { if (arrastrando) e.preventDefault(); }, { passive: false });
   // Mantener presionado no debe abrir el menú contextual del sistema (Android).
-  wrap.addEventListener('contextmenu', e => { if (e.target.closest('.en-ed-ej') && !e.target.closest('input')) e.preventDefault(); });
+  wrap.addEventListener('contextmenu', e => { if (e.target.closest('.en-ed-item') && !e.target.closest('input')) e.preventDefault(); });
 }
 
 // ── Reordenar en el editor: teclado, menú y arrastre ─────────────────────────
@@ -1223,158 +1411,258 @@ function moverEnEditor(desde, hasta) {
   borrador.sucio = true;
 }
 
-// Un aviso para lectores de pantalla tras repintar: se escribe un instante
-// después para que la región viva nueva lo anuncie.
-function anunciarPosicion(i, prefijo = '') {
-  const ej = borrador?.ejercicios[i];
-  if (!ej) return;
-  const texto = `${prefijo}${ej.nombre}, posición ${i + 1} de ${borrador.ejercicios.length}.`;
-  setTimeout(() => { const el = ctx.raiz.querySelector('#en-ed-anuncio'); if (el) el.textContent = texto; }, 60);
+function moverTramoEnEditor(desde, hasta) {
+  borrador.ejercicios = moverTramo(borrador.ejercicios, desde, hasta);
+  borrador.sucio = true;
 }
 
-function focoAsa(i) { ctx.raiz.querySelector(`[data-acc="ed-asa"][data-idx="${i}"]`)?.focus(); }
-
-// Teclado (patrón de arrastrar y soltar accesible): Enter o Espacio levanta,
-// flechas mueven, Enter o Espacio suelta, Escape devuelve todo como estaba.
-function teclaAsa(e) {
-  const asa = e.target.closest?.('.en-ed-asa');
-  if (!asa) return;
-  const i = +asa.dataset.idx;
-  const tecla = e.key;
-  if (tecla === 'Enter' || tecla === ' ') {
-    e.preventDefault();
-    if (asaLevantada) {
-      const fin = asaLevantada.idx;
-      asaLevantada = null;
-      render(); focoAsa(fin);
-      anunciarPosicion(fin, 'Soltado. ');
-    } else {
-      asaLevantada = { idx: i, inicio: borrador.ejercicios.map(x => ({ ...x })), sucioAntes: !!borrador.sucio };
-      render(); focoAsa(i);
-      anunciarPosicion(i, 'Levantado. Usa las flechas para moverlo. ');
-    }
-  } else if ((tecla === 'ArrowUp' || tecla === 'ArrowDown') && asaLevantada) {
-    e.preventDefault();
-    const j = tecla === 'ArrowUp' ? i - 1 : i + 1;
-    if (j < 0 || j >= borrador.ejercicios.length) return;
-    moverEnEditor(i, j);
-    asaLevantada.idx = j;
-    render(); focoAsa(j);
-    anunciarPosicion(j);
-  } else if (tecla === 'Escape' && asaLevantada) {
-    e.preventDefault();
-    const { inicio, sucioAntes } = asaLevantada;
-    const original = inicio.findIndex(x => x.idEjercicio === borrador.ejercicios[i].idEjercicio);
-    borrador.ejercicios = inicio;
-    borrador.sucio = sucioAntes;
-    asaLevantada = null;
-    render(); focoAsa(Math.max(0, original));
-    anunciarPosicion(Math.max(0, original), 'Cancelado. ');
+// Enfoca el primer selector que exista y no esté deshabilitado.
+function enfocar(...selectores) {
+  for (const sel of selectores) {
+    const el = ctx.raiz.querySelector(sel);
+    if (el && el.getAttribute('aria-disabled') !== 'true') { el.focus(); return; }
   }
 }
 
-// Arrastre con el dedo o el ratón (Pointer Events, sin librerías). Desde el
-// asa empieza al mover; desde la tarjeta, tras mantenerla presionada 400 ms
-// sin moverse más de 8 px (si se mueve antes, era scroll). Mientras se
-// arrastra solo se anima transform: las demás tarjetas se apartan en sitio.
-const PRESION_MS = 400, UMBRAL_PX = 8, BORDE_AUTOSCROLL = 90;
+// Suelta lo levantado con teclado sin repintar (el foco está en un campo).
+function soltarSinRepintar() {
+  if (!asaLevantada) return;
+  asaLevantada = null;
+  ctx.raiz.querySelectorAll('.en-ed-levantada').forEach(x => x.classList.remove('en-ed-levantada'));
+  ctx.raiz.querySelectorAll('.en-ed-asa[aria-pressed="true"]').forEach(x => x.setAttribute('aria-pressed', 'false'));
+}
+
+// Un aviso para lectores de pantalla tras repintar: se escribe un instante
+// después para que la región viva nueva lo anuncie.
+function anunciarEditor(texto) {
+  setTimeout(() => { const el = ctx.raiz.querySelector('#en-ed-anuncio'); if (el) el.textContent = texto; }, 60);
+}
+
+function anunciarPosicion(i, prefijo = '') {
+  const ej = borrador?.ejercicios[i];
+  if (ej) anunciarEditor(`${prefijo}${ej.nombre}, posición ${i + 1} de ${borrador.ejercicios.length}.`);
+}
+
+function anunciarPaso(r, prefijo = '') {
+  const ej = borrador?.ejercicios[r.idx];
+  if (!ej) return;
+  if (r.cambio === 'salio') anunciarEditor(`${prefijo}${ej.nombre} sale de la superserie.`);
+  else if (r.cambio === 'salto') anunciarEditor(`${prefijo}${ej.nombre} pasa la superserie, posición ${r.idx + 1} de ${borrador.ejercicios.length}.`);
+  else anunciarPosicion(r.idx, prefijo);
+}
+
+function anunciarTramo(t, prefijo = '') {
+  const ts = tramos(borrador?.ejercicios || []);
+  const ej = borrador?.ejercicios[ts[t]?.[0]];
+  if (!ej) return;
+  const nombre = ej.grupo != null ? `Superserie ${letraGrupo(ej.grupo)}` : ej.nombre;
+  anunciarEditor(`${prefijo}${nombre}, posición ${t + 1} de ${ts.length}.`);
+}
+
+// Teclado (patrón de arrastrar y soltar accesible): Enter o Espacio levanta,
+// flechas mueven, Enter o Espacio suelta, Escape devuelve el orden como estaba.
+// Con un ejercicio, cada flecha es un paso (pasoEjercicio: salta superseries
+// ajenas). El asa de la cabecera mueve la superserie entera, tramo a tramo.
+function teclaAsa(e) {
+  const asa = e.target.closest?.('.en-ed-asa');
+  if (!asa || !borrador) return;
+  const grupo = asa.dataset.acc === 'ed-asa-grupo';
+  const tipo = grupo ? 'grupo' : 'ej';
+  const i = grupo ? +asa.dataset.tramo : +asa.dataset.idx;
+  const total = grupo ? tramos(borrador.ejercicios).length : borrador.ejercicios.length;
+  const repintarYEnfocar = (k, t = tipo) => {
+    repintandoAsa = true;
+    render();
+    repintandoAsa = false;
+    ctx.raiz.querySelector(t === 'grupo' ? `[data-acc="ed-asa-grupo"][data-tramo="${k}"]` : `[data-acc="ed-asa"][data-idx="${k}"]`)?.focus();
+  };
+  const decir = (k, pre, t = tipo) => t === 'grupo' ? anunciarTramo(k, pre) : anunciarPosicion(k, pre);
+  const lev = asaLevantada;
+  const esLaLevantada = lev && lev.tipo === tipo && lev.idx === i;
+  const tecla = e.key;
+  if (tecla === 'Enter' || tecla === ' ') {
+    e.preventDefault();
+    if (lev) {
+      asaLevantada = null;
+      repintarYEnfocar(lev.idx, lev.tipo);
+      decir(lev.idx, 'Soltado. ', lev.tipo);
+    } else {
+      if (total < 2) return;
+      asaLevantada = { tipo, idx: i, idxInicio: i, inicio: borrador.ejercicios.map(x => ({ ...x })), sucioAntes: !!borrador.sucio };
+      menuEjIdx = null;
+      repintarYEnfocar(i);
+      decir(i, 'Levantado. Usa las flechas para moverlo. ');
+    }
+  } else if ((tecla === 'ArrowUp' || tecla === 'ArrowDown') && esLaLevantada) {
+    e.preventDefault();
+    const dir = tecla === 'ArrowUp' ? -1 : 1;
+    if (grupo) {
+      const j = i + dir;
+      if (j < 0 || j >= total) return;
+      moverTramoEnEditor(i, j);
+      asaLevantada.idx = j;
+      repintarYEnfocar(j);
+      decir(j);
+    } else {
+      const r = pasoEjercicio(borrador.ejercicios, i, dir);
+      if (!r.cambio) return;
+      borrador.ejercicios = r.ejercicios;
+      borrador.sucio = true;
+      asaLevantada.idx = r.idx;
+      repintarYEnfocar(r.idx);
+      anunciarPaso(r);
+    }
+  } else if (tecla === 'Escape' && esLaLevantada) {
+    e.preventDefault();
+    const { inicio, sucioAntes, idxInicio } = lev;
+    borrador.ejercicios = inicio;
+    borrador.sucio = sucioAntes;
+    asaLevantada = null;
+    repintarYEnfocar(idxInicio);
+    decir(idxInicio, 'Cancelado. ');
+  }
+}
+
+// Arrastre con el dedo o el ratón (Pointer Events, sin librerías). Desde un
+// asa empieza al mover; desde la tarjeta (o la cabecera de una superserie),
+// tras mantenerla presionada 400 ms sin moverse más de 8 px (si se mueve
+// antes, era scroll). Mientras se arrastra solo se anima transform.
+const PRESION_MS = 400, UMBRAL_PX = 8, BORDE_AUTOSCROLL = 90, ALTO_TABBAR = 64;
 
 function empezarPresion(e) {
-  if (e.button !== 0 || !borrador || borrador.ejercicios.length < 2) return;
-  const li = e.target.closest('.en-ed-ej');
+  if (e.button !== 0 || !borrador || borrador.ejercicios.length < 2 || arrastrando) return;
+  const li = e.target.closest('.en-ed-item');
   if (!li) return;
-  const desdeAsa = !!e.target.closest('.en-ed-asa');
-  if (!desdeAsa && e.target.closest('button, input, .en-ed-menu')) return;
-  const p = { idx: +li.dataset.idx, li, id: e.pointerId, x0: e.clientX, y0: e.clientY, ultimoY: e.clientY, timer: null };
+  const asa = e.target.closest('.en-ed-asa');
+  const enCabecera = !!e.target.closest('.en-ed-grupo-cab');
+  if (!asa && e.target.closest('button, input, .en-ed-menu, .en-ed-enlace')) return;
+  const grupo = asa ? asa.dataset.acc === 'ed-asa-grupo' : enCabecera;
+  const idx = +li.dataset.idx;
+  const ts = tramos(borrador.ejercicios);
+  if (grupo && ts.length < 2) return;
+  const u = grupo ? ts.findIndex(([a, z]) => idx >= a && idx <= z) : idx;
+  const p = { grupo, u, li, id: e.pointerId, x0: e.clientX, y0: e.clientY, ultimoY: e.clientY, timer: null };
   const limpiar = () => {
     clearTimeout(p.timer);
     document.removeEventListener('pointermove', mover);
     document.removeEventListener('pointerup', limpiar);
     document.removeEventListener('pointercancel', limpiar);
   };
+  // Si la pantalla se repintó mientras se mantenía presionado (otro toque,
+  // un render), esa presión ya no vale: nunca levanta otra tarjeta.
+  const vigente = () => !!borrador && p.li.isConnected && !arrastrando;
   const mover = ev => {
     if (ev.pointerId !== p.id) return;
     p.ultimoY = ev.clientY;
-    const lejos = Math.hypot(ev.clientX - p.x0, ev.clientY - p.y0) > (desdeAsa ? 3 : UMBRAL_PX);
-    if (!lejos) return;
+    if (Math.hypot(ev.clientX - p.x0, ev.clientY - p.y0) <= (asa ? 3 : UMBRAL_PX)) return;
     limpiar();
-    if (desdeAsa) iniciarArrastre(p, ev.clientY);   // desde la tarjeta, moverse antes de tiempo = scroll
+    if (asa && vigente()) iniciarArrastre(p, ev.clientY);   // desde la tarjeta, moverse antes de tiempo = scroll
   };
   document.addEventListener('pointermove', mover);
   document.addEventListener('pointerup', limpiar);
   document.addEventListener('pointercancel', limpiar);
-  if (!desdeAsa) p.timer = setTimeout(() => { limpiar(); iniciarArrastre(p, p.ultimoY); }, PRESION_MS);
+  if (!asa) p.timer = setTimeout(() => { limpiar(); if (vigente()) iniciarArrastre(p, p.ultimoY); }, PRESION_MS);
 }
 
 function iniciarArrastre(p, clientY) {
-  const lista = [...ctx.raiz.querySelectorAll('.en-ed-ej')];
+  const items = [...ctx.raiz.querySelectorAll('.en-ed-item')];
+  const ol = ctx.raiz.querySelector('.en-ed-lista');
+  // Unidades que se mueven: cada ejercicio, o cada tramo si se arrastra una
+  // superserie entera (así nunca cae dentro de otra).
+  const rangos = p.grupo ? tramos(borrador.ejercicios) : items.map((_, k) => [k, k]);
+  const unidades = rangos.map(([a, z]) => items.slice(a, z + 1));
+  if (!unidades[p.u]?.length) return;
   const desdeScroll = window.scrollY;
-  const cajas = lista.map(el => { const r = el.getBoundingClientRect(); return { top: r.top + desdeScroll, alto: r.height }; });
-  const hueco = lista.length > 1 ? cajas[1].top - (cajas[0].top + cajas[0].alto) : 10;
-  // Límites: la tarjeta no sale de la zona de la lista y la página no se
-  // desplaza más allá de su final real. Sin esto, la tarjeta movida alargaba
-  // la página y el autoscroll no paraba nunca.
-  const c0 = cajas[p.idx], ultima = cajas[cajas.length - 1];
+  const cajas = unidades.map(us => {
+    const r1 = us[0].getBoundingClientRect(), r2 = us[us.length - 1].getBoundingClientRect();
+    return { top: r1.top + desdeScroll, alto: r2.bottom - r1.top };
+  });
   const centroDe = c => c.top + c.alto / 2;
-  // …pero siempre puede llevar su centro hasta el del primero y el del último.
+  const c0 = cajas[p.u], ultima = cajas[cajas.length - 1];
+  // Lo que ocupa la unidad levantada (con su hueco): lo que se apartan las demás.
+  const paso = p.u + 1 < cajas.length ? cajas[p.u + 1].top - c0.top : c0.alto + (p.u > 0 ? c0.top - (cajas[p.u - 1].top + cajas[p.u - 1].alto) : 0);
+  // Límites: la unidad no sale de la zona de la lista y la página no se
+  // desplaza más allá de su final real (si no, la tarjeta movida alargaba la
+  // página y el autoscroll no paraba nunca).
   const minDy = Math.min(cajas[0].top - c0.top, centroDe(cajas[0]) - centroDe(c0));
   const maxDy = Math.max(ultima.top + ultima.alto - c0.alto - c0.top, centroDe(ultima) - centroDe(c0));
   const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-  const a = { ...p, lista, cajas, hueco, y0Pagina: p.y0 + desdeScroll, hasta: p.idx, yCliente: clientY, raf: 0 };
+  // El autoscroll solo se arma cuando el dedo se mueve de verdad: levantar
+  // una tarjeta que ya está cerca del borde no debe desplazar nada sola.
+  const a = { y0Pagina: p.y0 + desdeScroll, yInicio: clientY, hasta: p.u, yCliente: clientY, raf: 0, armado: false };
   menuEjIdx = null;
-  a.li.classList.add('en-ed-arrastrando');
-  lista.forEach((el, k) => { if (k !== a.idx) el.classList.add('en-ed-desplazable'); });
+  arrastrando = true;
+  ol?.classList.add('en-ed-lista-arrastre');
+  unidades[p.u].forEach(el => el.classList.add('en-ed-arrastrando'));
+  unidades.forEach((us, k) => { if (k !== p.u) us.forEach(el => el.classList.add('en-ed-desplazable')); });
   navigator.vibrate?.(12);   // Android; Safari de iPhone no vibra desde la web
   const pintar = () => {
     const dy = Math.min(maxDy, Math.max(minDy, a.yCliente + window.scrollY - a.y0Pagina));
-    a.li.style.transform = `translateY(${dy}px) scale(1.02)`;
-    const c = a.cajas[a.idx];
-    const centro = c.top + c.alto / 2 + dy;
-    let hasta = a.idx;
-    for (let k = a.idx + 1; k < cajas.length; k++) if (centro >= centroDe(cajas[k])) hasta = k;
-    for (let k = a.idx - 1; k >= 0; k--) if (centro <= centroDe(cajas[k])) hasta = k;
+    unidades[p.u].forEach(el => { el.style.transform = `translateY(${dy}px) scale(1.02)`; });
+    // Cuenta el borde que va delante: bajando, el de abajo; subiendo, el de
+    // arriba. Así una superserie alta cambia de sitio con su vecino al cubrir
+    // la mitad de ese vecino, no la mitad de sí misma.
+    let hasta = p.u;
+    if (dy > 0) {
+      const borde = c0.top + c0.alto + dy;
+      for (let k = p.u + 1; k < cajas.length; k++) if (borde >= centroDe(cajas[k])) hasta = k;
+    } else if (dy < 0) {
+      const borde = c0.top + dy;
+      for (let k = p.u - 1; k >= 0; k--) if (borde <= centroDe(cajas[k])) hasta = k;
+    }
     a.hasta = hasta;
-    const paso = c.alto + a.hueco;
-    lista.forEach((el, k) => {
-      if (k === a.idx) return;
-      const t = a.idx < hasta && k > a.idx && k <= hasta ? -paso : hasta < a.idx && k >= hasta && k < a.idx ? paso : 0;
-      el.style.transform = t ? `translateY(${t}px)` : '';
+    unidades.forEach((us, k) => {
+      if (k === p.u) return;
+      const t = p.u < hasta && k > p.u && k <= hasta ? -paso : hasta < p.u && k >= hasta && k < p.u ? paso : 0;
+      us.forEach(el => { el.style.transform = t ? `translateY(${t}px)` : ''; });
     });
   };
-  // Cerca de los bordes (o de la tabbar) la página se desplaza sola.
+  // Cerca de los bordes (o de la tabbar) la página se desplaza sola. La zona
+  // se achica en pantallas bajas (12 % del alto como máximo).
   const autoscroll = () => {
-    const abajo = window.innerHeight - BORDE_AUTOSCROLL - 64;
-    let v = a.yCliente < BORDE_AUTOSCROLL ? -Math.ceil((BORDE_AUTOSCROLL - a.yCliente) / 6)
+    const zona = Math.min(BORDE_AUTOSCROLL, Math.round(window.innerHeight * 0.12));
+    const abajo = window.innerHeight - zona - ALTO_TABBAR;
+    let v = !a.armado ? 0
+      : a.yCliente < zona ? -Math.ceil((zona - a.yCliente) / 6)
       : a.yCliente > abajo ? Math.ceil((a.yCliente - abajo) / 6) : 0;
     if ((v > 0 && window.scrollY >= maxScroll) || (v < 0 && window.scrollY <= 0)) v = 0;
     if (v) { window.scrollTo(0, Math.min(maxScroll, Math.max(0, window.scrollY + v))); pintar(); }
     a.raf = requestAnimationFrame(autoscroll);
   };
-  const mover = ev => { if (ev.pointerId !== a.id) return; a.yCliente = ev.clientY; pintar(); };
-  // Sin esto, Safari de iPhone convierte el arrastre en scroll a mitad de gesto.
-  const sinScroll = ev => ev.preventDefault();
+  const mover = ev => {
+    if (ev.pointerId !== p.id) return;
+    a.yCliente = ev.clientY;
+    if (Math.abs(ev.clientY - a.yInicio) > UMBRAL_PX) a.armado = true;
+    pintar();
+  };
   const terminar = (aplicar) => {
     cancelAnimationFrame(a.raf);
     document.removeEventListener('pointermove', mover);
     document.removeEventListener('pointerup', soltar);
     document.removeEventListener('pointercancel', cancelar);
     document.removeEventListener('keydown', escape, true);
-    document.removeEventListener('touchmove', sinScroll);
-    lista.forEach(el => { el.style.transform = ''; el.classList.remove('en-ed-desplazable', 'en-ed-arrastrando'); });
-    if (aplicar && a.hasta !== a.idx) {
-      moverEnEditor(a.idx, a.hasta);
+    arrastrando = false;
+    finArrastreMs = Date.now();
+    // El navegador sintetiza un click al soltar y lo manda a lo que quede bajo
+    // el dedo (p. ej. «Unir en superserie»): ese click no debe hacer nada.
+    const tragarClick = ev => { ev.preventDefault(); ev.stopPropagation(); };
+    document.addEventListener('click', tragarClick, true);
+    setTimeout(() => document.removeEventListener('click', tragarClick, true), 500);
+    ol?.classList.remove('en-ed-lista-arrastre');
+    items.forEach(el => { el.style.transform = ''; el.classList.remove('en-ed-desplazable', 'en-ed-arrastrando'); });
+    if (aplicar && a.hasta !== p.u) {
+      if (p.grupo) moverTramoEnEditor(p.u, a.hasta); else moverEnEditor(p.u, a.hasta);
       render();
-      anunciarPosicion(a.hasta, 'Movido. ');
+      if (p.grupo) anunciarTramo(a.hasta, 'Movida. '); else anunciarPosicion(a.hasta, 'Movido. ');
     }
   };
-  const soltar = ev => { if (ev.pointerId === a.id) terminar(true); };
-  const cancelar = ev => { if (ev.pointerId === a.id) terminar(false); };
+  const soltar = ev => { if (ev.pointerId === p.id) terminar(true); };
+  const cancelar = ev => { if (ev.pointerId === p.id) terminar(false); };
   const escape = ev => { if (ev.key === 'Escape') { ev.preventDefault(); terminar(false); } };
   document.addEventListener('pointermove', mover);
   document.addEventListener('pointerup', soltar);
   document.addEventListener('pointercancel', cancelar);
   document.addEventListener('keydown', escape, true);
-  document.addEventListener('touchmove', sinScroll, { passive: false });
   pintar();
   a.raf = requestAnimationFrame(autoscroll);
 }
@@ -1411,8 +1699,12 @@ function agregarEjercicioARutina(id, nombre) {
   if (erroresBorrador.ejercicios) delete erroresBorrador.ejercicios;
   modoBiblioteca = null;
   render();
-  // El ejercicio recién agregado queda a la vista, no al fondo de la página.
-  ctx.raiz.querySelector(`.en-ed-ej[data-idx="${borrador.ejercicios.length - 1}"]`)?.scrollIntoView({ block: 'center' });
+  // El ejercicio recién agregado queda a la vista (no al fondo de la página),
+  // con el foco en su «⋯» y un aviso para lectores de pantalla.
+  const k = borrador.ejercicios.length - 1;
+  ctx.raiz.querySelector(`.en-ed-item[data-idx="${k}"]`)?.scrollIntoView({ block: 'center' });
+  ctx.raiz.querySelector(`[data-acc="ed-menu"][data-idx="${k}"]`)?.focus({ preventScroll: true });
+  anunciarEditor(`${nombre} agregado, posición ${k + 1} de ${k + 1}.`);
 }
 
 // ── Biblioteca (pestaña y overlay "agregar a la sesión") ─────────────────────

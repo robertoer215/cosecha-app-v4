@@ -35,6 +35,7 @@
 
 ### Reglas con superseries
 - Arrastrar mueve **un** ejercicio. Si lo sueltas entre dos ejercicios de una superserie, se une a ella. Si lo sueltas fuera, queda suelto.
+- Un paso con «⋯ › Subir/Bajar» o con las flechas **nunca** mete el ejercicio en otra superserie: la salta entera. Desde el borde de la suya, el primer paso lo saca de ella.
 - Una superserie **entera** se mueve arrastrando su cabecera («Superserie A»).
 
 ### Técnica
@@ -188,7 +189,7 @@ Cada fase se publica por separado, con su OK.
 | Fase | Qué | Riesgo |
 |---|---|---|
 | **1** ✅ | Reordenar: asa, mantener presionado, teclado y menú Subir/Bajar (publicada el 30-oct) | Bajo |
-| **2** | Superseries en el editor: Unir/Separar, A1/A2 y arrastrar la cabecera. Reusa la sesión en vivo de hoy | Bajo |
+| **2** ✅ | Superseries en el editor: Unir/Separar, A1/A2 y arrastrar la cabecera. Reusa la sesión en vivo de hoy (publicada el 30-oct, tras revisión adversarial) | Bajo |
 | **3** | Técnicas, parte de datos y editor: píldoras, hoja y `plan`. Corrige volumen y récords | Medio |
 | **4** | Técnicas, parte de la sesión en vivo: micro-descanso, mini-series, bajadas, historial y resumen | Medio-alto |
 
