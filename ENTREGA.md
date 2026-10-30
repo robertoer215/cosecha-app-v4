@@ -62,6 +62,14 @@ Los datos del usuario viven SOLO en el dispositivo (`localStorage`, esquema vers
 
 «Busco tortilla y salen tacos; pollo y sale un guisado». Antes el orden era alfabético dentro de cada grupo y lo raro salía primero. Ahora cada resultado se puntúa (nombre que empieza por lo buscado, variante de uso diario en México, ya cocinado, nombre simple; variantes raras restan) y los resultados van en tres secciones: **Alimentos → Platillos → Del menú COSECHA**, con «Ver N más». Verificado en la URL pública: «tortilla» abre con la de maíz y los tacos van a Platillos; «pollo» abre con pechuga, el mole y el guisado en Platillos.
 
+## Entrenar: rutinas primero, crear rutina y descanso al empezar (pedido de Roberto, 30-oct)
+
+- Entrenar abre siempre en **Rutinas**; orden Rutinas · Progreso · Historial · Biblioteca.
+- **Crear rutina** (acción principal): editor con nombre, ejercicios de la Biblioteca, series (1–10) y repeticiones (rango); se guarda en «Tus rutinas» como rutina de un día. «Empezar sesión vacía» queda como secundaria.
+- Al empezar **cualquier** rutina se elige el descanso entre series (1 min, 1 min 30 s, 2 min, 3 min o «lo que sugiere la rutina» si varía por ejercicio); se aplica a todos los ejercicios y se sigue ajustando por ejercicio en la sesión.
+- Sesión en vivo: los ±15 van a la derecha del círculo; círculo, tarjeta y botón no se mueven entre activo y descanso (medido a 375 y 320 px).
+- 193 tests. Pendiente: editar una rutina ya creada y rutinas de varios días.
+
 ## Backlog de pulido (S3 de la ronda 5, no bloquean el lanzamiento)
 
 - qrcodejs desde cdnjs sin SRI (heredado de Pedir).
