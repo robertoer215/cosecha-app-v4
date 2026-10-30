@@ -74,6 +74,8 @@ Los datos del usuario viven SOLO en el dispositivo (`localStorage`, esquema vers
 ## Rutinas avanzadas (arquitectura aprobada el 30-oct: `docs/arquitectura-rutinas-avanzadas.md`)
 
 - **Fase 1 — Reordenar (publicada):** asa ≡ (arrastrar), mantener presionada la tarjeta 400 ms (umbral 8 px contra el scroll), autoscroll acotado, teclado (Enter/flechas/Escape con anuncios) y menú «⋯» con Subir, Bajar y Quitar. Las superseries se conservan al reordenar (`moverEjercicio`, `normalizarGrupos`, tope de 4). 201 tests. Pendiente de verificar en iPhone real el gesto largo.
+- **Fase 2 — Superseries (publicada):** «Unir en superserie» / «Separar» entre ejercicios (2 a 4; «Superserie llena» o «Juntas pasarían de 4»), barra continua, cabecera «Superserie A · N ejercicios», etiquetas A1/A2; la superserie entera se mueve arrastrando su cabecera, con «⋯» (Subir/Bajar superserie) o con teclado. La sesión en vivo ya las alternaba (descanso al cerrar la ronda).
+- **Revisión adversarial de las fases 1 y 2** (4 ángulos que buscan + 4 que refutan): 20 hallazgos confirmados, 0 S0, todos arreglados y verificados en navegador. Los principales: un paso con «⋯»/flechas ya no mete un ejercicio en otra superserie (`pasoEjercicio`: la salta; desde el borde, primero sale); el autoscroll solo se arma si el dedo se mueve; el click que sigue a un arrastre se descarta; el `touchmove` no pasivo se registra antes del gesto (Safari de iPhone); umbral de cambio por el borde delantero (superseries altas); tocar ≡ abre Subir/Bajar (VoiceOver); foco y avisos tras quitar/agregar; Escape solo deshace movimientos. 211 tests.
 
 ## Backlog de pulido (S3 de la ronda 5, no bloquean el lanzamiento)
 

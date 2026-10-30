@@ -9,7 +9,8 @@ import { epley1RM, volumenSesion, seriesPorGrupo, ultimaVez,
          recordsEjercicio, prsPorEjercicio, estadisticasPeriodo, cambioPct, PESTANAS,
          OPCIONES_DESCANSO, etiquetaDescanso, rangoDescanso, ejercicioDeRutina, limpiarEjercicioRutina,
          validarBorrador, rutinaDesdeBorrador, borradorDesdeRutina,
-         moverEjercicio, normalizarGrupos, MAX_SUPERSERIE } from '../js/entreno.js';
+         moverEjercicio, normalizarGrupos, MAX_SUPERSERIE,
+         letraGrupo, tramos, puedeUnir, unirConSiguiente, separarDeSiguiente, moverTramo, pasoEjercicio } from '../js/entreno.js';
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -385,7 +386,7 @@ const RUTINA_PROPIA = {
 test('editar sin cambios devuelve la MISMA rutina (superseries, otros días, notas e id)', () => {
   const b = borradorDesdeRutina(RUTINA_PROPIA);
   assert.equal(b.id, 'R-7');
-  assert.deepEqual(b.ejercicios.map(e => e.grupo), [null, 1, 1]);
+  assert.deepEqual(b.ejercicios.map(e => e.grupo), [null, 0, 0]);   // renumerada: es la superserie A
   assert.deepEqual(rutinaDesdeBorrador(b, 'R-otro'), RUTINA_PROPIA);
 });
 
@@ -451,4 +452,89 @@ test('moverEjercicio: una superserie llena (4) no admite un quinto', () => {
 
 test('normalizarGrupos: renumera por orden y quita superseries de un solo ejercicio', () => {
   assert.equal(grupos(normalizarGrupos([er('a', 7), er('b', 7), er('c', 3), er('d'), er('e', 9), er('f', 9)])), '00··11');
+});
+
+// ── Superseries en el editor ─────────────────────────────────────────────────
+
+test('letraGrupo y tramos: A, B…; cada superserie es un tramo y cada suelto otro', () => {
+  assert.deepEqual([letraGrupo(0), letraGrupo(1), letraGrupo(null)], ['A', 'B', '']);
+  assert.deepEqual(tramos([er('a', 0), er('b', 0), er('c'), er('d', 1), er('e', 1)]), [[0, 1], [2, 2], [3, 4]]);
+});
+
+test('unirConSiguiente: dos sueltos forman superserie; un suelto se suma; dos superseries se funden', () => {
+  assert.equal(grupos(unirConSiguiente([er('a'), er('b'), er('c')], 0).ejercicios), '00·');
+  assert.equal(grupos(unirConSiguiente([er('a', 0), er('b', 0), er('c')], 1).ejercicios), '000');
+  assert.equal(grupos(unirConSiguiente([er('a'), er('b', 0), er('c', 0)], 0).ejercicios), '000');
+  assert.equal(grupos(unirConSiguiente([er('a', 0), er('b', 0), er('c', 1), er('d', 1)], 1).ejercicios), '0000');
+});
+
+test('unirConSiguiente: nunca pasa de 4; el último no tiene siguiente', () => {
+  const llena = [er('a', 0), er('b', 0), er('c', 0), er('d', 0), er('x')];
+  assert.equal(puedeUnir(llena, 3), false);
+  const r = unirConSiguiente(llena, 3);
+  assert.match(r.error, /máximo 4/);
+  assert.equal(grupos(r.ejercicios), '0000·');
+  assert.equal(puedeUnir([er('a', 0), er('b', 0), er('c', 1), er('d', 1), er('e', 1)], 1), false);   // 2 + 3
+  assert.ok(unirConSiguiente([er('a'), er('b')], 1).error);
+});
+
+test('separarDeSiguiente: parte la superserie; los que quedan solos dejan de serlo', () => {
+  assert.equal(grupos(separarDeSiguiente([er('a', 0), er('b', 0), er('c', 0), er('d', 0)], 1).ejercicios), '0011');
+  assert.equal(grupos(separarDeSiguiente([er('a', 0), er('b', 0), er('c', 0)], 0).ejercicios), '·00');
+  assert.equal(grupos(separarDeSiguiente([er('a', 0), er('b', 0)], 0).ejercicios), '··');
+  assert.equal(grupos(separarDeSiguiente([er('a'), er('b')], 0).ejercicios), '··');   // nada que separar
+});
+
+test('moverTramo: la superserie se mueve entera y nunca cae dentro de otra', () => {
+  const l = [er('x'), er('a1', 0), er('a2', 0), er('b1', 1), er('b2', 1), er('y')];
+  const r = moverTramo(l, 1, 3);               // A al final
+  assert.equal(ids(r), 'x b1 b2 y a1 a2');
+  assert.equal(grupos(r), '·00·11');
+  const r2 = moverTramo(l, 2, 0);              // B al principio
+  assert.equal(ids(r2), 'b1 b2 x a1 a2 y');
+  assert.equal(grupos(r2), '00·11·');
+});
+
+test('una rutina con superseries hechas en el editor llega a la sesión como bloques', () => {
+  const b = { nombre: 'Torso', ejercicios: unirConSiguiente([er('press'), er('remo'), er('curl')], 0).ejercicios };
+  const r = rutinaDesdeBorrador(b, 'R-1');
+  assert.deepEqual(r.dias[0].bloques.map(bl => bl.map(x => x.idEjercicio)), [['press', 'remo'], ['curl']]);
+});
+
+// ── Un paso con el menú o las flechas (revisión adversarial, 30-oct) ────────
+
+test('pasoEjercicio: un suelto SALTA la superserie entera, nunca entra en ella', () => {
+  const l = [er('a1', 0), er('a2', 0), er('x')];
+  const r = pasoEjercicio(l, 2, -1);
+  assert.equal(ids(r.ejercicios), 'x a1 a2');
+  assert.equal(grupos(r.ejercicios), '·00');
+  assert.deepEqual([r.idx, r.cambio], [0, 'salto']);
+  const llena = [er('x'), er('a', 0), er('b', 0), er('c', 0), er('d', 0)];
+  const r2 = pasoEjercicio(llena, 0, 1);
+  assert.equal(ids(r2.ejercicios), 'a b c d x');
+  assert.equal(grupos(r2.ejercicios), '0000·');      // la llena sigue intacta
+  assert.equal(r2.idx, 4);
+});
+
+test('pasoEjercicio: dentro de su superserie cambia de sitio; en el borde, primero sale', () => {
+  const l = [er('a1', 0), er('a2', 0), er('a3', 0), er('x')];
+  const d = pasoEjercicio(l, 0, 1);
+  assert.equal(ids(d.ejercicios), 'a2 a1 a3 x');
+  assert.equal(grupos(d.ejercicios), '000·');
+  const s1 = pasoEjercicio(l, 2, 1);                 // a3 en el borde de abajo
+  assert.equal(ids(s1.ejercicios), 'a1 a2 a3 x');
+  assert.equal(grupos(s1.ejercicios), '00··');
+  assert.deepEqual([s1.idx, s1.cambio], [2, 'salio']);
+  const s2 = pasoEjercicio([er('a1', 0), er('a2', 0)], 0, -1);   // de 2 a 1: la superserie se deshace
+  assert.equal(grupos(s2.ejercicios), '··');
+});
+
+test('pasoEjercicio: dos sueltos se intercambian; fuera de los extremos no hace nada', () => {
+  assert.equal(ids(pasoEjercicio([er('a'), er('b')], 0, 1).ejercicios), 'b a');
+  assert.equal(pasoEjercicio([er('a'), er('b')], 0, -1).cambio, null);
+});
+
+test('borradorDesdeRutina: la primera superserie de una rutina guardada es la A', () => {
+  const r = { id: 'R-1', nombre: 'X', dias: [{ nombre: 'Día 1', bloques: [[{ idEjercicio: 'x', nombre: 'X' }], [{ idEjercicio: 'a', nombre: 'A' }, { idEjercicio: 'b', nombre: 'B' }]] }] };
+  assert.deepEqual(borradorDesdeRutina(r).ejercicios.map(e => letraGrupo(e.grupo)), ['', 'A', 'A']);
 });

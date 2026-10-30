@@ -73,8 +73,9 @@
 .en-ed-lista{list-style:none;margin:0;padding:0}
 /* Tarjeta: asa (≡) · nombre · menú (⋯). Mantener presionada la tarjeta no
    selecciona texto ni abre el menú del sistema; los campos sí se seleccionan. */
-.en-ed-ej{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-.en-ed-ej input{-webkit-user-select:text;user-select:text}
+.en-ed-item{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.en-ed-item input{-webkit-user-select:text;user-select:text}
+.en-ed-item .en-ed-ej{margin-bottom:0}
 .en-ed-ej-top{display:flex;align-items:center;gap:2px}
 .en-ed-ej-top .en-card-nombre{flex:1;min-width:0}
 .en-ed-asa,.en-ed-mas{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;min-width:44px;min-height:44px;background:none;border:none;border-radius:var(--r-sm);color:var(--muted-ink);cursor:pointer;transition:color .2s,background-color .2s}
@@ -96,9 +97,32 @@
    con transform (nunca top/height). Con prefers-reduced-motion, el barrido
    global de styles.css apaga la transición y el cambio es instantáneo. */
 .en-ed-desplazable{transition:transform .2s ease}
-.en-ed-arrastrando{position:relative;z-index:6;box-shadow:var(--lift-cta);cursor:grabbing}
+.en-ed-arrastrando{position:relative;z-index:6;cursor:grabbing}
+.en-ed-arrastrando .en-ed-ej{box-shadow:var(--lift-cta)}
+/* Mientras se arrastra, los "Unir/Separar" se ocultan sin mover nada. */
+.en-ed-lista-arrastre .en-ed-enlace{visibility:hidden}
+
+/* ── Superseries en el editor ─────────────────────────────────────────────
+   Barra de color a la izquierda + cabecera «Superserie A» + etiqueta A1/A2:
+   el grupo se lee por forma y por texto, nunca solo por color. */
+.en-ed-en-grupo .en-ed-ej{border-left:3px solid var(--accent-ink);border-top-left-radius:0;border-bottom-left-radius:0}
+.en-ed-grupo-cab{display:flex;align-items:center;gap:2px;min-height:44px;margin-top:4px;padding-left:4px;border-left:3px solid var(--accent-ink)}
+/* El asa de la cabecera cae en la misma vertical que las de las tarjetas
+   (3 px de barra + 4 px aquí = 3 + 16 − 12 del asa dentro de la tarjeta). */
+.en-ed-grupo-cab .en-ed-asa{margin:0 2px 0 0}
+.en-ed-grupo-tit{font-family:var(--mono);font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--accent-ink)}
+.en-ed-etq{flex-shrink:0;margin-right:6px;padding:2px 8px;border-radius:var(--r-pill);background:var(--accent-soft);color:var(--accent-ink);font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.04em}
+.en-ed-enlace{position:relative;display:flex;align-items:center;justify-content:center;min-height:52px}
+/* Entre dos ejercicios de la misma superserie, la barra continúa. */
+.en-ed-unido .en-ed-enlace::before{content:'';position:absolute;left:0;top:0;bottom:0;border-left:3px solid var(--accent-ink)}
+.en-ed-unir{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 16px;background:var(--bg);border:1px dashed var(--border-strong);border-radius:var(--r-pill);color:var(--muted-ink);font-family:var(--sans);font-size:12px;cursor:pointer;transition:color .2s,border-color .2s}
+.en-ed-unir svg{width:16px;height:16px}
+.en-ed-unir:hover{color:var(--text);border-color:var(--text)}
+.en-ed-unir-on{border-style:solid;border-color:transparent;color:var(--accent-ink)}
+.en-ed-unir:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.en-ed-unir-lleno{font-size:12px;color:var(--muted-ink)}
 .en-ed-levantada{outline:2px solid var(--accent);outline-offset:2px}
-.en-ed-campos{display:flex;flex-wrap:wrap;gap:14px 28px;margin-top:12px}
+.en-ed-campos{display:flex;flex-wrap:wrap;gap:14px 20px;margin-top:12px}
 .en-ed-campo .en-ed-lbl{margin-bottom:8px}
 .en-ed-step{display:flex;align-items:center;gap:12px}
 .en-ed-step .en-d-aj{font-size:18px;font-weight:400}
@@ -107,7 +131,7 @@
 .en-ed-reps{display:flex;align-items:center;gap:8px;color:var(--muted-ink)}
 .en-ed-reps .en-ed-in{width:52px}
 .en-ed-in:focus{border-bottom-color:var(--accent)}
-.en-ed-agregar{width:100%;margin-top:4px}
+.en-ed-agregar{width:100%;margin-top:14px}
 .en-ed-guardar{margin-top:28px}
 .en-prog-chips{display:flex;flex-wrap:wrap;gap:8px}
 .en-chip{min-height:44px;padding:10px 16px;border:1px solid var(--border-strong);border-radius:var(--r-pill);background:var(--bg);color:var(--muted-ink);font-family:var(--sans);font-size:12px;cursor:pointer;transition:background-color .2s}
