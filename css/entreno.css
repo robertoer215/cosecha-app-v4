@@ -34,7 +34,7 @@
 .en-btn-ghost:hover{color:var(--text)}
 .en-btn:focus-visible,.en-mini:focus-visible,.en-check:focus-visible,.en-tab:focus-visible,
 .en-chip:focus-visible,.en-ej-row:focus-visible,.en-card-btn:focus-visible,.en-volver:focus-visible,
-.en-d-aj:focus-visible,.en-d-saltar:focus-visible,.en-mas-serie:focus-visible,.en-peligro:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.en-d-aj:focus-visible,.en-d-saltar:focus-visible,.en-serie-btn:focus-visible,.en-peligro:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* Descartar en --danger y como texto: destruir no debe parecer un CTA. */
 .en-peligro{background:none;border:none;min-height:44px;padding:12px;color:var(--danger);font-family:var(--sans);font-size:12px;cursor:pointer}
 .en-volver{display:inline-flex;align-items:center;gap:6px;background:none;border:none;min-height:44px;padding:10px 12px 10px 0;margin-bottom:8px;color:var(--muted-ink);font-family:var(--sans);font-size:13px;cursor:pointer}
@@ -130,10 +130,8 @@
 .en-ed-pildora{display:inline-flex;align-items:center;justify-content:center;gap:4px;min-width:44px;min-height:44px;padding:0 12px;border:1px solid var(--border-strong);border-radius:var(--r-pill);background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;font-variant-numeric:tabular-nums;cursor:pointer;transition:background-color .2s,border-color .2s}
 .en-ed-pildora:hover{background:var(--surface)}
 .en-ed-pildora-con{border-color:var(--accent-ink);background:var(--accent-soft)}
-.en-ed-pildora-ins{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--accent-ink)}
-.en-ed-cal{min-height:44px;padding:0 14px;border:1px dashed var(--border-strong);border-radius:var(--r-pill);background:none;color:var(--muted-ink);font-family:var(--sans);font-size:12px;cursor:pointer;transition:color .2s,border-color .2s}
-.en-ed-cal:hover{color:var(--text);border-color:var(--text)}
-.en-ed-pildora:focus-visible,.en-ed-cal:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.en-ed-pildora-ins{padding:1px 6px;border-radius:var(--r-pill);background:var(--accent-ink);color:var(--bg);font-family:var(--mono);font-size:11px;font-weight:700}
+.en-ed-pildora:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* ── Hoja inferior: técnica de una serie ───────────────────────────────────
    Velo con el mismo marrón derivado de --clay que los de styles.css; la hoja
@@ -205,17 +203,16 @@
 .en-vivo-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:20px}
 .en-crono{font-size:20px;font-weight:300;letter-spacing:-.5px;color:var(--text);font-variant-numeric:tabular-nums;padding-top:22px;white-space:nowrap}
 .en-ej{border:1px solid var(--border);border-radius:var(--r-md);padding:14px 14px 10px;margin-bottom:12px;background:var(--bg)}
-.en-ej-hd{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px}
-.en-ej-nombre{font-size:14px;font-weight:500;color:var(--text);min-width:0}
-.en-ej-desc{display:flex;align-items:center;gap:4px;flex-shrink:0}
-.en-ej-desc-val{font-size:12px;color:var(--muted-ink);font-variant-numeric:tabular-nums;min-width:34px;text-align:center}
+.en-ej-hd{display:flex;align-items:center;margin-bottom:10px}
+/* El nombre ocupa toda la cabecera y parte en dos líneas antes que cortarse (pedido de Roberto, 31-oct-2026). */
+.en-ej-nombre{font-size:15px;font-weight:500;line-height:1.3;color:var(--text);min-width:0;overflow-wrap:anywhere}
 .en-mini{min-width:44px;min-height:44px;background:none;border:none;border-radius:var(--r-pill);color:var(--muted-ink);font-family:var(--sans);font-size:11px;cursor:pointer;transition:background-color .2s}
 .en-mini:hover{background:var(--surface);color:var(--text)}
 
 /* Superserie: marco común + rótulo en --ember (patrón .meta-tag). Dentro,
    las tarjetas pierden su marco propio: el bloque es UNA unidad. */
-.en-super{border:1px solid var(--border-strong);border-radius:var(--r-md);padding:10px;margin-bottom:12px}
-.en-super-tag{display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:1.5px;text-transform:uppercase;padding:4px 10px;background:var(--ember);border-radius:var(--r-pill);color:var(--text);margin-bottom:8px}
+.en-super{border:1.5px solid var(--accent);border-radius:var(--r-md);padding:10px;margin-bottom:12px}
+.en-super-tag{display:inline-block;font-family:var(--mono);font-size:12px;font-weight:600;letter-spacing:1.5px;text-transform:uppercase;padding:5px 12px;background:var(--accent-ink);border-radius:var(--r-pill);color:var(--bg);margin-bottom:8px}
 .en-super .en-ej{border:none;border-bottom:1px solid var(--border);border-radius:0;margin-bottom:0;padding-left:4px;padding-right:4px}
 .en-super .en-ej:last-child{border-bottom:none}
 
@@ -223,18 +220,15 @@
    filas. A 375 px (335 de contenido) la previa se queda ~70 px: "12×110" cabe. */
 .en-fila{display:grid;grid-template-columns:16px minmax(0,1fr) 60px 46px 36px 44px;gap:8px;align-items:center;min-height:48px;border-bottom:1px solid var(--border)}
 /* Ejercicio con técnicas: la columna # lleva la insignia (W/RP/D) bajo el número. */
-.en-tabla-tec .en-fila{grid-template-columns:28px minmax(0,1fr) 60px 46px 36px 44px}
 .en-fila:last-of-type{border-bottom:none}
 .en-fila-hd{min-height:24px;border-bottom:1px solid var(--border)}
 .en-fila-hd span{font-family:var(--mono);font-size:8px;letter-spacing:1px;text-transform:uppercase;color:var(--muted-ink)}
 .en-num{font-size:11px;color:var(--muted-ink);font-variant-numeric:tabular-nums}
-.en-tabla-tec .en-num{display:flex;flex-direction:column;align-items:center;gap:2px}
-.en-tec-num{padding:0 4px;font-size:11px}
 /* En una serie normal de un ejercicio con técnicas, el hueco de la insignia se
    reserva (invisible) para que la tarjeta no cambie de alto entre series. */
 .en-tec-hueco{visibility:hidden}
 /* La previa es referencia, no dato de hoy: tinta secundaria a propósito. */
-.en-prev{font-size:11px;color:var(--muted-ink);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden}
+.en-prev{font-size:11px;color:var(--muted-ink);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .en-in{width:100%;min-height:44px;background:transparent;border:none;border-bottom:1px solid var(--border-strong);color:var(--text);font-family:var(--sans);font-size:16px;font-variant-numeric:tabular-nums;text-align:center;outline:none;transition:border-color .2s}
 .en-in:focus{border-bottom-color:var(--accent)}
 .en-in::placeholder{color:var(--muted)}
@@ -245,8 +239,13 @@
 .en-check:hover{border-color:var(--green)}
 .en-check-on{background:var(--green);border-color:var(--green);color:#fff}
 .en-hecha .en-num,.en-hecha .en-prev{color:var(--green)}
-.en-mas-serie{width:100%;min-height:44px;background:none;border:none;color:var(--accent-ink);font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer;text-align:left;padding:10px 0 6px;transition:color .2s}
-.en-mas-serie:hover{color:var(--accent-deep)}
+/* ± serie: botones de verdad, no texto suelto (pedido de Roberto, 31-oct-2026). */
+.en-serie-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-width:88px;min-height:44px;padding:0 16px;border:1.5px solid var(--accent-ink);border-radius:var(--r-pill);background:var(--bg);color:var(--accent-ink);font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;touch-action:manipulation;transition:background-color .2s,color .2s,transform .15s}
+.en-serie-btn svg{width:16px;height:16px;flex-shrink:0}
+.en-serie-btn:hover{background:var(--accent-soft)}
+.en-serie-btn:active{transform:scale(.97)}
+.en-serie-btn-menos{border-color:var(--border-strong);color:var(--text)}
+.en-serie-btn-menos:hover{background:var(--surface)}
 .en-add-ej{width:100%;margin:4px 0 24px}
 .en-vivo-acciones{display:grid;gap:8px;justify-items:center}
 .en-vivo-acciones .en-btn-main{width:100%}
@@ -314,7 +313,6 @@
 /* En pantallas anchas la tabla de series respira más; nada cambia de sitio. */
 @media (min-width:561px){
   .en-fila{grid-template-columns:20px minmax(0,1fr) 84px 64px 48px 44px;gap:12px}
-  .en-tabla-tec .en-fila{grid-template-columns:30px minmax(0,1fr) 84px 64px 48px 44px}
 }
 
 /* ── Barrido final de marca (patrón styles.css:688): TODOS los micro-rótulos
@@ -322,6 +320,7 @@
    declaraciones de arriba quedan solo como layout, igual que en la hoja base. */
 .en-ey,.en-sec-lbl,.en-super-tag,.en-fila-hd span,.en-stat-lbl,.en-rec-tag,.en-notas-lbl,
 .en-d-lbl{font-family:var(--mono);font-size:12px;font-weight:400;letter-spacing:.04em;line-height:1.35}
+.en-super-tag{font-weight:600}
 /* El foco del textarea de notas era invisible (outline:none + borde 1px):
    mismo anillo que el resto de la app. */
 .en-notas:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
@@ -428,7 +427,6 @@
 /* Editar y Borrar como texto: "Empezar" sigue siendo la acción de la tarjeta. */
 .en-rut-editar{background:none;border:none;min-height:44px;padding:12px 12px 12px 0;color:var(--text);font-family:var(--sans);font-size:13px;font-weight:500;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .en-rut-editar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
-.en-ej-desc-nota{font-size:12px;color:var(--muted-ink);text-align:right;flex-shrink:0;max-width:120px;line-height:1.35}
 .en-unidad{display:flex;align-items:center;gap:8px;margin:-8px 0 20px;font-size:13px;color:var(--muted-ink)}
 .en-unidad span{margin-right:4px}
 .en-unidad-btn{min-width:48px;min-height:44px;border:1px solid var(--border-strong);border-radius:var(--r-pill);background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;cursor:pointer}
@@ -495,9 +493,9 @@
 .en-rec-v{font-size:15px;font-weight:500;color:var(--text);font-variant-numeric:tabular-nums}
 .en-rec-f{margin-left:auto;font-size:12px;color:var(--muted-ink);text-align:right}
 .en-rec-cuerpo{padding:0 14px 14px}
-.en-rec-fila{display:grid;grid-template-columns:72px 1fr;gap:12px;min-height:30px;align-items:center;font-size:13px;color:var(--text);font-variant-numeric:tabular-nums}
+.en-rec-fila{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px;min-height:30px;align-items:center;font-size:13px;color:var(--text);font-variant-numeric:tabular-nums}
 .en-rec-hd span{font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-ink)}
-.en-rec-pr{font-style:normal;margin-left:6px;padding:2px 8px;border-radius:var(--r-pill);background:var(--ember);font-size:11px;color:var(--text)}
+.en-rec-pr{white-space:nowrap;font-style:normal;margin-left:6px;padding:2px 8px;border-radius:var(--r-pill);background:var(--ember);font-size:11px;color:var(--text)}
 .en-rec-tot{border-top:1px solid var(--border);margin-top:6px;padding-top:6px}
 .en-rec-tot b{font-weight:600}
 .en-rec-ir{width:100%;margin-top:10px}
@@ -528,7 +526,8 @@
 .en-foco-anillo[data-estado="micro"] .en-foco-lbl{color:var(--accent-ink)}
 .en-foco-anillo[data-estado="parte"]{background:var(--green)}
 .en-foco-anillo[data-estado="parte"] .en-foco-lbl{color:var(--green)}
-.en-tec{display:inline-block;padding:1px 6px;border-radius:var(--r-pill);background:var(--accent-soft);color:var(--accent-ink);font-family:var(--mono);font-size:11px;font-weight:600;letter-spacing:.04em;vertical-align:middle}
+/* Insignia de técnica: naranja lleno para que se vea de un vistazo (pedido de Roberto, 31-oct-2026). --bg sobre --accent-ink: 5,0:1. */
+.en-tec{display:inline-block;padding:2px 8px;border-radius:var(--r-pill);background:var(--accent-ink);color:var(--bg);font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.04em;line-height:1.4;vertical-align:middle}
 /* --accent-deep y no --accent-ink: sobre --surface, accent-ink se queda en 4,42:1. */
 .en-foco-tecnica{margin:0;padding:0 12px 6px;min-height:calc(2 * 1.5em + 6px);font-size:12px;line-height:1.5;color:var(--accent-deep);text-align:center}
 /* El peso de la mini-serie es el de la serie: se ve como dato, no como campo. */
@@ -540,13 +539,26 @@
 .en-foco-salida{min-height:44px;padding:10px 12px;background:none;border:none;color:var(--muted-ink);font-family:var(--sans);font-size:12px;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .en-foco-salida[hidden]{display:inline-block;visibility:hidden}
 .en-foco-salida:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* Serie con técnica: la fila y su línea naranja van juntas, con la misma barra a la izquierda. */
+/* La barra va por fuera (en el margen de la tarjeta) para no tapar el número de la serie. */
+.en-fila-con-tec{border-bottom:none;position:relative}
+.en-fila-con-tec .en-num{color:var(--accent-ink);font-weight:600}
+.en-hecha.en-fila-con-tec .en-num{color:var(--green)}
+/* Serie en curso con técnica: una sola barra (la de fuera) y el fondo sigue en su línea. */
+.en-activa.en-fila-con-tec{box-shadow:none}
+.en-fila-tec.en-activa-linea{background:var(--accent-soft)}
+.en-fila-con-tec::before,.en-fila-tec::before{content:'';position:absolute;left:-8px;top:0;bottom:0;width:3px;background:var(--accent)}
+.en-fila-tec{position:relative;display:flex;align-items:center;gap:8px;margin:0;padding:0 0 10px;font-size:12px;line-height:1.4;color:var(--text);border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
+.en-fila-tec .en-tec{flex-shrink:0;min-width:34px;text-align:center}
 .en-fila-partes{margin:0;padding:4px 0 8px 24px;font-size:11px;color:var(--muted-ink);border-bottom:1px solid var(--border);font-variant-numeric:tabular-nums}
 .en-ej-rango{text-align:left;padding:0 0 6px}
 .en-foco-error{margin:0;padding:0 12px 10px;font-size:13px;color:var(--danger);text-align:center}
 .en-foco-error:empty{display:none}
-.en-ej-pie{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-.en-ej-pie .en-mas-serie{width:auto}
-.en-quitar-ej{margin-left:auto}
+.en-ej-pie{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding-top:12px}
+.en-quitar-ej{margin-left:auto;padding:12px 8px}
 /* Los filtros eran select sin flecha: el atajo background borraba la imagen
    con la que styles.css la dibuja. Solo el color de fondo. */
 .en-sel{background-color:var(--bg)}
+/* Teléfonos de 320 px: columnas un poco más justas para que «Previa» no pise «kg»
+   (va al final para ganarle al barrido de micro-rótulos). */
+@media (max-width:359px){.en-fila{grid-template-columns:14px minmax(0,1fr) 52px 42px 30px 44px;gap:6px}.en-fila-hd span{font-size:10px}}

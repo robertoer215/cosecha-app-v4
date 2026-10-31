@@ -203,6 +203,8 @@ Cada fase se publica por separado, con su OK.
 
 ## 8. Decisiones (Roberto, 30-oct-2026)
 
+> **Cambio del 31-oct-2026:** se quitó el Calentamiento (W). No se puede elegir y las rutinas que lo tenían pierden esas series (`sinCalentamientos`). Las sesiones viejas con W siguen sin contar. Peso y reps pasan a ser opcionales en el foco. Lo que este documento dice de la W queda como historia.
+
 1. **Técnicas del piloto:** Calentamiento, Rest-pause y Drop set. «Al fallo» queda para después.
 2. **Parámetros:** editables, con valores por defecto (RP: 2 mini-series y 15 s; Drop: 1 bajada y −20 %).
 3. **Récords:** el calentamiento no cuenta; RP y drop suman volumen, pero el récord (1RM estimado) usa solo la serie principal.

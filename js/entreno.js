@@ -244,13 +244,15 @@ export function aKg(valor, unidad) {
 }
 
 // ── Técnicas por serie: cálculos puros (testeados) ───────────────────────────
-// Decisión de Roberto (30-oct-2026): calentamiento, rest-pause y drop set, con
-// parámetros editables. El calentamiento no cuenta en volumen ni en récords; en
-// rest-pause y drop set el volumen suma todas las partes, pero el récord (1RM
-// estimado) usa SOLO la parte principal (si no, se inflaría).
+// Decisión de Roberto (30-oct-2026): rest-pause y drop set, con parámetros
+// editables. El volumen suma todas las partes, pero el récord (1RM estimado)
+// usa SOLO la parte principal (si no, se inflaría).
+// El calentamiento (W) se quitó el 31-oct-2026 («la serie de calentar no debe
+// contar como una serie formal»): ya no se puede elegir y las rutinas que lo
+// tenían pierden esas series al leerse (sinCalentamientos). Las sesiones ya
+// guardadas conservan su tipo y siguen sin contarlo (esCalentamiento).
 export const TECNICAS = {
   normal: { nombre: 'Normal', insignia: '', descripcion: 'Una serie como siempre.' },
-  calentamiento: { nombre: 'Calentamiento', insignia: 'W', descripcion: 'Serie ligera para preparar el músculo. No cuenta en volumen ni en récords.' },
   restpause: { nombre: 'Rest-pause', insignia: 'RP', descripcion: 'Llegas al fallo, descansas unos segundos y haces mini-series con el mismo peso.' },
   drop: { nombre: 'Drop set', insignia: 'D', descripcion: 'Al terminar bajas el peso y sigues sin descansar.' },
 };
@@ -287,6 +289,19 @@ export function planEsNormal(plan) {
 
 export const esCalentamiento = s => s?.tipo === 'calentamiento';
 
+// La técnica con la que se PINTA una serie. Una W que quedó en una sesión
+// empezada antes del 31-oct se sigue marcando (no cuenta, y debe notarse).
+const W_DE_ANTES = { nombre: 'Calentamiento', insignia: 'W', descripcion: 'Serie de calentamiento de antes: no cuenta.' };
+export const tecnicaDe = s => TECNICAS[s?.tipo] ?? (esCalentamiento(s) ? W_DE_ANTES : null);
+
+// Rutina con calentamientos de antes: se quitan esas series del plan (y del
+// número de series, mínimo 1) en vez de volverlas series de trabajo.
+export function sinCalentamientos(series, plan) {
+  if (!Array.isArray(plan) || !plan.some(esCalentamiento)) return { series, plan };
+  const n = plan.slice(0, series).filter(esCalentamiento).length;
+  return { series: Math.max(1, series - n), plan: plan.filter(t => !esCalentamiento(t)) };
+}
+
 // Repeticiones y volumen de UNA serie: la parte principal más sus partes
 // (mini-series del rest-pause con el mismo peso, o bajadas del drop set).
 export function repsDeSerie(s) {
@@ -319,8 +334,7 @@ export function pesoBajada(pesoKg, pct, unidad = 'kg') {
 
 // Qué toca en una serie con técnica después de su parte principal:
 // 'micro' (rest-pause: micro-descanso antes de la mini-serie k), 'parte'
-// (drop set: la bajada k) o 'fin'. Para una serie normal o de calentamiento,
-// siempre 'fin'.
+// (drop set: la bajada k) o 'fin'. Para una serie normal, siempre 'fin'.
 export function siguienteParte(s) {
   const t = limpiarTecnica(s);
   const hechas = (s?.partes || []).length;
@@ -330,13 +344,23 @@ export function siguienteParte(s) {
 }
 
 // Una serie como texto para resumen e historial: «8×60 + 3 + 2 RP»,
-// «10×60 + 8×47.5 D», «12×20 W», «15 reps».
-export function textoSerie(s, unidad = 'kg') {
+// «10×60 + 8×47.5 D», «15 reps» (y «12×20 W» en los calentamientos de antes).
+// Sin insignia cuando ya la pinta otra cosa (la línea naranja de «Ejercicios»).
+export function textoSerie(s, unidad = 'kg', conInsignia = true) {
   const base = s?.pesoKg > 0 ? `${s.reps}×${fmtPeso(s.pesoKg, unidad)}` : `${s?.reps ?? 0} reps`;
   const partes = (s?.partes || []).map(p => s.tipo === 'drop' && p.pesoKg > 0 ? `${p.reps}×${fmtPeso(p.pesoKg, unidad)}` : `${p.reps}`);
   const cuerpo = partes.length ? `${base} + ${partes.join(' + ')}` : base;
-  const ins = TECNICAS[s?.tipo]?.insignia;
+  const ins = conInsignia && tecnicaDe(s)?.insignia;
   return ins ? `${cuerpo} ${ins}` : cuerpo;
+}
+
+// La técnica de una serie en palabras, para la línea naranja de «Ejercicios»:
+// «Rest-pause · 2 mini-series, 15 s entre ellas», «Drop set · 1 bajada del 20 %».
+export function resumenTecnica(s) {
+  const t = limpiarTecnica(s);
+  if (t.tipo === 'restpause') return `Rest-pause · ${t.mini} ${t.mini === 1 ? 'mini-serie' : 'mini-series'}, ${t.microS} s entre ellas`;
+  if (t.tipo === 'drop') return `Drop set · ${t.bajadas} ${t.bajadas === 1 ? 'bajada' : 'bajadas'} del ${t.pct} %`;
+  return esCalentamiento(s) ? 'Calentamiento de antes · no cuenta como serie' : '';
 }
 
 // «Guardar como rutina»: las técnicas de las series pasan al plan (o nada si
@@ -344,13 +368,6 @@ export function textoSerie(s, unidad = 'kg') {
 export function planDesdeSeries(series) {
   const plan = (series || []).map(limpiarTecnica);
   return planEsNormal(plan) ? null : plan;
-}
-
-// «+ Calentamiento» del editor: una serie W al principio (hasta 10 series).
-export function agregarCalentamiento(ej) {
-  const series = ej.series || 0;
-  if (series >= 10) return ej;
-  return { ...ej, series: series + 1, plan: [{ tipo: 'calentamiento' }, ...normalizarPlan(series, ej.plan)] };
 }
 
 // ── Crear rutina y elegir descanso: cálculos puros (testeados) ───────────────
@@ -385,11 +402,11 @@ const entre = (v, min, max, def) => Number.isFinite(v) ? Math.min(max, Math.max(
 // Normaliza lo que el usuario escribió: series 1–10, reps 1–50 y el máximo
 // nunca por debajo del mínimo (8–6 se lee como 6–8, no como error).
 export function limpiarEjercicioRutina(ej) {
-  const series = entre(ej.series, 1, 10, 3);
+  const { series, plan } = sinCalentamientos(entre(ej.series, 1, 10, 3), ej.plan);
   const a = entre(ej.repsMin, 1, 50, 8), b = entre(ej.repsMax, 1, 50, Number.isFinite(ej.repsMin) ? a : 12);
   // El plan de técnicas sigue al número de series: «+» añade una normal al
   // final y «−» quita la última.
-  return { ...ej, series, repsMin: Math.min(a, b), repsMax: Math.max(a, b), ...(ej.plan ? { plan: normalizarPlan(series, ej.plan) } : {}) };
+  return { ...ej, series, repsMin: Math.min(a, b), repsMax: Math.max(a, b), ...(plan ? { plan: normalizarPlan(series, plan) } : {}) };
 }
 
 export function validarBorrador(b) {
@@ -613,6 +630,8 @@ function fechaCorta(ms) {
 
 function capital(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 
+const SVG_SUMAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>';
+const SVG_RESTAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>';
 const SVG_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
 const SVG_LUPA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M15.8 15.8L20.5 20.5"/></svg>';
 const SVG_VOLVER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14.5 5.5L8 12l6.5 6.5"/></svg>';
@@ -755,6 +774,10 @@ function restaurarDescanso() {
 
 // ── Sesiones: crear, marcar, cerrar ──────────────────────────────────────────
 
+// Descanso de un ejercicio añadido a mitad de sesión: el de la sesión (el que se
+// eligió al empezar), no 90 s fijos; ya no hay control de descanso por tarjeta.
+const descansoDeSesion = () => sesion?.ejercicios?.at(-1)?.descansoS ?? 90;
+
 function nuevaSesion(rutinaId) {
   return { id: 'S-' + Date.now(), inicioMs: Date.now(), finMs: null, rutinaId: rutinaId ?? null, ejercicios: [], notas: '' };
 }
@@ -804,7 +827,7 @@ function empezarVacia() {
 function empezarConEjercicio(id) {
   sesion = nuevaSesion(null);
   const f = porId.get(id);
-  sesion.ejercicios.push(ejercicioDeSesion(id, f?.nombre ?? id, 90, null, 3));
+  sesion.ejercicios.push(ejercicioDeSesion(id, f?.nombre ?? id, descansoDeSesion(), null, 3));
   persistir();
   pedirWakeLock();
   modoBiblioteca = null;
@@ -824,9 +847,10 @@ async function empezarDesdeRutina(rutina, dia, descansoS = null) {
     const g = bloque.length > 1 ? ++grupo : null;
     for (const b of bloque) {
       const f = porId.get(b.idEjercicio);
+      const { series, plan } = sinCalentamientos(b.series ?? 3, b.plan ?? null);
       sesion.ejercicios.push(ejercicioDeSesion(
-        b.idEjercicio, f?.nombre ?? b.nombre ?? b.idEjercicio, descansoS ?? b.descansoS ?? 90, g, b.series ?? 3, b.repsMin ?? null,
-        b.repsMax ? { min: b.repsMin ?? b.repsMax, max: b.repsMax } : null, b.plan ?? null));
+        b.idEjercicio, f?.nombre ?? b.nombre ?? b.idEjercicio, descansoS ?? b.descansoS ?? 90, g, series, b.repsMin ?? null,
+        b.repsMax ? { min: b.repsMin ?? b.repsMax, max: b.repsMax } : null, plan));
     }
   }
   persistir();
@@ -839,7 +863,7 @@ async function empezarDesdeRutina(rutina, dia, descansoS = null) {
 }
 
 function agregarEjercicioASesion(id, nombre) {
-  sesion.ejercicios.push(ejercicioDeSesion(id, nombre, 90, null, 3));
+  sesion.ejercicios.push(ejercicioDeSesion(id, nombre, descansoDeSesion(), null, 3));
   persistir();
   modoBiblioteca = null;
   render();
@@ -948,13 +972,15 @@ function sesionARutina(ses, nombre) {
   const bloques = [];
   let grupoAbierto = null;
   for (const ej of ses.ejercicios) {
-    const hechas = ej.series.filter(s => s.hecha);
-    const reps = hechas.filter(s => !esCalentamiento(s)).map(s => s.reps).filter(r => r > 0);
-    const plan = planDesdeSeries(hechas.length ? hechas : ej.series);
+    // Los calentamientos de antes no pasan a la rutina: no son series formales.
+    const trabajo = ej.series.filter(s => !esCalentamiento(s));
+    const hechas = trabajo.filter(s => s.hecha);
+    const reps = hechas.map(s => s.reps).filter(r => r > 0);
+    const plan = planDesdeSeries(hechas.length ? hechas : trabajo);
     const item = {
       idEjercicio: ej.idEjercicio,
       nombre: ej.nombre,
-      series: hechas.length || ej.series.length,
+      series: hechas.length || trabajo.length || 1,
       repsMin: reps.length ? Math.min(...reps) : null,
       repsMax: reps.length ? Math.max(...reps) : null,
       descansoS: ej.descansoS,
@@ -1410,7 +1436,6 @@ function pintarEditorRutina(raiz) {
               return `<button type="button" class="en-ed-pildora${t.tipo !== 'normal' ? ' en-ed-pildora-con' : ''}" data-acc="ed-tecnica" data-idx="${i}" data-serie="${j}"
                 aria-haspopup="dialog" aria-label="Serie ${j + 1}: ${T.nombre}. Cambiar técnica">${j + 1}${T.insignia ? `<span class="en-ed-pildora-ins" aria-hidden="true">${T.insignia}</span>` : ''}</button>`;
             }).join('')}
-            ${ej.series < 10 ? `<button type="button" class="en-ed-cal" data-acc="ed-calentamiento" data-idx="${i}" aria-label="Agregar una serie de calentamiento al principio de ${nombre}">+ Calentamiento</button>` : ''}
           </div>
         </div>
       </div>
@@ -1572,12 +1597,6 @@ function pintarEditorRutina(raiz) {
       menuEjIdx = null;
       render();
       ctx.raiz.querySelector('.en-hoja input[name="en-tecnica"]:checked')?.focus();
-    } else if (acc === 'ed-calentamiento') {
-      b.ejercicios[i] = limpiarEjercicioRutina(agregarCalentamiento(b.ejercicios[i]));
-      b.sucio = true;
-      render();
-      enfocar(`[data-acc="ed-tecnica"][data-idx="${i}"][data-serie="0"]`);
-      anunciarEditor(`Serie de calentamiento agregada al principio de ${b.ejercicios[i].nombre}.`);
     } else if (acc === 'ed-guardar') guardarBorrador(wrap);
   });
   wrap.addEventListener('keydown', teclaAsa);
@@ -1909,7 +1928,7 @@ function htmlHojaTecnica() {
       ${opciones}
     </fieldset>
     ${ej.series > 1 ? `<label class="en-hoja-todas" for="en-hoja-todas">
-      <input type="checkbox" id="en-hoja-todas"${todas ? ' checked' : ''}> Aplicar a todas las series de trabajo
+      <input type="checkbox" id="en-hoja-todas"${todas ? ' checked' : ''}> Aplicar a todas las series
     </label>` : ''}
     <p class="en-sr" id="en-hoja-anuncio" role="status"></p>
     <button type="button" class="en-btn en-btn-main en-hoja-listo" data-acc="hoja-cerrar" id="en-hoja-listo">Listo</button>
@@ -1917,15 +1936,12 @@ function htmlHojaTecnica() {
 }
 
 // Aplica un cambio a la serie abierta, o a todas si está marcada la casilla.
-// «Todas» son las series de TRABAJO: las que eran calentamiento al abrir la
-// hoja se respetan (si no, marcar la casilla borraba la W sin aviso).
 function aplicarTecnica(cambio) {
-  const { idx, serie, todas, planInicial } = hojaTecnica;
+  const { idx, serie, todas } = hojaTecnica;
   const ej = borrador.ejercicios[idx];
   const plan = normalizarPlan(ej.series, ej.plan);
   const base = limpiarTecnica(cambio(plan[serie]));
-  const deTrabajo = j => planInicial?.[j]?.tipo !== 'calentamiento';
-  borrador.ejercicios[idx] = { ...ej, plan: plan.map((t, j) => j === serie || (todas && deTrabajo(j)) ? { ...base } : t) };
+  borrador.ejercicios[idx] = { ...ej, plan: plan.map((t, j) => j === serie || todas ? { ...base } : t) };
   borrador.sucio = true;
 }
 
@@ -2009,11 +2025,11 @@ function conectarHojaTecnica(raiz) {
       const v = e.target.value;
       aplicarTecnica(t => t.tipo === v ? t : { tipo: v });
       repintarHoja();
-      anunciarHoja(`${TECNICAS[v].nombre}${hojaTecnica.todas ? ', en todas las series de trabajo' : ''}.`);
+      anunciarHoja(`${TECNICAS[v].nombre}${hojaTecnica.todas ? ', en todas las series' : ''}.`);
     } else if (e.target.id === 'en-hoja-todas') {
       hojaTecnica.todas = e.target.checked;
       if (hojaTecnica.todas) {
-        aplicarTecnica(t => t);   // la técnica de esta serie pasa a las de trabajo
+        aplicarTecnica(t => t);   // la técnica de esta serie pasa a todas
       } else {
         // Desmarcar devuelve las demás series a como estaban al abrir la hoja.
         const { idx, serie, planInicial } = hojaTecnica;
@@ -2022,7 +2038,7 @@ function conectarHojaTecnica(raiz) {
         borrador.ejercicios[idx] = { ...ej, plan: plan.map((t, j) => j === serie ? t : (planInicial?.[j] ?? t)) };
       }
       repintarHoja();
-      anunciarHoja(hojaTecnica.todas ? 'Se aplica a todas las series de trabajo.' : 'Solo a esta serie.');
+      anunciarHoja(hojaTecnica.todas ? 'Se aplica a todas las series.' : 'Solo a esta serie.');
     }
   });
   // Escape cierra; Tab no sale de la hoja (el editor de detrás está inerte).
@@ -2285,7 +2301,7 @@ function elegirLibre(destino) {
   else if (destino === 'rutina') agregarEjercicioARutina(id, nombre);
   else {
     sesion = nuevaSesion(null);
-    sesion.ejercicios.push(ejercicioDeSesion(id, nombre, 90, null, 3));
+    sesion.ejercicios.push(ejercicioDeSesion(id, nombre, descansoDeSesion(), null, 3));
     persistir();
     pedirWakeLock();
     render();
@@ -2635,8 +2651,7 @@ function estadoFoco() {
   }
   const enCurso = serieEnCursoValida();
   if (enCurso) {
-    const s = sesion.ejercicios[enCurso.idx].series[enCurso.serie];
-    return { tipo: 'activo', lbl: esCalentamiento(s) ? 'Calentamiento' : 'Activo', ref: enCurso, desdeMs: enCurso.inicioMs };
+    return { tipo: 'activo', lbl: 'Activo', ref: enCurso, desdeMs: enCurso.inicioMs };
   }
   const micro = microEnCurso();
   if (micro) return { tipo: 'micro', lbl: 'Micro-descanso', ref: { idx: micro.idx, serie: micro.serie }, micro };
@@ -2699,17 +2714,10 @@ function finDeSerie() {
   if (!c) return;
   const ej = sesion.ejercicios[c.idx];
   const serie = ej.series[c.serie];
+  // Peso y reps son opcionales (Roberto, 31-oct-2026: pedirlos a mitad de una
+  // superserie o de una bajada era incómodo). Lo que no se anota queda en 0 y
+  // se corrige después en «Ejercicios».
   leerFoco(serie);
-  // Una serie sin repeticiones no es una serie: se pide el dato en vez de
-  // guardar "0 × 0 kg" (y un resumen que dice "peso corporal" en una sentadilla).
-  if (!serie.reps) {
-    const err = ctx.raiz.querySelector('.en-foco-error');
-    if (err) err.textContent = '¿Cuántas repeticiones hiciste? Anótalas y vuelve a tocar Fin de la serie.';
-    const r = ctx.raiz.querySelector('.en-foco-in[data-campo="reps"]');
-    if (r) { r.setAttribute('aria-invalid', 'true'); r.focus(); }
-    persistir();
-    return;
-  }
   // Cuánto duró la serie (su parte principal): dato barato para el historial.
   serie.durS = Math.round((Date.now() - c.inicioMs) / 1000);
   sesion.serieEnCurso = null;
@@ -2797,15 +2805,7 @@ function finDeParte() {
   const p = parteEnCursoValida();
   if (!p) return;
   const s = sesion.ejercicios[p.idx].series[p.serie];
-  leerFoco(p);
-  if (!p.reps) {
-    const err = ctx.raiz.querySelector('.en-foco-error');
-    if (err) err.textContent = `¿Cuántas repeticiones hiciste en esta ${s.tipo === 'drop' ? 'bajada' : 'mini-serie'}? Anótalas y vuelve a tocar el botón.`;
-    const r = ctx.raiz.querySelector('.en-foco-in[data-campo="reps"]');
-    if (r) { r.setAttribute('aria-invalid', 'true'); r.focus(); }
-    persistir();
-    return;
-  }
+  leerFoco(p);  // opcional, como en la parte principal
   // En rest-pause la mini-serie es con el mismo peso; en drop set, el anotado.
   s.partes = [...(s.partes || []), s.tipo === 'drop' ? { reps: p.reps, pesoKg: p.pesoKg } : { reps: p.reps }];
   sesion.parteEnCurso = null;
@@ -2910,13 +2910,6 @@ function pintarVivo(raiz) {
       }
       persistir();
       render();
-    } else if (acc === 'desc') {
-      const ej = sesion.ejercicios[+b.dataset.idx];
-      // Piso de 15 s y techo de 10 min: fuera de ahí ya no es un descanso
-      // entre series, es un error de dedo.
-      ej.descansoS = Math.min(600, Math.max(15, ej.descansoS + (+b.dataset.d)));
-      persistir();
-      b.parentElement.querySelector('.en-ej-desc-val').textContent = formatear(ej.descansoS);
     } else if (acc === 'agregar') {
       modoBiblioteca = 'sesion';
       consultaBib = '';
@@ -2970,11 +2963,11 @@ function htmlFoco(unidad) {
   const rotulo = ef.tipo === 'activo' || ef.tipo === 'parte' || ef.tipo === 'micro' ? 'Ahora' : 'Siguiente';
   // En una parte (o su micro-descanso) los campos son los de ESA parte.
   const borradorParte = ef.tipo === 'parte' ? ef.parte : ef.tipo === 'micro' ? sesion.descanso?.micro : null;
-  const T = s ? TECNICAS[s.tipo] : null;
+  const T = s ? tecnicaDe(s) : null;
   // Si el ejercicio tiene alguna serie con técnica, la tarjeta reserva sus
   // líneas en TODAS sus series y estados: así no cambia de alto ni empuja el
   // botón entre activo, micro-descanso, mini-serie y bajada.
-  const conTecnicas = !!ej && ej.series.some(x => TECNICAS[x.tipo]?.insignia);
+  const conTecnicas = !!ej && ej.series.some(x => tecnicaDe(x)?.insignia);
   const tp = s ? limpiarTecnica(s) : null;
   const queParte = s?.tipo === 'drop' ? 'bajada' : 'mini-serie';
   const kParte = borradorParte ? (Number(borradorParte.k) || 0) : 0;
@@ -2986,7 +2979,7 @@ function htmlFoco(unidad) {
       : `Rest-pause · mini-serie ${kParte + 1} de ${tp.mini}, con el mismo peso.`)
     : s.tipo === 'restpause' ? `Rest-pause: al terminar, ${tp.microS} s de micro-descanso y ${tp.mini} ${tp.mini === 1 ? 'mini-serie' : 'mini-series'}.`
     : s.tipo === 'drop' ? `Drop set: al terminar, bajas un ${tp.pct} % y sigues sin descansar${tp.bajadas > 1 ? ` (${tp.bajadas} bajadas)` : ''}.`
-    : 'Calentamiento: no cuenta en volumen ni en récords.';
+    : 'Calentamiento de antes: no cuenta como serie.';
   const tarjeta = ej ? `
     <div class="en-foco-card">
       <div class="en-foco-ej">
@@ -3082,25 +3075,18 @@ function htmlListaVivo(unidad) {
         ${enFicha
           ? `<button type="button" class="en-ej-tit" data-acc="ficha" data-id="${esc(ej.idEjercicio)}" aria-label="Ver cómo se hace ${esc(ej.nombre)}">${miniatura(ej.idEjercicio)}<span class="en-ej-nombre">${esc(ej.nombre)}</span></button>`
           : `<div class="en-ej-tit">${miniatura(ej.idEjercicio)}<span class="en-ej-nombre">${esc(ej.nombre)}</span></div>`}
-        ${ej.superGrupo != null && idx !== ultimoDelGrupo(ej.superGrupo)
-          ? '<span class="en-ej-desc-nota">Descansas al cerrar la ronda</span>'
-          : `<div class="en-ej-desc" role="group" aria-label="Descanso de este ejercicio">
-          <button type="button" class="en-mini" data-acc="desc" data-idx="${idx}" data-d="-15" aria-label="Quitar 15 segundos al descanso">−15</button>
-          <span class="en-ej-desc-val">${formatear(ej.descansoS)}</span>
-          <button type="button" class="en-mini" data-acc="desc" data-idx="${idx}" data-d="15" aria-label="Sumar 15 segundos al descanso">+15</button>
-        </div>`}
       </div>
-      <div class="en-tabla${ej.series.some(x => TECNICAS[x.tipo]?.insignia) ? ' en-tabla-tec' : ''}" role="group" aria-label="Series de ${esc(ej.nombre)}">
+      <div class="en-tabla" role="group" aria-label="Series de ${esc(ej.nombre)}">
         <div class="en-fila en-fila-hd" aria-hidden="true">
           <span>#</span><span>Previa</span><span>${unidad}</span><span>Reps</span><span>RIR</span><span></span>
         </div>
         ${ej.series.map((s, j) => {
           const prev = previos.get(ej.idEjercicio)?.[j];
           const activa = enCurso && enCurso.idx === idx && enCurso.serie === j;
-          const T = TECNICAS[s.tipo];
+          const T = tecnicaDe(s);
           return `
-          <div class="en-fila${s.hecha ? ' en-hecha' : ''}${activa ? ' en-activa' : ''}" data-serie="${j}">
-            <span class="en-num">${j + 1}${T?.insignia ? `<span class="en-tec en-tec-num"><span aria-hidden="true">${T.insignia}</span><span class="en-sr">${T.nombre}</span></span>` : ''}</span>
+          <div class="en-fila${s.hecha ? ' en-hecha' : ''}${activa ? ' en-activa' : ''}${T?.insignia ? ' en-fila-con-tec' : ''}" data-serie="${j}">
+            <span class="en-num">${j + 1}</span>
             <span class="en-prev">${prev ? `${prev.reps}×${fmtPeso(prev.pesoKg, unidad)}` : '—'}</span>
             <input class="en-in en-in-peso" inputmode="decimal" value="${s.pesoKg ? fmtPeso(s.pesoKg, unidad) : ''}"
               aria-label="Peso de la serie ${j + 1} en ${unidad}">
@@ -3111,11 +3097,12 @@ function htmlListaVivo(unidad) {
             <button type="button" class="en-check${s.hecha ? ' en-check-on' : ''}" data-acc="check"
               data-idx="${idx}" data-serie="${j}" aria-pressed="${s.hecha}"
               aria-label="Serie ${j + 1}${T?.insignia ? ` (${T.nombre})` : ''} ${s.hecha ? 'hecha; tócala para desmarcarla' : 'por hacer; tócala al terminarla'}">${SVG_CHECK}</button>
-          </div>${s.partes?.length ? `<p class="en-fila-partes">${esc(textoSerie(s, unidad))}</p>` : ''}`;
+          </div>${T?.insignia ? `<p class="en-fila-tec${activa ? ' en-activa-linea' : ''}"><span class="en-tec" aria-hidden="true">${T.insignia}</span><span>${esc(resumenTecnica(s))}${s.partes?.length ? ` · Hecho: ${esc(textoSerie(s, unidad, false))}` : ''}</span></p>`
+            : s.partes?.length ? `<p class="en-fila-partes">${esc(textoSerie(s, unidad))}</p>` : ''}`;
         }).join('')}
         <div class="en-ej-pie">
-          <button type="button" class="en-mas-serie" data-acc="serie" data-idx="${idx}">+ serie</button>
-          ${ej.series.length > 1 ? `<button type="button" class="en-mas-serie" data-acc="menos-serie" data-idx="${idx}">− serie</button>` : ''}
+          <button type="button" class="en-serie-btn" data-acc="serie" data-idx="${idx}" aria-label="Añadir una serie a ${esc(ej.nombre)}">${SVG_SUMAR}<span>Serie</span></button>
+          ${ej.series.length > 1 ? `<button type="button" class="en-serie-btn en-serie-btn-menos" data-acc="menos-serie" data-idx="${idx}" aria-label="Quitar la última serie de ${esc(ej.nombre)}">${SVG_RESTAR}<span>Serie</span></button>` : ''}
           <button type="button" class="en-peligro en-quitar-ej" data-acc="quitar-ej" data-idx="${idx}">Quitar ejercicio</button>
         </div>
         ${ej.rango ? `<p class="en-ej-rango">Objetivo: ${ej.rango.min === ej.rango.max ? ej.rango.max : `${ej.rango.min}–${ej.rango.max}`} reps</p>` : ''}
