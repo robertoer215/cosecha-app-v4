@@ -42,14 +42,22 @@ Detalle y decisiones de Roberto en `docs/arquitectura-rutinas-avanzadas.md`.
   (asa ≡ o mantener 400 ms), teclado y menú «⋯». Un paso con menú o flechas es
   `pasoEjercicio` (salta superseries ajenas; desde el borde, primero sale de la suya);
   soltar un arrastre es `moverEjercicio`; una superserie entera, `moverTramo`.
-- **Técnicas por serie** (`TECNICAS`, `PARAMS_TECNICA`): normal, calentamiento (W),
+- **Técnicas por serie** (`TECNICAS`, `PARAMS_TECNICA`): normal,
   rest-pause (RP: mini-series + micro-descanso) y drop set (D: bajadas −pct). El `plan` de
   la rutina lleva una técnica por serie y solo se guarda si alguna no es normal. En la
   sesión, cada serie con técnica lleva `tipo` y sus parámetros; las partes hechas van en
   `partes: [{ reps, pesoKg }]`. La serie NO se marca hecha hasta cerrar sus partes.
   Estado vivo: `sesion.parteEnCurso` (mini-serie o bajada) y `sesion.descanso.micro`
   (micro-descanso con la misma hora de fin que el descanso). `siguienteParte()` decide.
-- **Cuentas:** el calentamiento no cuenta en volumen ni récords; RP y drop suman sus
+- **Calentamiento (W) quitado el 31-oct-2026** («no debe contar como una serie formal»):
+  no se puede elegir; `sinCalentamientos()` quita las W de las rutinas viejas (y baja
+  `series`). Las sesiones ya guardadas conservan `tipo: 'calentamiento'` y `esCalentamiento`
+  las sigue excluyendo de volumen, récords y conteos. No borrar esas exclusiones.
+- **Peso y reps son opcionales** al cerrar una serie, mini-serie o bajada en el foco.
+- **Ejercicios (vista en vivo):** sin control de descanso por tarjeta (el descanso se elige
+  al empezar y se ajusta con los ±15 del foco); botones «+ Serie / − Serie»; las series con
+  técnica llevan una línea naranja (`resumenTecnica()`).
+- **Cuentas:** RP y drop suman sus
   partes al volumen (`volumenDeSerie`), pero el récord (mejor serie, 1RM) usa solo la
   parte principal. Texto de una serie: `textoSerie()` («7×60 + 3 + 2 RP»).
 - El círculo del foco no se mueve entre estados (los ±15 van a su derecha).

@@ -12,7 +12,7 @@ import { epley1RM, volumenSesion, seriesPorGrupo, ultimaVez,
          moverEjercicio, normalizarGrupos, MAX_SUPERSERIE,
          letraGrupo, tramos, puedeUnir, unirConSiguiente, separarDeSiguiente, moverTramo, pasoEjercicio,
          TECNICAS, limpiarTecnica, normalizarPlan, planEsNormal, repsDeSerie, volumenDeSerie, pesoBajada,
-         siguienteParte, textoSerie, planDesdeSeries, agregarCalentamiento, previasPorSerie } from '../js/entreno.js';
+         siguienteParte, textoSerie, planDesdeSeries, sinCalentamientos, resumenTecnica, tecnicaDe, previasPorSerie } from '../js/entreno.js';
 import { migrar, importarJSON } from '../js/almacen.js';
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -549,28 +549,45 @@ test('limpiarTecnica: tipo desconocido = normal; parámetros por defecto y dentr
   assert.deepEqual(limpiarTecnica({ tipo: 'restpause' }), { tipo: 'restpause', mini: 2, microS: 15 });
   assert.deepEqual(limpiarTecnica({ tipo: 'restpause', mini: 9, microS: 3 }), { tipo: 'restpause', mini: 4, microS: 10 });
   assert.deepEqual(limpiarTecnica({ tipo: 'drop', pct: 23 }), { tipo: 'drop', bajadas: 1, pct: 25 });
-  assert.equal(TECNICAS.calentamiento.insignia, 'W');
+  assert.equal('calentamiento' in TECNICAS, false);   // quitado el 31-oct-2026
+  assert.deepEqual(limpiarTecnica({ tipo: 'calentamiento' }), { tipo: 'normal' });
 });
 
 test('normalizarPlan y planEsNormal', () => {
-  assert.deepEqual(normalizarPlan(3, [{ tipo: 'calentamiento' }]).map(t => t.tipo), ['calentamiento', 'normal', 'normal']);
+  assert.deepEqual(normalizarPlan(3, [{ tipo: 'drop' }]).map(t => t.tipo), ['drop', 'normal', 'normal']);
   assert.equal(planEsNormal(undefined), true);
   assert.equal(planEsNormal([{ tipo: 'normal' }, {}]), true);
   assert.equal(planEsNormal([{ tipo: 'drop' }]), false);
 });
 
 test('limpiarEjercicioRutina: el plan sigue al número de series', () => {
-  const ej = { ...ejercicioDeRutina('a', 'A'), plan: [{ tipo: 'calentamiento' }, { tipo: 'normal' }, { tipo: 'restpause' }] };
-  assert.deepEqual(limpiarEjercicioRutina({ ...ej, series: 4 }).plan.map(t => t.tipo), ['calentamiento', 'normal', 'restpause', 'normal']);
-  assert.deepEqual(limpiarEjercicioRutina({ ...ej, series: 2 }).plan.map(t => t.tipo), ['calentamiento', 'normal']);
+  const ej = { ...ejercicioDeRutina('a', 'A'), plan: [{ tipo: 'drop' }, { tipo: 'normal' }, { tipo: 'restpause' }] };
+  assert.deepEqual(limpiarEjercicioRutina({ ...ej, series: 4 }).plan.map(t => t.tipo), ['drop', 'normal', 'restpause', 'normal']);
+  assert.deepEqual(limpiarEjercicioRutina({ ...ej, series: 2 }).plan.map(t => t.tipo), ['drop', 'normal']);
   assert.equal('plan' in limpiarEjercicioRutina(ejercicioDeRutina('a', 'A')), false);   // sin plan, sin campo
 });
 
-test('agregarCalentamiento: una W al principio, hasta 10 series', () => {
-  const r = agregarCalentamiento(ejercicioDeRutina('a', 'A'));
-  assert.equal(r.series, 4);
-  assert.deepEqual(r.plan.map(t => t.tipo), ['calentamiento', 'normal', 'normal', 'normal']);
-  assert.equal(agregarCalentamiento({ ...r, series: 10 }).series, 10);
+test('sinCalentamientos: las W de rutinas de antes se quitan, no se vuelven series de trabajo', () => {
+  const plan = [{ tipo: 'calentamiento' }, { tipo: 'normal' }, { tipo: 'restpause' }, { tipo: 'normal' }];
+  const r = sinCalentamientos(4, plan);
+  assert.equal(r.series, 3);
+  assert.deepEqual(r.plan.map(t => t.tipo), ['normal', 'restpause', 'normal']);
+  assert.deepEqual(sinCalentamientos(1, [{ tipo: 'calentamiento' }]).series, 1);   // nunca 0 series
+  assert.deepEqual(sinCalentamientos(3, null), { series: 3, plan: null });
+  // el editor y la rutina guardada ya no traen W
+  const e = limpiarEjercicioRutina({ ...ejercicioDeRutina('a', 'A'), series: 4, plan });
+  assert.equal(e.series, 3);
+  assert.deepEqual(e.plan.map(t => t.tipo), ['normal', 'restpause', 'normal']);
+  const rut = { id: 'R-1', nombre: 'X', dias: [{ bloques: [[{ idEjercicio: 'a', nombre: 'A', series: 4, repsMin: 8, repsMax: 10, plan }]] }] };
+  assert.equal(borradorDesdeRutina(rut).ejercicios[0].series, 3);
+});
+
+test('resumenTecnica: la línea naranja de «Ejercicios»', () => {
+  assert.equal(resumenTecnica({ tipo: 'restpause', mini: 2, microS: 15 }), 'Rest-pause · 2 mini-series, 15 s entre ellas');
+  assert.equal(resumenTecnica({ tipo: 'restpause', mini: 1 }), 'Rest-pause · 1 mini-serie, 15 s entre ellas');
+  assert.equal(resumenTecnica({ tipo: 'drop' }), 'Drop set · 1 bajada del 20 %');
+  assert.equal(resumenTecnica({ tipo: 'drop', bajadas: 3, pct: 30 }), 'Drop set · 3 bajadas del 30 %');
+  assert.equal(resumenTecnica({ reps: 8 }), '');
 });
 
 test('volumen: el calentamiento no cuenta; rest-pause y drop suman sus partes', () => {
@@ -631,11 +648,11 @@ test('textoSerie: formato del resumen y del historial', () => {
 
 test('planDesdeSeries y la ida y vuelta editor → rutina conservan el plan', () => {
   assert.equal(planDesdeSeries([{ reps: 8 }, { reps: 8 }]), null);
-  assert.deepEqual(planDesdeSeries([{ tipo: 'calentamiento' }, { reps: 8 }]).map(t => t.tipo), ['calentamiento', 'normal']);
-  const b = { nombre: 'P', ejercicios: [{ ...agregarCalentamiento(ejercicioDeRutina('a', 'A')), grupo: null }] };
+  assert.deepEqual(planDesdeSeries([{ tipo: 'drop' }, { reps: 8 }]).map(t => t.tipo), ['drop', 'normal']);
+  const b = { nombre: 'P', ejercicios: [{ ...ejercicioDeRutina('a', 'A'), plan: [{ tipo: 'normal' }, { tipo: 'restpause' }, { tipo: 'normal' }], grupo: null }] };
   const r = rutinaDesdeBorrador(b, 'R-1');
-  assert.deepEqual(r.dias[0].bloques[0][0].plan.map(t => t.tipo), ['calentamiento', 'normal', 'normal', 'normal']);
-  assert.deepEqual(borradorDesdeRutina(r).ejercicios[0].plan.map(t => t.tipo), ['calentamiento', 'normal', 'normal', 'normal']);
+  assert.deepEqual(r.dias[0].bloques[0][0].plan.map(t => t.tipo), ['normal', 'restpause', 'normal']);
+  assert.deepEqual(borradorDesdeRutina(r).ejercicios[0].plan.map(t => t.tipo), ['normal', 'restpause', 'normal']);
   const sinPlan = rutinaDesdeBorrador({ nombre: 'P', ejercicios: [ejercicioDeRutina('a', 'A')] }, 'R-2');
   assert.equal('plan' in sinPlan.dias[0].bloques[0][0], false);
 });
@@ -698,4 +715,19 @@ test('almacén: el estado vivo de un respaldo manipulado no cuela texto (parte e
   assert.deepEqual(viva.parteEnCurso, { idx: 0, serie: 0, k: 0, inicioMs: null, reps: 0, pesoKg: 0 });
   assert.equal('micro' in viva.descanso, false);           // k no es un entero: fuera
   assert.equal(JSON.stringify(viva).includes('<img'), false);
+});
+
+// ── Ajustes del 31-oct (revisión) ────────────────────────────────────────────
+
+test('textoSerie sin insignia conserva los pesos de las bajadas', () => {
+  const d = { reps: 10, pesoKg: 60, tipo: 'drop', partes: [{ reps: 8, pesoKg: 47.5 }] };
+  assert.equal(textoSerie(d, 'kg', false), '10×60 + 8×47.5');
+  assert.equal(textoSerie(d), '10×60 + 8×47.5 D');
+});
+
+test('una W de una sesión de antes se sigue marcando y explicando', () => {
+  assert.equal(tecnicaDe({ tipo: 'calentamiento' }).insignia, 'W');
+  assert.equal(tecnicaDe({ tipo: 'drop' }).insignia, 'D');
+  assert.equal(tecnicaDe({}), null);   // serie normal de una sesión: sin tipo
+  assert.equal(resumenTecnica({ tipo: 'calentamiento' }), 'Calentamiento de antes · no cuenta como serie');
 });
