@@ -638,6 +638,7 @@ const SVG_VOLVER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const SVG_ASA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg>';
 const SVG_MAS = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg>';
 const SVG_CERRAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const SVG_PAPELERA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 12a2 2 0 0 0 2 1.8h7a2 2 0 0 0 2-1.8l1-12M9 7V4.5h6V7"/></svg>';
 const SVG_ESLABON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/></svg>';
 
 // ── Estado del módulo ────────────────────────────────────────────────────────
@@ -659,7 +660,8 @@ let periodoProg = '1m';      // '1m' | '6m' (gráficas y comparaciones de Progre
 let detalleTab = 'progreso'; // pestaña del detalle de un ejercicio
 let modoBiblioteca = null;   // null (pestaña) | 'sesion' | 'rutina' (overlay "agregar a…")
 let borrador = null;         // rutina en el editor de "Crear rutina": { nombre, ejercicios }
-let erroresBorrador = {};    // errores del último intento de guardar (se ven junto a su campo)
+let erroresBorrador = {};
+let relojDeshacer = null;    // cierra el aviso «Quitaste… · Deshacer» del editor    // errores del último intento de guardar (se ven junto a su campo)
 let inicioPendiente = null;  // { rutina, dia }: falta elegir el descanso antes de empezar
 let rutinaAbiertaId = null;  // rutina recién guardada: su tarjeta se pinta abierta una vez
 let avisoRutina = '';        // "Rutina guardada" / "Cambios guardados" para lectores de pantalla
@@ -1373,6 +1375,9 @@ function pintarEditorRutina(raiz) {
   const ts = tramos(l);
   const tramoDe = i => ts.findIndex(([a, z]) => i >= a && i <= z);
   const lev = asaLevantada;
+  // «Deshacer» solo vale mientras la lista siga tal cual quedó al quitar: con
+  // cualquier otro cambio, devolver la foto de antes lo pisaría.
+  if (b.deshacer && JSON.stringify(l) !== b.deshacer.despues) delete b.deshacer;
   const tarjeta = (ej, i) => {
     const enGrupo = ej.grupo != null;
     const t = tramoDe(i);
@@ -1397,6 +1402,7 @@ function pintarEditorRutina(raiz) {
             aria-label="Mover ${etiqueta ? etiqueta + ', ' : ''}${nombre}, posición ${i + 1} de ${n}" aria-describedby="en-ed-asa-ayuda">${SVG_ASA}</button>` : ''}
           ${etiqueta ? `<span class="en-ed-etq" aria-hidden="true">${etiqueta}</span>` : ''}
           <span class="en-card-nombre">${nombre}</span>
+          <button type="button" class="en-ed-quitar" data-acc="ed-quitar" data-idx="${i}" aria-label="Quitar ${nombre} de la rutina">${SVG_PAPELERA}</button>
           ${n > 1 ? `<button type="button" class="en-ed-mas" data-acc="ed-menu" data-idx="${i}" aria-expanded="${menuEjIdx === i}"
             aria-controls="en-ed-menu-${i}" aria-label="Más opciones de ${nombre}">${SVG_MAS}</button>` : ''}
         </div>
@@ -1437,9 +1443,6 @@ function pintarEditorRutina(raiz) {
             }).join('')}
           </div>
         </div>
-        <div class="en-ed-pie">
-          <button type="button" class="en-peligro en-quitar-ej" data-acc="ed-quitar" data-idx="${i}">Quitar ejercicio</button>
-        </div>
       </div>
       ${sig ? `<div class="en-ed-enlace">${unidoSig
         ? `<button type="button" class="en-ed-unir en-ed-unir-on" data-acc="ed-separar" data-idx="${i}"
@@ -1473,6 +1476,10 @@ function pintarEditorRutina(raiz) {
       : '<p class="en-vacio">Todavía no hay ejercicios. Agrega el primero desde la biblioteca.</p>'}
     <p class="en-sr" id="en-ed-asa-ayuda">Arrastra este botón o mantén presionada la tarjeta. Al tocarlo se abren Subir y Bajar. Con teclado: Enter para levantar, flechas para mover, Enter para soltar y Escape para cancelar.</p>
     <p class="en-sr" id="en-ed-anuncio" role="status"></p>
+    ${b.deshacer ? `<div class="en-ed-deshacer">
+      <span>Quitaste ${esc(b.deshacer.nombre)}</span>
+      <button type="button" data-acc="ed-deshacer">Deshacer</button>
+    </div>` : ''}
     ${err.ejercicios ? `<p class="en-ed-err" id="en-ed-ej-err">${esc(err.ejercicios)}</p>` : ''}
     <button type="button" class="en-btn en-btn-ghost en-ed-agregar" data-acc="ed-agregar"
       ${err.ejercicios ? 'aria-describedby="en-ed-ej-err"' : ''}>Agregar ejercicio</button>
@@ -1581,17 +1588,36 @@ function pintarEditorRutina(raiz) {
         ? `Superserie ${letraGrupo(g)}: ${b.ejercicios.filter(x => x.grupo === g).map(x => x.nombre).join(' y ')}.`
         : `Separados: ${b.ejercicios[i].nombre} y ${b.ejercicios[i + 1].nombre}.`);
     } else if (acc === 'ed-quitar') {
-      // Visible en cada tarjeta (antes vivía escondido en ⋯) y con doble toque,
-      // como «Quitar ejercicio» en la sesión: un roce no borra lo configurado.
-      if (!armarDosToques(btn, 'Toca otra vez para quitarlo')) return;
+      // Papelera a la vista en cada tarjeta (antes vivía escondida en ⋯). Un
+      // toque quita; el error se arregla con «Deshacer», sin confirmar antes.
       const quitado = b.ejercicios[i]?.nombre;
+      const antes = structuredClone(b.ejercicios);
       b.ejercicios = normalizarGrupos(b.ejercicios.filter((_, k) => k !== i));
+      b.deshacer = { nombre: quitado, idx: i, antes, despues: JSON.stringify(b.ejercicios) };
       b.sucio = true;
       menuEjIdx = null;
       render();
+      const aviso = b.deshacer;
+      clearTimeout(relojDeshacer);
+      relojDeshacer = setTimeout(() => {
+        if (borrador?.deshacer !== aviso) return;
+        delete borrador.deshacer;
+        ctx.raiz.querySelector('.en-ed-deshacer')?.remove();
+      }, 8000);
       // El foco no se pierde: va al ejercicio que ocupa su lugar (o a Agregar).
       enfocar(`[data-acc="ed-quitar"][data-idx="${Math.min(i, b.ejercicios.length - 1)}"]`, '[data-acc="ed-agregar"]');
-      anunciarEditor(`${quitado} quitado.`);
+      anunciarEditor(`${quitado} quitado. Puedes deshacerlo.`);
+    } else if (acc === 'ed-deshacer') {
+      const d = b.deshacer;
+      // Las reps y el arrastre cambian la lista sin repintar: si pasó algo
+      // después de quitar, el aviso caduca en vez de pisar ese cambio.
+      if (!d || JSON.stringify(b.ejercicios) !== d.despues) { delete b.deshacer; wrap.querySelector('.en-ed-deshacer')?.remove(); return; }
+      b.ejercicios = d.antes;
+      delete b.deshacer;
+      clearTimeout(relojDeshacer);
+      render();
+      enfocar(`[data-acc="ed-quitar"][data-idx="${d.idx}"]`, '[data-acc="ed-agregar"]');
+      anunciarEditor(`${d.nombre} vuelve a la rutina.`);
     } else if (acc === 'ed-series') {
       if (desactivado) return;
       b.ejercicios[i] = limpiarEjercicioRutina({ ...b.ejercicios[i], series: b.ejercicios[i].series + (+btn.dataset.v) });
