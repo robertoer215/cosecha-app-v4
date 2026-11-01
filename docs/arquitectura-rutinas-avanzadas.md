@@ -32,7 +32,7 @@
 ### Alternativas sin gesto (obligatorias por accesibilidad)
 - **Teclado:** el asa es un botón. Con Enter o Espacio se levanta, las flechas la mueven, Enter la suelta y Esc cancela.
 - **Menú «⋯» de la tarjeta:** Subir, Bajar, Unir con el siguiente y Quitar. Sirve para VoiceOver y para quien no hace gestos largos.
-  - *1-nov-2026:* «Quitar» salió del menú y es un botón visible «Quitar ejercicio» al pie de cada tarjeta, con doble toque (como en la sesión). Con un solo ejercicio el ⋯ no aparece.
+  - *1-nov-2026:* «Quitar» salió del menú: es una papelera roja en la cabecera de cada tarjeta. Un toque quita y aparece «Quitaste X · Deshacer» (8 s, fijo encima de la tabbar). `borrador.deshacer` guarda la lista de antes y la de después en JSON; si la lista cambió desde entonces, Deshacer caduca para no pisar ese cambio. Con un solo ejercicio el ⋯ no aparece.
 
 ### Reglas con superseries
 - Arrastrar mueve **un** ejercicio. Si lo sueltas entre dos ejercicios de una superserie, se une a ella. Si lo sueltas fuera, queda suelto.

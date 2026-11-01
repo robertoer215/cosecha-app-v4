@@ -81,7 +81,7 @@ Los datos del usuario viven SOLO en el dispositivo (`localStorage`, esquema vers
 - **Revisión de aspecto de las fases 3 y 4 (9 confirmados, arreglados):** la tarjeta del foco reserva sus líneas en los ejercicios con técnicas y ya no cambia de alto entre estados (medido: 11 estados × 320, 375, 430 y 812×375, círculo/tarjeta/botón quietos); «Terminar la serie aquí» va dentro de la tarjeta y pide doble toque; la hoja conserva su desplazamiento y no repite la animación al tocar − o +, con cabecera fija que se desliza hacia abajo para cerrar y «Listo» siempre a la vista; insignia W/RP/D bajo el número de serie en la lista (visible a 320 px); historial del drop set con el peso de cada bajada; CSS de la hoja sin duplicados.
 
 - **Ajustes del 31-oct (pedido de Roberto):** se quitó el calentamiento (las rutinas viejas pierden sus W; las sesiones viejas siguen sin contarlas); peso y reps opcionales al cerrar serie, mini-serie o bajada; en «Ejercicios», título a todo el ancho sin el control −15/+15, botones «+ Serie / − Serie», línea naranja con la técnica de cada serie (RP/D) y etiqueta «Superserie» naranja y más grande.
-- **Ajuste del 1-nov:** en el editor de rutinas, «Quitar ejercicio» es un botón visible al pie de cada tarjeta (antes estaba escondido en ⋯), con doble toque. Si el ejercicio estaba en una superserie de 2, la superserie se deshace.
+- **Ajuste del 1-nov:** en el editor de rutinas, cada ejercicio tiene una papelera roja junto al nombre (antes «Quitar» estaba escondido en ⋯). Un toque lo quita y aparece «Quitaste X · Deshacer» durante 8 s; Deshacer lo devuelve a su sitio, con su superserie y sus reps.
 
 ## Backlog de pulido (S3 de la ronda 5, no bloquean el lanzamiento)
 
