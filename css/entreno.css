@@ -91,7 +91,7 @@
 .en-ed-menu[hidden]{display:none}
 .en-ed-op{min-height:44px;padding:10px 18px;border:1px solid var(--border-strong);border-radius:var(--r-pill);background:var(--bg);color:var(--text);font-family:var(--sans);font-size:13px;cursor:pointer}
 .en-ed-op[aria-disabled="true"]{opacity:.4;cursor:default}
-.en-ed-op-quitar{margin-left:auto}
+.en-ed-pie{display:flex;justify-content:flex-end;margin:4px -8px -12px 0}
 .en-ed-pista{font-size:12px;line-height:1.5;color:var(--muted-ink);margin:-2px 0 12px}
 /* Reordenar: la tarjeta levantada sigue al dedo; las demás se apartan solo
    con transform (nunca top/height). Con prefers-reduced-motion, el barrido
