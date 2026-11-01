@@ -1,5 +1,5 @@
 {
- "nota": "Agrupa los ejercicios de data/ejercicios.json en ejercicios maestros (y, si aplica, por ángulo o tipo) para la Biblioteca. pop = popularidad general en gimnasio: 5 básico, 4 muy común, 3 común, 2 ocasional, 1 raro (por defecto). Los ejercicios que no aparecen aquí se muestran solos, con su nombre. En «sueltos» va la popularidad de los que no tienen variantes. «ocultos» son duplicados verificados (mismas instrucciones que otro): no salen en la Biblioteca, pero las rutinas y el historial que ya los usan siguen funcionando.",
+ "nota": "Agrupa los ejercicios de data/ejercicios.json en ejercicios maestros (y, si aplica, por ángulo o tipo) para la Biblioteca. pop = popularidad general en gimnasio: 5 básico, 4 muy común, 3 común, 2 ocasional, 1 raro (por defecto). Los ejercicios que no aparecen aquí se muestran solos, con su nombre. En «sueltos» va la popularidad de los que no tienen variantes. «ocultos» son duplicados verificados (mismas instrucciones que otro): no salen en la Biblioteca, pero las rutinas y el historial que ya los usan siguen funcionando. «tambien» suma músculos al filtro de Músculo para ejercicios que la gente busca ahí aunque su músculo principal sea otro (sentadilla búlgara y desplantes también en Glúteos); no cambia el ejercicio ni sus estadísticas.",
  "maestros": [
   {
    "nombre": "Press de banca",
@@ -4523,5 +4523,158 @@
   "Standing_One-Arm_Dumbbell_Triceps_Extension",
   "Bent_Over_One-Arm_Long_Bar_Row",
   "Dumbbell_Raise"
- ]
+ ],
+ "tambien": {
+  "Barbell_Deadlift": [
+   "femorales",
+   "glúteos"
+  ],
+  "Trap_Bar_Deadlift": [
+   "femorales",
+   "glúteos"
+  ],
+  "Deficit_Deadlift": [
+   "femorales",
+   "glúteos"
+  ],
+  "One-Arm_Side_Deadlift": [
+   "femorales",
+   "glúteos"
+  ],
+  "Leverage_Deadlift": [
+   "femorales",
+   "glúteos"
+  ],
+  "Cable_Deadlifts": [
+   "femorales",
+   "glúteos"
+  ],
+  "Deadlift_with_Bands": [
+   "femorales",
+   "glúteos"
+  ],
+  "Deadlift_with_Chains": [
+   "femorales",
+   "glúteos"
+  ],
+  "Reverse_Band_Deadlift": [
+   "femorales",
+   "glúteos"
+  ],
+  "Axle_Deadlift": [
+   "femorales",
+   "glúteos"
+  ],
+  "Romanian_Deadlift": [
+   "glúteos"
+  ],
+  "Stiff-Legged_Dumbbell_Deadlift": [
+   "glúteos"
+  ],
+  "Stiff-Legged_Barbell_Deadlift": [
+   "glúteos"
+  ],
+  "Smith_Machine_Stiff-Legged_Deadlift": [
+   "glúteos"
+  ],
+  "Romanian_Deadlift_from_Deficit": [
+   "glúteos"
+  ],
+  "Wide_Stance_Stiff_Legs": [
+   "glúteos"
+  ],
+  "Sumo_Deadlift": [
+   "glúteos"
+  ],
+  "Sumo_Deadlift_with_Bands": [
+   "glúteos"
+  ],
+  "Sumo_Deadlift_with_Chains": [
+   "glúteos"
+  ],
+  "Reverse_Band_Sumo_Deadlift": [
+   "glúteos"
+  ],
+  "Kettlebell_One-Legged_Deadlift": [
+   "glúteos"
+  ],
+  "Hyperextensions_Back_Extensions": [
+   "glúteos"
+  ],
+  "Superman": [
+   "glúteos"
+  ],
+  "Lower_Back_Curl": [
+   "glúteos"
+  ],
+  "Reverse_Hyperextension": [
+   "glúteos"
+  ],
+  "Hyperextensions_With_No_Hyperextension_Bench": [
+   "glúteos"
+  ],
+  "Weighted_Ball_Hyperextension": [
+   "glúteos"
+  ],
+  "Split_Squat_with_Dumbbells": [
+   "glúteos"
+  ],
+  "One_Leg_Barbell_Squat": [
+   "glúteos"
+  ],
+  "Smith_Single-Leg_Split_Squat": [
+   "glúteos"
+  ],
+  "Suspended_Split_Squat": [
+   "glúteos"
+  ],
+  "Dumbbell_Lunges": [
+   "glúteos"
+  ],
+  "Dumbbell_Rear_Lunge": [
+   "glúteos"
+  ],
+  "Barbell_Lunge": [
+   "glúteos"
+  ],
+  "Elevated_Back_Lunge": [
+   "glúteos"
+  ],
+  "Lunge_Pass_Through": [
+   "glúteos"
+  ],
+  "Bodyweight_Walking_Lunge": [
+   "glúteos"
+  ],
+  "Barbell_Walking_Lunge": [
+   "glúteos"
+  ],
+  "Split_Jump": [
+   "glúteos"
+  ],
+  "Split_Squats": [
+   "glúteos"
+  ],
+  "Lunge_Sprint": [
+   "glúteos"
+  ],
+  "Dumbbell_Step_Ups": [
+   "glúteos"
+  ],
+  "Barbell_Step_Ups": [
+   "glúteos"
+  ],
+  "Single-Leg_High_Box_Squat": [
+   "glúteos"
+  ],
+  "One-Arm_Kettlebell_Swings": [
+   "glúteos"
+  ],
+  "Vertical_Swing": [
+   "glúteos"
+  ],
+  "Mountain_Climbers": [
+   "abdomen"
+  ]
+ }
 }

@@ -78,6 +78,18 @@
 .en-ed-item .en-ed-ej{margin-bottom:0}
 .en-ed-ej-top{display:flex;align-items:center;gap:2px}
 .en-ed-ej-top .en-card-nombre{flex:1;min-width:0}
+/* Foto del ejercicio junto a su nombre, igual que en la sesión. */
+.en-ed-ej-top .en-thumb{width:40px;height:40px;margin-right:10px}
+/* En teléfono, asa + etiqueta A1 + foto + papelera + menú dejaban 70–140 px
+   al nombre (cuatro o cinco renglones en una superserie, también en los de
+   430 px): el nombre baja a su propio renglón, a todo lo ancho, y arriba
+   quedan la foto y los botones. Mismo corte de teléfono que styles.css
+   (560 px) e igual en todas las tarjetas para que la lista se lea pareja. */
+@media (max-width:560px){
+  .en-ed-ej-top{flex-wrap:wrap;row-gap:8px}
+  .en-ed-ej-top .en-thumb{margin-right:auto}
+  .en-ed-ej-top .en-card-nombre{order:1;flex-basis:100%}
+}
 .en-ed-asa,.en-ed-mas{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;min-width:44px;min-height:44px;background:none;border:none;border-radius:var(--r-sm);color:var(--muted-ink);cursor:pointer;transition:color .2s,background-color .2s}
 .en-ed-asa{margin:-10px 2px -10px -12px;cursor:grab;touch-action:none}
 .en-ed-mas{margin:-10px -10px -10px 0}
@@ -208,6 +220,7 @@
 .en-ej-row-sub{display:block;font-size:10px;color:var(--muted-ink);margin-top:2px}
 .en-ej-row-acc{font-size:12px;font-weight:500;color:var(--accent-ink);flex-shrink:0}
 .en-libre{margin-top:12px;width:100%}
+.en-reintentar{margin-top:12px}
 
 /* ── Sesión en vivo ──────────────────────────────────────────────────────── */
 .en-vivo-hd{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:20px}
@@ -424,6 +437,13 @@
 .en-fgrupo + .en-fgrupo{margin-top:14px;border-top:1px solid var(--border)}
 .en-flegend{float:left;width:100%;padding:0;margin-bottom:10px;color:var(--muted-ink);text-transform:uppercase}
 .en-fopc{clear:both;display:flex;flex-wrap:wrap;gap:8px}
+/* «Afinar» cuelga de las zonas marcadas: caja hundida (--surface) para que se
+   lea como un detalle de lo elegido y no como un filtro más. */
+.en-fafinar{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+.en-fafinar[hidden]{display:none}
+.en-fsub{border:0;margin:0;padding:12px;min-width:0;border-radius:var(--r-md);background:var(--surface)}
+.en-fsub-lbl{float:left;width:100%;padding:0;margin-bottom:10px;font-family:var(--sans);font-size:13px;font-weight:600;line-height:1.35;color:var(--text)}
+.en-fsub-lbl span{font-weight:400;color:var(--muted)}
 /* label e input traen el barrido global (mono en mayúsculas, input con solo
    filete inferior y sin apariencia): aquí vuelven a texto normal y casilla
    nativa, como .en-hoja-todas. */
