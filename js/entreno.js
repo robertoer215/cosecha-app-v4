@@ -1397,8 +1397,8 @@ function pintarEditorRutina(raiz) {
             aria-label="Mover ${etiqueta ? etiqueta + ', ' : ''}${nombre}, posición ${i + 1} de ${n}" aria-describedby="en-ed-asa-ayuda">${SVG_ASA}</button>` : ''}
           ${etiqueta ? `<span class="en-ed-etq" aria-hidden="true">${etiqueta}</span>` : ''}
           <span class="en-card-nombre">${nombre}</span>
-          <button type="button" class="en-ed-mas" data-acc="ed-menu" data-idx="${i}" aria-expanded="${menuEjIdx === i}"
-            aria-controls="en-ed-menu-${i}" aria-label="Más opciones de ${nombre}">${SVG_MAS}</button>
+          ${n > 1 ? `<button type="button" class="en-ed-mas" data-acc="ed-menu" data-idx="${i}" aria-expanded="${menuEjIdx === i}"
+            aria-controls="en-ed-menu-${i}" aria-label="Más opciones de ${nombre}">${SVG_MAS}</button>` : ''}
         </div>
         <div class="en-ed-menu" id="en-ed-menu-${i}"${menuEjIdx === i ? '' : ' hidden'}>
           <button type="button" class="en-ed-op" data-acc="ed-subir" data-idx="${i}"${i === 0 && !enGrupo ? ' aria-disabled="true"' : ''}>Subir</button>
@@ -1406,7 +1406,6 @@ function pintarEditorRutina(raiz) {
           ${enGrupo ? `
           <button type="button" class="en-ed-op" data-acc="ed-subir-grupo" data-idx="${i}"${t === 0 ? ' aria-disabled="true"' : ''}>Subir superserie</button>
           <button type="button" class="en-ed-op" data-acc="ed-bajar-grupo" data-idx="${i}"${t === ts.length - 1 ? ' aria-disabled="true"' : ''}>Bajar superserie</button>` : ''}
-          <button type="button" class="en-peligro en-ed-op-quitar" data-acc="ed-quitar" data-idx="${i}">Quitar</button>
         </div>
         <div class="en-ed-campos">
           <div class="en-ed-campo">
@@ -1437,6 +1436,9 @@ function pintarEditorRutina(raiz) {
                 aria-haspopup="dialog" aria-label="Serie ${j + 1}: ${T.nombre}. Cambiar técnica">${j + 1}${T.insignia ? `<span class="en-ed-pildora-ins" aria-hidden="true">${T.insignia}</span>` : ''}</button>`;
             }).join('')}
           </div>
+        </div>
+        <div class="en-ed-pie">
+          <button type="button" class="en-peligro en-quitar-ej" data-acc="ed-quitar" data-idx="${i}">Quitar ejercicio</button>
         </div>
       </div>
       ${sig ? `<div class="en-ed-enlace">${unidoSig
@@ -1579,13 +1581,16 @@ function pintarEditorRutina(raiz) {
         ? `Superserie ${letraGrupo(g)}: ${b.ejercicios.filter(x => x.grupo === g).map(x => x.nombre).join(' y ')}.`
         : `Separados: ${b.ejercicios[i].nombre} y ${b.ejercicios[i + 1].nombre}.`);
     } else if (acc === 'ed-quitar') {
+      // Visible en cada tarjeta (antes vivía escondido en ⋯) y con doble toque,
+      // como «Quitar ejercicio» en la sesión: un roce no borra lo configurado.
+      if (!armarDosToques(btn, 'Toca otra vez para quitarlo')) return;
       const quitado = b.ejercicios[i]?.nombre;
       b.ejercicios = normalizarGrupos(b.ejercicios.filter((_, k) => k !== i));
       b.sucio = true;
       menuEjIdx = null;
       render();
       // El foco no se pierde: va al ejercicio que ocupa su lugar (o a Agregar).
-      enfocar(`[data-acc="ed-menu"][data-idx="${Math.min(i, b.ejercicios.length - 1)}"]`, '[data-acc="ed-agregar"]');
+      enfocar(`[data-acc="ed-quitar"][data-idx="${Math.min(i, b.ejercicios.length - 1)}"]`, '[data-acc="ed-agregar"]');
       anunciarEditor(`${quitado} quitado.`);
     } else if (acc === 'ed-series') {
       if (desactivado) return;
