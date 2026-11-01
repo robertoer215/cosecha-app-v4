@@ -26,7 +26,10 @@ solo lectura y aquí `MODO_DEMO` queda encendido (ver "Modo demo").
 - `data/` — `alimentos.json` (hoy: base mínima de la carta vía
   `scripts/base_minima_carta.mjs`; la base USDA ≥1.500 con fuente/id/licencia
   la reemplaza cuando su pipeline termine), `ejercicios.json` (free-exercise-db
-  traducido, Unlicense; imágenes por CDN, no en el repo), `rutinas.json`.
+  traducido, Unlicense; imágenes por CDN, no en el repo), `rutinas.json`,
+  `grupos-ejercicios.json` (curado a mano: agrupa los ejercicios en maestros
+  → grupo por ángulo o tipo → variantes con etiqueta y popularidad 1–5; lo
+  lee `js/biblioteca.js`; si falta, cada ejercicio va solo).
   Cada JSON se carga al abrir SU pestaña.
 - El shell (`app.js`: `goTab`, `renderHoy`, persistencia de perfil,
   `agregarPlatoAlDiario`) lo edita UNA sola persona/agente a la vez.

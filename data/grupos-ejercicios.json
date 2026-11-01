@@ -1,0 +1,4527 @@
+{
+ "nota": "Agrupa los ejercicios de data/ejercicios.json en ejercicios maestros (y, si aplica, por ángulo o tipo) para la Biblioteca. pop = popularidad general en gimnasio: 5 básico, 4 muy común, 3 común, 2 ocasional, 1 raro (por defecto). Los ejercicios que no aparecen aquí se muestran solos, con su nombre. En «sueltos» va la popularidad de los que no tienen variantes. «ocultos» son duplicados verificados (mismas instrucciones que otro): no salen en la Biblioteca, pero las rutinas y el historial que ya los usan siguen funcionando.",
+ "maestros": [
+  {
+   "nombre": "Press de banca",
+   "grupos": [
+    {
+     "nombre": "Plano",
+     "variantes": [
+      {
+       "id": "Barbell_Bench_Press_-_Medium_Grip",
+       "etiqueta": "Barra",
+       "pop": 5
+      },
+      {
+       "id": "Dumbbell_Bench_Press",
+       "etiqueta": "Mancuernas",
+       "pop": 5
+      },
+      {
+       "id": "Smith_Machine_Bench_Press",
+       "etiqueta": "Smith",
+       "pop": 4
+      },
+      {
+       "id": "Machine_Bench_Press",
+       "etiqueta": "Máquina",
+       "pop": 4
+      },
+      {
+       "id": "Leverage_Chest_Press",
+       "etiqueta": "Máquina de discos",
+       "pop": 3
+      },
+      {
+       "id": "Bench_Press_-_With_Bands",
+       "etiqueta": "Ligas",
+       "pop": 2
+      },
+      {
+       "id": "Dumbbell_Bench_Press_with_Neutral_Grip",
+       "etiqueta": "Mancuernas agarre neutro",
+       "pop": 2
+      },
+      {
+       "id": "Wide-Grip_Barbell_Bench_Press",
+       "etiqueta": "Barra agarre abierto",
+       "pop": 2
+      },
+      {
+       "id": "One_Arm_Dumbbell_Bench_Press",
+       "etiqueta": "Mancuerna a un brazo",
+       "pop": 2
+      },
+      {
+       "id": "Bench_Press_-_Powerlifting",
+       "etiqueta": "Barra estilo powerlifting",
+       "pop": 2
+      },
+      {
+       "id": "Reverse_Triceps_Bench_Press",
+       "etiqueta": "Barra agarre supino",
+       "pop": 1
+      },
+      {
+       "id": "Bench_Press_with_Chains",
+       "etiqueta": "Barra con cadenas",
+       "pop": 1
+      },
+      {
+       "id": "Reverse_Band_Bench_Press",
+       "etiqueta": "Barra con ligas invertidas",
+       "pop": 1
+      },
+      {
+       "id": "Board_Press",
+       "etiqueta": "Con tablas",
+       "pop": 1
+      },
+      {
+       "id": "Pin_Presses",
+       "etiqueta": "En rack (pin press)",
+       "pop": 1
+      },
+      {
+       "id": "Barbell_Guillotine_Bench_Press",
+       "etiqueta": "Guillotina",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Inclinado",
+     "variantes": [
+      {
+       "id": "Barbell_Incline_Bench_Press_-_Medium_Grip",
+       "etiqueta": "Barra",
+       "pop": 5
+      },
+      {
+       "id": "Incline_Dumbbell_Press",
+       "etiqueta": "Mancuernas",
+       "pop": 5
+      },
+      {
+       "id": "Smith_Machine_Incline_Bench_Press",
+       "etiqueta": "Smith",
+       "pop": 4
+      },
+      {
+       "id": "Leverage_Incline_Chest_Press",
+       "etiqueta": "Máquina de discos",
+       "pop": 3
+      },
+      {
+       "id": "Incline_Cable_Chest_Press",
+       "etiqueta": "Polea",
+       "pop": 2
+      },
+      {
+       "id": "Incline_Dumbbell_Bench_With_Palms_Facing_In",
+       "etiqueta": "Mancuernas agarre neutro",
+       "pop": 2
+      }
+     ]
+    },
+    {
+     "nombre": "Declinado",
+     "variantes": [
+      {
+       "id": "Decline_Barbell_Bench_Press",
+       "etiqueta": "Barra",
+       "pop": 3
+      },
+      {
+       "id": "Decline_Dumbbell_Bench_Press",
+       "etiqueta": "Mancuernas",
+       "pop": 3
+      },
+      {
+       "id": "Smith_Machine_Decline_Press",
+       "etiqueta": "Smith",
+       "pop": 2
+      },
+      {
+       "id": "Leverage_Decline_Chest_Press",
+       "etiqueta": "Máquina de discos",
+       "pop": 2
+      },
+      {
+       "id": "Wide-Grip_Decline_Barbell_Bench_Press",
+       "etiqueta": "Barra agarre abierto",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Agarre cerrado",
+     "variantes": [
+      {
+       "id": "Close-Grip_Barbell_Bench_Press",
+       "etiqueta": "Barra",
+       "pop": 4
+      },
+      {
+       "id": "Smith_Machine_Close-Grip_Bench_Press",
+       "etiqueta": "Smith",
+       "pop": 2
+      },
+      {
+       "id": "Close-Grip_Dumbbell_Press",
+       "etiqueta": "Una mancuerna apretada",
+       "pop": 1
+      },
+      {
+       "id": "Close-Grip_EZ-Bar_Press",
+       "etiqueta": "Barra Z",
+       "pop": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "nombre": "Press en el piso",
+   "variantes": [
+    {
+     "id": "Floor_Press",
+     "etiqueta": "Barra",
+     "pop": 2
+    },
+    {
+     "id": "Dumbbell_Floor_Press",
+     "etiqueta": "Mancuernas",
+     "pop": 2
+    },
+    {
+     "id": "One-Arm_Kettlebell_Floor_Press",
+     "etiqueta": "Kettlebell a un brazo",
+     "pop": 1
+    },
+    {
+     "id": "One_Arm_Floor_Press",
+     "etiqueta": "Barra a un brazo",
+     "pop": 1
+    },
+    {
+     "id": "Alternating_Floor_Press",
+     "etiqueta": "Kettlebell alternado",
+     "pop": 1
+    },
+    {
+     "id": "Extended_Range_One-Arm_Kettlebell_Floor_Press",
+     "etiqueta": "Kettlebell rango extendido",
+     "pop": 1
+    },
+    {
+     "id": "Leg-Over_Floor_Press",
+     "etiqueta": "Kettlebell pierna cruzada",
+     "pop": 1
+    },
+    {
+     "id": "Floor_Press_with_Chains",
+     "etiqueta": "Barra con cadenas",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Aperturas",
+   "grupos": [
+    {
+     "nombre": "Plano",
+     "variantes": [
+      {
+       "id": "Butterfly",
+       "etiqueta": "Máquina (mariposa o pec deck)",
+       "pop": 5
+      },
+      {
+       "id": "Dumbbell_Flyes",
+       "etiqueta": "Mancuernas",
+       "pop": 4
+      },
+      {
+       "id": "Flat_Bench_Cable_Flyes",
+       "etiqueta": "Polea",
+       "pop": 3
+      },
+      {
+       "id": "One-Arm_Flat_Bench_Dumbbell_Flye",
+       "etiqueta": "Mancuerna a un brazo",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Inclinado",
+     "variantes": [
+      {
+       "id": "Incline_Dumbbell_Flyes",
+       "etiqueta": "Mancuernas",
+       "pop": 4
+      },
+      {
+       "id": "Incline_Cable_Flye",
+       "etiqueta": "Polea",
+       "pop": 3
+      },
+      {
+       "id": "Incline_Dumbbell_Flyes_-_With_A_Twist",
+       "etiqueta": "Mancuernas con giro",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Declinado",
+     "variantes": [
+      {
+       "id": "Decline_Dumbbell_Flyes",
+       "etiqueta": "Mancuernas",
+       "pop": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "nombre": "Cruce de poleas",
+   "variantes": [
+    {
+     "id": "Cable_Crossover",
+     "etiqueta": "Polea alta",
+     "pop": 5
+    },
+    {
+     "id": "Low_Cable_Crossover",
+     "etiqueta": "Polea baja",
+     "pop": 3
+    },
+    {
+     "id": "Single-Arm_Cable_Crossover",
+     "etiqueta": "A un brazo",
+     "pop": 2
+    },
+    {
+     "id": "Cross_Over_-_With_Bands",
+     "etiqueta": "Ligas",
+     "pop": 2
+    },
+    {
+     "id": "Cable_Iron_Cross",
+     "etiqueta": "Cruz de hierro",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Press de pecho en polea",
+   "variantes": [
+    {
+     "id": "Cable_Chest_Press",
+     "etiqueta": "Polea",
+     "pop": 2
+    },
+    {
+     "id": "Standing_Cable_Chest_Press",
+     "etiqueta": "De pie",
+     "pop": 2
+    }
+   ]
+  },
+  {
+   "nombre": "Fondos",
+   "variantes": [
+    {
+     "id": "Parallel_Bar_Dip",
+     "etiqueta": "Paralelas",
+     "pop": 5
+    },
+    {
+     "id": "Dips_-_Triceps_Version",
+     "etiqueta": "Paralelas para tríceps",
+     "pop": 4
+    },
+    {
+     "id": "Dips_-_Chest_Version",
+     "etiqueta": "Paralelas para pecho",
+     "pop": 4
+    },
+    {
+     "id": "Bench_Dips",
+     "etiqueta": "En banco",
+     "pop": 4
+    },
+    {
+     "id": "Dip_Machine",
+     "etiqueta": "Máquina",
+     "pop": 3
+    },
+    {
+     "id": "Weighted_Bench_Dip",
+     "etiqueta": "En banco con peso",
+     "pop": 2
+    },
+    {
+     "id": "Ring_Dips",
+     "etiqueta": "Anillas",
+     "pop": 2
+    }
+   ]
+  },
+  {
+   "nombre": "Lagartijas",
+   "grupos": [
+    {
+     "nombre": "En el piso",
+     "variantes": [
+      {
+       "id": "Pushups",
+       "etiqueta": "Clásicas",
+       "pop": 5
+      },
+      {
+       "id": "Push-Up_Wide",
+       "etiqueta": "Agarre abierto",
+       "pop": 3
+      },
+      {
+       "id": "Push-Ups_-_Close_Triceps_Position",
+       "etiqueta": "Cerradas para tríceps",
+       "pop": 3
+      },
+      {
+       "id": "Pushups_Close_and_Wide_Hand_Positions",
+       "etiqueta": "Cerrado y abierto",
+       "pop": 1
+      },
+      {
+       "id": "Single-Arm_Push-Up",
+       "etiqueta": "A un brazo",
+       "pop": 1
+      },
+      {
+       "id": "Push_Up_to_Side_Plank",
+       "etiqueta": "Con plancha lateral",
+       "pop": 1
+      },
+      {
+       "id": "Clock_Push-Up",
+       "etiqueta": "De reloj",
+       "pop": 1
+      },
+      {
+       "id": "Close-Grip_Push-Up_off_of_a_Dumbbell",
+       "etiqueta": "Cerradas sobre mancuerna",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Inclinadas (manos elevadas)",
+     "variantes": [
+      {
+       "id": "Incline_Push-Up",
+       "etiqueta": "Peso corporal",
+       "pop": 3
+      },
+      {
+       "id": "Incline_Push-Up_Medium",
+       "etiqueta": "Agarre medio",
+       "pop": 1
+      },
+      {
+       "id": "Incline_Push-Up_Wide",
+       "etiqueta": "Agarre abierto",
+       "pop": 1
+      },
+      {
+       "id": "Incline_Push-Up_Close-Grip",
+       "etiqueta": "Agarre cerrado",
+       "pop": 1
+      },
+      {
+       "id": "Incline_Push-Up_Reverse_Grip",
+       "etiqueta": "Agarre invertido",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Declinadas (pies elevados)",
+     "variantes": [
+      {
+       "id": "Push-Ups_With_Feet_Elevated",
+       "etiqueta": "Pies elevados",
+       "pop": 3
+      },
+      {
+       "id": "Push-Ups_With_Feet_On_An_Exercise_Ball",
+       "etiqueta": "Pies sobre pelota",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Explosivas",
+     "variantes": [
+      {
+       "id": "Plyo_Push-up",
+       "etiqueta": "Pliométricas",
+       "pop": 2
+      },
+      {
+       "id": "Plyo_Kettlebell_Pushups",
+       "etiqueta": "Sobre kettlebells",
+       "pop": 1
+      },
+      {
+       "id": "Incline_Push-Up_Depth_Jump",
+       "etiqueta": "Inclinadas con salto",
+       "pop": 1
+      },
+      {
+       "id": "Drop_Push",
+       "etiqueta": "Con caída",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "En suspensión",
+     "variantes": [
+      {
+       "id": "Suspended_Push-Up",
+       "etiqueta": "TRX o suspensión",
+       "pop": 2
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "nombre": "Pullover",
+   "variantes": [
+    {
+     "id": "Bent-Arm_Dumbbell_Pullover",
+     "etiqueta": "Mancuerna brazos flexionados",
+     "pop": 3
+    },
+    {
+     "id": "Straight-Arm_Dumbbell_Pullover",
+     "etiqueta": "Mancuerna brazos rectos",
+     "pop": 3
+    },
+    {
+     "id": "Bent-Arm_Barbell_Pullover",
+     "etiqueta": "Barra brazos flexionados",
+     "pop": 2
+    },
+    {
+     "id": "Cable_Incline_Pushdown",
+     "etiqueta": "Polea inclinado",
+     "pop": 1
+    },
+    {
+     "id": "Wide-Grip_Decline_Barbell_Pullover",
+     "etiqueta": "Barra declinado",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Jalón con brazos rectos (pullover en polea)",
+   "variantes": [
+    {
+     "id": "Straight-Arm_Pulldown",
+     "etiqueta": "Polea con barra",
+     "pop": 4
+    },
+    {
+     "id": "Rope_Straight-Arm_Pulldown",
+     "etiqueta": "Polea con cuerda",
+     "pop": 3
+    }
+   ]
+  },
+  {
+   "nombre": "Dominadas",
+   "grupos": [
+    {
+     "nombre": "Por agarre",
+     "variantes": [
+      {
+       "id": "Pullups",
+       "etiqueta": "Agarre prono",
+       "pop": 5
+      },
+      {
+       "id": "Chin-Up",
+       "etiqueta": "Agarre supino (chin-up)",
+       "pop": 4
+      },
+      {
+       "id": "V-Bar_Pullup",
+       "etiqueta": "Agarre neutro (barra V)",
+       "pop": 2
+      },
+      {
+       "id": "Mixed_Grip_Chin",
+       "etiqueta": "Agarre mixto",
+       "pop": 1
+      },
+      {
+       "id": "Wide-Grip_Rear_Pull-Up",
+       "etiqueta": "Tras nuca",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Con ayuda o con peso",
+     "variantes": [
+      {
+       "id": "Band_Assisted_Pull-Up",
+       "etiqueta": "Asistida con liga",
+       "pop": 4
+      },
+      {
+       "id": "Weighted_Pull_Ups",
+       "etiqueta": "Con lastre",
+       "pop": 3
+      }
+     ]
+    },
+    {
+     "nombre": "Otras",
+     "variantes": [
+      {
+       "id": "Scapular_Pull-Up",
+       "etiqueta": "Escapular",
+       "pop": 2
+      },
+      {
+       "id": "Side_To_Side_Chins",
+       "etiqueta": "Lado a lado",
+       "pop": 1
+      },
+      {
+       "id": "Rocky_Pull-Ups_Pulldowns",
+       "etiqueta": "Rocky",
+       "pop": 1
+      },
+      {
+       "id": "Gironda_Sternum_Chins",
+       "etiqueta": "Gironda al esternón",
+       "pop": 1
+      },
+      {
+       "id": "One_Arm_Chin-Up",
+       "etiqueta": "A un brazo con toalla",
+       "pop": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "nombre": "Muscle up",
+   "variantes": [
+    {
+     "id": "Muscle_Up",
+     "etiqueta": "Anillas",
+     "pop": 2
+    },
+    {
+     "id": "Kipping_Muscle_Up",
+     "etiqueta": "Anillas con kipping",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Jalón al pecho",
+   "variantes": [
+    {
+     "id": "Wide-Grip_Lat_Pulldown",
+     "etiqueta": "Agarre abierto",
+     "pop": 5
+    },
+    {
+     "id": "Close-Grip_Front_Lat_Pulldown",
+     "etiqueta": "Agarre cerrado",
+     "pop": 4
+    },
+    {
+     "id": "V-Bar_Pulldown",
+     "etiqueta": "Barra V (neutro)",
+     "pop": 4
+    },
+    {
+     "id": "Underhand_Cable_Pulldowns",
+     "etiqueta": "Agarre supino",
+     "pop": 3
+    },
+    {
+     "id": "One_Arm_Lat_Pulldown",
+     "etiqueta": "A un brazo",
+     "pop": 2
+    },
+    {
+     "id": "Full_Range-Of-Motion_Lat_Pulldown",
+     "etiqueta": "Rango completo",
+     "pop": 1
+    },
+    {
+     "id": "Wide-Grip_Pulldown_Behind_The_Neck",
+     "etiqueta": "Tras nuca",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Remo arrodillado en polea alta",
+   "variantes": [
+    {
+     "id": "Kneeling_High_Pulley_Row",
+     "etiqueta": "Dos manos",
+     "pop": 1
+    },
+    {
+     "id": "Kneeling_Single-Arm_High_Pulley_Row",
+     "etiqueta": "Una mano",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Remo inclinado",
+   "variantes": [
+    {
+     "id": "Bent_Over_Barbell_Row",
+     "etiqueta": "Barra",
+     "pop": 5
+    },
+    {
+     "id": "Bent_Over_Two-Dumbbell_Row",
+     "etiqueta": "Mancuernas",
+     "pop": 4
+    },
+    {
+     "id": "Reverse_Grip_Bent-Over_Rows",
+     "etiqueta": "Barra agarre supino",
+     "pop": 3
+    },
+    {
+     "id": "Smith_Machine_Bent_Over_Row",
+     "etiqueta": "Smith",
+     "pop": 2
+    },
+    {
+     "id": "Bent_Over_Two-Dumbbell_Row_With_Palms_In",
+     "etiqueta": "Mancuernas agarre neutro",
+     "pop": 2
+    },
+    {
+     "id": "Two-Arm_Kettlebell_Row",
+     "etiqueta": "Kettlebells",
+     "pop": 2
+    },
+    {
+     "id": "Alternating_Kettlebell_Row",
+     "etiqueta": "Kettlebell alternado",
+     "pop": 1
+    },
+    {
+     "id": "Straight_Bar_Bench_Mid_Rows",
+     "etiqueta": "Barra de pie sobre banco",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Remo a un brazo",
+   "variantes": [
+    {
+     "id": "One-Arm_Dumbbell_Row",
+     "etiqueta": "Mancuerna",
+     "pop": 5
+    },
+    {
+     "id": "One-Arm_Long_Bar_Row",
+     "etiqueta": "Landmine",
+     "pop": 2
+    },
+    {
+     "id": "One-Arm_Kettlebell_Row",
+     "etiqueta": "Kettlebell",
+     "pop": 2
+    }
+   ]
+  },
+  {
+   "nombre": "Remo con pecho apoyado",
+   "variantes": [
+    {
+     "id": "Dumbbell_Incline_Row",
+     "etiqueta": "Mancuernas en banco inclinado",
+     "pop": 3
+    },
+    {
+     "id": "Incline_Bench_Pull",
+     "etiqueta": "Barra en banco inclinado",
+     "pop": 2
+    },
+    {
+     "id": "Lying_Cambered_Barbell_Row",
+     "etiqueta": "Barra camber",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Remo en barra T",
+   "variantes": [
+    {
+     "id": "T-Bar_Row_with_Handle",
+     "etiqueta": "Barra con maneral",
+     "pop": 4
+    },
+    {
+     "id": "Lying_T-Bar_Row",
+     "etiqueta": "Máquina (pecho apoyado)",
+     "pop": 3
+    },
+    {
+     "id": "Bent_Over_Two-Arm_Long_Bar_Row",
+     "etiqueta": "Sin maneral",
+     "pop": 3
+    }
+   ]
+  },
+  {
+   "nombre": "Remo sentado en polea",
+   "variantes": [
+    {
+     "id": "Seated_Cable_Rows",
+     "etiqueta": "Polea",
+     "pop": 5
+    },
+    {
+     "id": "Seated_One-arm_Cable_Pulley_Rows",
+     "etiqueta": "A un brazo",
+     "pop": 3
+    },
+    {
+     "id": "Shotgun_Row",
+     "etiqueta": "De pie a una mano",
+     "pop": 2
+    },
+    {
+     "id": "Elevated_Cable_Rows",
+     "etiqueta": "Elevado",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Remo en máquina",
+   "variantes": [
+    {
+     "id": "Leverage_Iso_Row",
+     "etiqueta": "Iso-lateral",
+     "pop": 3
+    },
+    {
+     "id": "Leverage_High_Row",
+     "etiqueta": "Alto",
+     "pop": 3
+    }
+   ]
+  },
+  {
+   "nombre": "Remo invertido",
+   "variantes": [
+    {
+     "id": "Inverted_Row",
+     "etiqueta": "Peso corporal",
+     "pop": 3
+    },
+    {
+     "id": "Suspended_Row",
+     "etiqueta": "TRX o suspensión",
+     "pop": 3
+    },
+    {
+     "id": "Inverted_Row_with_Straps",
+     "etiqueta": "Con straps",
+     "pop": 1
+    },
+    {
+     "id": "Bodyweight_Mid_Row",
+     "etiqueta": "Remo medio",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Peso muerto",
+   "grupos": [
+    {
+     "nombre": "Convencional",
+     "variantes": [
+      {
+       "id": "Barbell_Deadlift",
+       "etiqueta": "Barra",
+       "pop": 5
+      },
+      {
+       "id": "Trap_Bar_Deadlift",
+       "etiqueta": "Barra hexagonal",
+       "pop": 3
+      },
+      {
+       "id": "Deficit_Deadlift",
+       "etiqueta": "Con déficit",
+       "pop": 2
+      },
+      {
+       "id": "One-Arm_Side_Deadlift",
+       "etiqueta": "Lateral a un brazo (suitcase)",
+       "pop": 1
+      },
+      {
+       "id": "Leverage_Deadlift",
+       "etiqueta": "Máquina de discos",
+       "pop": 1
+      },
+      {
+       "id": "Cable_Deadlifts",
+       "etiqueta": "Polea",
+       "pop": 1
+      },
+      {
+       "id": "Deadlift_with_Bands",
+       "etiqueta": "Con ligas",
+       "pop": 1
+      },
+      {
+       "id": "Deadlift_with_Chains",
+       "etiqueta": "Con cadenas",
+       "pop": 1
+      },
+      {
+       "id": "Reverse_Band_Deadlift",
+       "etiqueta": "Con ligas invertidas",
+       "pop": 1
+      },
+      {
+       "id": "Axle_Deadlift",
+       "etiqueta": "Barra de eje (axle)",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Rumano o piernas rígidas",
+     "variantes": [
+      {
+       "id": "Romanian_Deadlift",
+       "etiqueta": "Barra (rumano)",
+       "pop": 5
+      },
+      {
+       "id": "Stiff-Legged_Dumbbell_Deadlift",
+       "etiqueta": "Mancuernas",
+       "pop": 5
+      },
+      {
+       "id": "Stiff-Legged_Barbell_Deadlift",
+       "etiqueta": "Barra piernas rígidas",
+       "pop": 4
+      },
+      {
+       "id": "Smith_Machine_Stiff-Legged_Deadlift",
+       "etiqueta": "Smith",
+       "pop": 2
+      },
+      {
+       "id": "Romanian_Deadlift_from_Deficit",
+       "etiqueta": "Rumano con déficit",
+       "pop": 1
+      },
+      {
+       "id": "Wide_Stance_Stiff_Legs",
+       "etiqueta": "Postura amplia",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Sumo",
+     "variantes": [
+      {
+       "id": "Sumo_Deadlift",
+       "etiqueta": "Barra",
+       "pop": 4
+      },
+      {
+       "id": "Sumo_Deadlift_with_Bands",
+       "etiqueta": "Con ligas",
+       "pop": 1
+      },
+      {
+       "id": "Sumo_Deadlift_with_Chains",
+       "etiqueta": "Con cadenas",
+       "pop": 1
+      },
+      {
+       "id": "Reverse_Band_Sumo_Deadlift",
+       "etiqueta": "Con ligas invertidas",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "A una pierna",
+     "variantes": [
+      {
+       "id": "Kettlebell_One-Legged_Deadlift",
+       "etiqueta": "Kettlebell",
+       "pop": 3
+      }
+     ]
+    },
+    {
+     "nombre": "Parcial en rack",
+     "variantes": [
+      {
+       "id": "Rack_Pulls",
+       "etiqueta": "Rack pull",
+       "pop": 3
+      },
+      {
+       "id": "Rack_Pull_with_Bands",
+       "etiqueta": "Rack pull con ligas",
+       "pop": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "nombre": "Hiperextensiones",
+   "variantes": [
+    {
+     "id": "Hyperextensions_Back_Extensions",
+     "etiqueta": "Banco romano",
+     "pop": 4
+    },
+    {
+     "id": "Superman",
+     "etiqueta": "Superman (en el piso)",
+     "pop": 3
+    },
+    {
+     "id": "Lower_Back_Curl",
+     "etiqueta": "Extensión lumbar en el piso",
+     "pop": 1
+    },
+    {
+     "id": "Reverse_Hyperextension",
+     "etiqueta": "Inversa en máquina",
+     "pop": 2
+    },
+    {
+     "id": "Hyperextensions_With_No_Hyperextension_Bench",
+     "etiqueta": "Sin banco romano",
+     "pop": 1
+    },
+    {
+     "id": "Weighted_Ball_Hyperextension",
+     "etiqueta": "En pelota con peso",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Buenos días",
+   "variantes": [
+    {
+     "id": "Good_Morning",
+     "etiqueta": "Barra",
+     "pop": 3
+    },
+    {
+     "id": "Seated_Good_Mornings",
+     "etiqueta": "Sentado",
+     "pop": 1
+    },
+    {
+     "id": "Good_Morning_off_Pins",
+     "etiqueta": "Desde soportes",
+     "pop": 1
+    },
+    {
+     "id": "Stiff_Leg_Barbell_Good_Morning",
+     "etiqueta": "Piernas rígidas",
+     "pop": 1
+    },
+    {
+     "id": "Hanging_Bar_Good_Morning",
+     "etiqueta": "Barra suspendida",
+     "pop": 1
+    },
+    {
+     "id": "Band_Good_Morning",
+     "etiqueta": "Liga",
+     "pop": 1
+    },
+    {
+     "id": "Band_Good_Morning_Pull_Through",
+     "etiqueta": "Liga anclada a poste",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Encogimientos de hombros",
+   "variantes": [
+    {
+     "id": "Dumbbell_Shrug",
+     "etiqueta": "Mancuernas",
+     "pop": 5
+    },
+    {
+     "id": "Barbell_Shrug",
+     "etiqueta": "Barra",
+     "pop": 4
+    },
+    {
+     "id": "Cable_Shrugs",
+     "etiqueta": "Polea",
+     "pop": 2
+    },
+    {
+     "id": "Leverage_Shrug",
+     "etiqueta": "Máquina de discos",
+     "pop": 2
+    },
+    {
+     "id": "Smith_Machine_Behind_the_Back_Shrug",
+     "etiqueta": "Smith tras la espalda",
+     "pop": 1
+    },
+    {
+     "id": "Barbell_Shrug_Behind_The_Back",
+     "etiqueta": "Barra tras la espalda",
+     "pop": 1
+    },
+    {
+     "id": "Calf-Machine_Shoulder_Shrug",
+     "etiqueta": "Máquina de pantorrilla",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Remo al mentón",
+   "variantes": [
+    {
+     "id": "Upright_Barbell_Row",
+     "etiqueta": "Barra",
+     "pop": 4
+    },
+    {
+     "id": "Standing_Dumbbell_Upright_Row",
+     "etiqueta": "Mancuernas",
+     "pop": 3
+    },
+    {
+     "id": "Upright_Cable_Row",
+     "etiqueta": "Polea",
+     "pop": 3
+    },
+    {
+     "id": "Smith_Machine_Upright_Row",
+     "etiqueta": "Smith",
+     "pop": 2
+    },
+    {
+     "id": "Upright_Row_-_With_Bands",
+     "etiqueta": "Ligas",
+     "pop": 1
+    },
+    {
+     "id": "Dumbbell_One-Arm_Upright_Row",
+     "etiqueta": "Mancuerna a un brazo",
+     "pop": 1
+    },
+    {
+     "id": "Smith_Machine_One-Arm_Upright_Row",
+     "etiqueta": "Smith a un brazo",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Press militar",
+   "grupos": [
+    {
+     "nombre": "De pie",
+     "variantes": [
+      {
+       "id": "Standing_Military_Press",
+       "etiqueta": "Barra",
+       "pop": 5
+      },
+      {
+       "id": "Standing_Dumbbell_Press",
+       "etiqueta": "Mancuernas",
+       "pop": 4
+      },
+      {
+       "id": "Standing_Alternating_Dumbbell_Press",
+       "etiqueta": "Mancuernas alternado",
+       "pop": 2
+      },
+      {
+       "id": "Standing_Palms-In_Dumbbell_Press",
+       "etiqueta": "Mancuernas agarre neutro",
+       "pop": 2
+      },
+      {
+       "id": "Standing_Barbell_Press_Behind_Neck",
+       "etiqueta": "Barra tras nuca",
+       "pop": 2
+      },
+      {
+       "id": "Two-Arm_Kettlebell_Military_Press",
+       "etiqueta": "Kettlebells",
+       "pop": 2
+      },
+      {
+       "id": "Shoulder_Press_-_With_Bands",
+       "etiqueta": "Ligas",
+       "pop": 2
+      },
+      {
+       "id": "Cable_Shoulder_Press",
+       "etiqueta": "Polea",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Sentado",
+     "variantes": [
+      {
+       "id": "Seated_Dumbbell_Press",
+       "etiqueta": "Mancuernas",
+       "pop": 5
+      },
+      {
+       "id": "Barbell_Shoulder_Press",
+       "etiqueta": "Barra",
+       "pop": 4
+      },
+      {
+       "id": "Smith_Machine_Overhead_Shoulder_Press",
+       "etiqueta": "Smith",
+       "pop": 4
+      },
+      {
+       "id": "Seated_Cable_Shoulder_Press",
+       "etiqueta": "Polea",
+       "pop": 2
+      },
+      {
+       "id": "Kettlebell_Seated_Press",
+       "etiqueta": "Kettlebell",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Máquina",
+     "variantes": [
+      {
+       "id": "Machine_Shoulder_Military_Press",
+       "etiqueta": "Máquina",
+       "pop": 4
+      },
+      {
+       "id": "Leverage_Shoulder_Press",
+       "etiqueta": "Máquina de discos",
+       "pop": 3
+      }
+     ]
+    },
+    {
+     "nombre": "A un brazo o alternado",
+     "variantes": [
+      {
+       "id": "Dumbbell_One-Arm_Shoulder_Press",
+       "etiqueta": "Mancuerna a un brazo",
+       "pop": 3
+      },
+      {
+       "id": "Standing_Palm-In_One-Arm_Dumbbell_Press",
+       "etiqueta": "Mancuerna agarre neutro",
+       "pop": 1
+      },
+      {
+       "id": "One-Arm_Kettlebell_Military_Press_To_The_Side",
+       "etiqueta": "Kettlebell lateral",
+       "pop": 1
+      },
+      {
+       "id": "One-Arm_Kettlebell_Para_Press",
+       "etiqueta": "Kettlebell hacia afuera",
+       "pop": 1
+      },
+      {
+       "id": "Alternating_Kettlebell_Press",
+       "etiqueta": "Kettlebell alternado",
+       "pop": 1
+      },
+      {
+       "id": "Kettlebell_Seesaw_Press",
+       "etiqueta": "Kettlebell sube y baja",
+       "pop": 1
+      },
+      {
+       "id": "See-Saw_Press_Alternating_Side_Press",
+       "etiqueta": "Mancuernas sube y baja",
+       "pop": 1
+      },
+      {
+       "id": "Alternating_Cable_Shoulder_Press",
+       "etiqueta": "Polea alternado",
+       "pop": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "nombre": "Press Arnold",
+   "variantes": [
+    {
+     "id": "Arnold_Dumbbell_Press",
+     "etiqueta": "Mancuernas",
+     "pop": 4
+    },
+    {
+     "id": "Kettlebell_Arnold_Press",
+     "etiqueta": "Kettlebell",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Push press",
+   "variantes": [
+    {
+     "id": "Push_Press",
+     "etiqueta": "Barra",
+     "pop": 3
+    },
+    {
+     "id": "Push_Press_-_Behind_the_Neck",
+     "etiqueta": "Barra tras nuca",
+     "pop": 1
+    },
+    {
+     "id": "Double_Kettlebell_Push_Press",
+     "etiqueta": "Dos kettlebells",
+     "pop": 1
+    },
+    {
+     "id": "One-Arm_Kettlebell_Push_Press",
+     "etiqueta": "Kettlebell a un brazo",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Press landmine",
+   "variantes": [
+    {
+     "id": "Landmine_Linear_Jammer",
+     "etiqueta": "Jammer a dos brazos",
+     "pop": 2
+    },
+    {
+     "id": "Single-Arm_Linear_Jammer",
+     "etiqueta": "A un brazo",
+     "pop": 2
+    }
+   ]
+  },
+  {
+   "nombre": "Press Bradford",
+   "variantes": [
+    {
+     "id": "Bradford_Rocky_Presses",
+     "etiqueta": "Barra",
+     "pop": 1
+    },
+    {
+     "id": "Standing_Bradford_Press",
+     "etiqueta": "De pie",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Elevación lateral",
+   "variantes": [
+    {
+     "id": "Side_Lateral_Raise",
+     "etiqueta": "Mancuernas",
+     "pop": 5
+    },
+    {
+     "id": "Seated_Side_Lateral_Raise",
+     "etiqueta": "Mancuernas sentado",
+     "pop": 3
+    },
+    {
+     "id": "One-Arm_Side_Laterals",
+     "etiqueta": "Mancuerna a un brazo",
+     "pop": 3
+    },
+    {
+     "id": "Standing_Low-Pulley_Deltoid_Raise",
+     "etiqueta": "Polea baja",
+     "pop": 4
+    },
+    {
+     "id": "Cable_Seated_Lateral_Raise",
+     "etiqueta": "Polea sentado",
+     "pop": 2
+    },
+    {
+     "id": "Lateral_Raise_-_With_Bands",
+     "etiqueta": "Ligas",
+     "pop": 2
+    },
+    {
+     "id": "Alternating_Deltoid_Raise",
+     "etiqueta": "Alternando frontal y lateral",
+     "pop": 1
+    },
+    {
+     "id": "Side_Laterals_to_Front_Raise",
+     "etiqueta": "Lateral a frontal",
+     "pop": 1
+    },
+    {
+     "id": "Power_Partials",
+     "etiqueta": "Parciales",
+     "pop": 1
+    },
+    {
+     "id": "Lying_One-Arm_Lateral_Raise",
+     "etiqueta": "Acostado a un brazo",
+     "pop": 1
+    },
+    {
+     "id": "One-Arm_Incline_Lateral_Raise",
+     "etiqueta": "Banco inclinado a un brazo",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Elevación frontal",
+   "variantes": [
+    {
+     "id": "Front_Dumbbell_Raise",
+     "etiqueta": "Mancuernas alternado",
+     "pop": 4
+    },
+    {
+     "id": "Front_Cable_Raise",
+     "etiqueta": "Polea",
+     "pop": 3
+    },
+    {
+     "id": "Front_Plate_Raise",
+     "etiqueta": "Disco",
+     "pop": 3
+    },
+    {
+     "id": "Front_Two-Dumbbell_Raise",
+     "etiqueta": "Mancuernas juntas",
+     "pop": 2
+    },
+    {
+     "id": "Single_Dumbbell_Raise",
+     "etiqueta": "Una mancuerna a dos manos",
+     "pop": 2
+    },
+    {
+     "id": "Front_Incline_Dumbbell_Raise",
+     "etiqueta": "Banco inclinado",
+     "pop": 1
+    },
+    {
+     "id": "Standing_Dumbbell_Straight-Arm_Front_Delt_Raise_Above_Head",
+     "etiqueta": "Brazos rectos sobre la cabeza",
+     "pop": 1
+    },
+    {
+     "id": "Standing_Front_Barbell_Raise_Over_Head",
+     "etiqueta": "Barra sobre la cabeza",
+     "pop": 1
+    },
+    {
+     "id": "Straight_Raises_on_Incline_Bench",
+     "etiqueta": "Barra en banco inclinado",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Vuelo posterior (pájaros)",
+   "variantes": [
+    {
+     "id": "Seated_Bent-Over_Rear_Delt_Raise",
+     "etiqueta": "Mancuernas sentado",
+     "pop": 4
+    },
+    {
+     "id": "Reverse_Machine_Flyes",
+     "etiqueta": "Máquina (pec deck invertido)",
+     "pop": 4
+    },
+    {
+     "id": "Cable_Rear_Delt_Fly",
+     "etiqueta": "Polea",
+     "pop": 3
+    },
+    {
+     "id": "Bent_Over_Low-Pulley_Side_Lateral",
+     "etiqueta": "Polea baja a un brazo",
+     "pop": 2
+    },
+    {
+     "id": "Band_Pull_Apart",
+     "etiqueta": "Liga (pull apart)",
+     "pop": 3
+    },
+    {
+     "id": "Back_Flyes_-_With_Bands",
+     "etiqueta": "Ligas",
+     "pop": 2
+    },
+    {
+     "id": "Reverse_Flyes",
+     "etiqueta": "Banco inclinado",
+     "pop": 2
+    },
+    {
+     "id": "Lying_Rear_Delt_Raise",
+     "etiqueta": "Acostado en banco plano",
+     "pop": 1
+    },
+    {
+     "id": "Dumbbell_Lying_One-Arm_Rear_Lateral_Raise",
+     "etiqueta": "Acostado a un brazo",
+     "pop": 1
+    },
+    {
+     "id": "Bent_Over_Dumbbell_Rear_Delt_Raise_With_Head_On_Bench",
+     "etiqueta": "Frente apoyada en banco",
+     "pop": 1
+    },
+    {
+     "id": "Reverse_Flyes_With_External_Rotation",
+     "etiqueta": "Con rotación externa",
+     "pop": 1
+    },
+    {
+     "id": "Barbell_Rear_Delt_Row",
+     "etiqueta": "Remo con barra",
+     "pop": 1
+    },
+    {
+     "id": "Cable_Rope_Rear-Delt_Rows",
+     "etiqueta": "Remo con cuerda",
+     "pop": 1
+    },
+    {
+     "id": "Low_Pulley_Row_To_Neck",
+     "etiqueta": "Remo al cuello sentado en polea",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Rotación externa",
+   "variantes": [
+    {
+     "id": "External_Rotation_with_Band",
+     "etiqueta": "Liga",
+     "pop": 3
+    },
+    {
+     "id": "External_Rotation_with_Cable",
+     "etiqueta": "Polea",
+     "pop": 3
+    },
+    {
+     "id": "External_Rotation",
+     "etiqueta": "Mancuerna",
+     "pop": 2
+    }
+   ]
+  },
+  {
+   "nombre": "Rotación interna",
+   "variantes": [
+    {
+     "id": "Cable_Internal_Rotation",
+     "etiqueta": "Polea",
+     "pop": 1
+    },
+    {
+     "id": "Internal_Rotation_with_Band",
+     "etiqueta": "Liga",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Elevación de hombros en banco inclinado",
+   "variantes": [
+    {
+     "id": "Dumbbell_Incline_Shoulder_Raise",
+     "etiqueta": "Mancuernas",
+     "pop": 1
+    },
+    {
+     "id": "Barbell_Incline_Shoulder_Raise",
+     "etiqueta": "Barra",
+     "pop": 1
+    },
+    {
+     "id": "Smith_Incline_Shoulder_Raise",
+     "etiqueta": "Smith",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Halo",
+   "variantes": [
+    {
+     "id": "Kettlebell_Halo",
+     "etiqueta": "Kettlebell",
+     "pop": 1
+    },
+    {
+     "id": "Kettlebell_Halo_With_Overhead_Extension",
+     "etiqueta": "Con extensión sobre la cabeza",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Curl de bíceps",
+   "grupos": [
+    {
+     "nombre": "De pie",
+     "variantes": [
+      {
+       "id": "Barbell_Curl",
+       "etiqueta": "Barra",
+       "pop": 5
+      },
+      {
+       "id": "Dumbbell_Bicep_Curl",
+       "etiqueta": "Mancuernas",
+       "pop": 5
+      },
+      {
+       "id": "Dumbbell_Alternate_Bicep_Curl",
+       "etiqueta": "Mancuernas alternado",
+       "pop": 4
+      },
+      {
+       "id": "EZ-Bar_Curl",
+       "etiqueta": "Barra Z",
+       "pop": 4
+      },
+      {
+       "id": "Close-Grip_Standing_Barbell_Curl",
+       "etiqueta": "Barra agarre cerrado",
+       "pop": 1
+      },
+      {
+       "id": "Wide-Grip_Standing_Barbell_Curl",
+       "etiqueta": "Barra agarre abierto",
+       "pop": 1
+      },
+      {
+       "id": "Close-Grip_EZ_Bar_Curl",
+       "etiqueta": "Barra Z agarre cerrado",
+       "pop": 1
+      },
+      {
+       "id": "Close-Grip_EZ-Bar_Curl_with_Band",
+       "etiqueta": "Barra Z con liga",
+       "pop": 1
+      },
+      {
+       "id": "Drag_Curl",
+       "etiqueta": "De arrastre",
+       "pop": 1
+      },
+      {
+       "id": "Standing_Inner-Biceps_Curl",
+       "etiqueta": "Bíceps interno",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Polea",
+     "variantes": [
+      {
+       "id": "Standing_Biceps_Cable_Curl",
+       "etiqueta": "Polea de pie",
+       "pop": 4
+      },
+      {
+       "id": "Standing_One-Arm_Cable_Curl",
+       "etiqueta": "Polea a una mano",
+       "pop": 2
+      },
+      {
+       "id": "High_Cable_Curls",
+       "etiqueta": "Polea alta",
+       "pop": 1
+      },
+      {
+       "id": "Lying_Cable_Curl",
+       "etiqueta": "Acostado en polea",
+       "pop": 1
+      },
+      {
+       "id": "Lying_Close-Grip_Bar_Curl_On_High_Pulley",
+       "etiqueta": "Acostado en polea alta",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Sentado o inclinado",
+     "variantes": [
+      {
+       "id": "Incline_Dumbbell_Curl",
+       "etiqueta": "Mancuernas inclinado",
+       "pop": 4
+      },
+      {
+       "id": "Seated_Dumbbell_Curl",
+       "etiqueta": "Mancuernas sentado con giro",
+       "pop": 2
+      },
+      {
+       "id": "Alternate_Incline_Dumbbell_Curl",
+       "etiqueta": "Alternado en banco inclinado",
+       "pop": 1
+      },
+      {
+       "id": "Incline_Inner_Biceps_Curl",
+       "etiqueta": "Inclinado bíceps interno",
+       "pop": 1
+      },
+      {
+       "id": "Flexor_Incline_Dumbbell_Curls",
+       "etiqueta": "Inclinado de flexores",
+       "pop": 1
+      },
+      {
+       "id": "Standing_One-Arm_Dumbbell_Curl_Over_Incline_Bench",
+       "etiqueta": "A una mano sobre banco inclinado",
+       "pop": 1
+      },
+      {
+       "id": "Seated_Dumbbell_Inner_Biceps_Curl",
+       "etiqueta": "Abierto sentado",
+       "pop": 1
+      },
+      {
+       "id": "Dumbbell_Prone_Incline_Curl",
+       "etiqueta": "Boca abajo en banco inclinado",
+       "pop": 1
+      },
+      {
+       "id": "Barbell_Curls_Lying_Against_An_Incline",
+       "etiqueta": "Barra recostado en banco inclinado",
+       "pop": 1
+      },
+      {
+       "id": "Lying_Supine_Dumbbell_Curl",
+       "etiqueta": "Mancuernas acostado en banco",
+       "pop": 1
+      },
+      {
+       "id": "Lying_High_Bench_Barbell_Curl",
+       "etiqueta": "Barra acostado en banco alto",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Máquina",
+     "variantes": [
+      {
+       "id": "Machine_Bicep_Curl",
+       "etiqueta": "Máquina",
+       "pop": 3
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "nombre": "Curl predicador",
+   "variantes": [
+    {
+     "id": "Preacher_Curl",
+     "etiqueta": "Barra (banco Scott)",
+     "pop": 4
+    },
+    {
+     "id": "One_Arm_Dumbbell_Preacher_Curl",
+     "etiqueta": "Mancuerna a un brazo",
+     "pop": 3
+    },
+    {
+     "id": "Machine_Preacher_Curls",
+     "etiqueta": "Máquina",
+     "pop": 3
+    },
+    {
+     "id": "Cable_Preacher_Curl",
+     "etiqueta": "Polea",
+     "pop": 2
+    },
+    {
+     "id": "Two-Arm_Dumbbell_Preacher_Curl",
+     "etiqueta": "Mancuernas a dos brazos",
+     "pop": 2
+    },
+    {
+     "id": "Spider_Curl",
+     "etiqueta": "Araña con barra Z",
+     "pop": 2
+    }
+   ]
+  },
+  {
+   "nombre": "Curl martillo",
+   "variantes": [
+    {
+     "id": "Hammer_Curls",
+     "etiqueta": "Mancuernas",
+     "pop": 5
+    },
+    {
+     "id": "Cable_Hammer_Curls_-_Rope_Attachment",
+     "etiqueta": "Cuerda en polea",
+     "pop": 4
+    },
+    {
+     "id": "Alternate_Hammer_Curl",
+     "etiqueta": "Alternado",
+     "pop": 3
+    },
+    {
+     "id": "Cross_Body_Hammer_Curl",
+     "etiqueta": "Cruzado",
+     "pop": 2
+    },
+    {
+     "id": "Incline_Hammer_Curls",
+     "etiqueta": "Inclinado",
+     "pop": 1
+    },
+    {
+     "id": "Preacher_Hammer_Dumbbell_Curl",
+     "etiqueta": "En banco predicador",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Curl concentrado",
+   "variantes": [
+    {
+     "id": "Concentration_Curls",
+     "etiqueta": "Sentado",
+     "pop": 4
+    },
+    {
+     "id": "Standing_Concentration_Curl",
+     "etiqueta": "De pie",
+     "pop": 1
+    },
+    {
+     "id": "Seated_Close-Grip_Concentration_Barbell_Curl",
+     "etiqueta": "Barra agarre cerrado",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Curl invertido",
+   "variantes": [
+    {
+     "id": "Reverse_Barbell_Curl",
+     "etiqueta": "Barra",
+     "pop": 2
+    },
+    {
+     "id": "Reverse_Cable_Curl",
+     "etiqueta": "Polea",
+     "pop": 2
+    },
+    {
+     "id": "Standing_Dumbbell_Reverse_Curl",
+     "etiqueta": "Mancuernas",
+     "pop": 1
+    },
+    {
+     "id": "Reverse_Barbell_Preacher_Curls",
+     "etiqueta": "Predicador con barra Z",
+     "pop": 1
+    },
+    {
+     "id": "Reverse_Plate_Curls",
+     "etiqueta": "Disco",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Curl Zottman",
+   "variantes": [
+    {
+     "id": "Zottman_Curl",
+     "etiqueta": "Mancuernas",
+     "pop": 2
+    },
+    {
+     "id": "Zottman_Preacher_Curl",
+     "etiqueta": "En predicador",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Extensión de tríceps en polea alta",
+   "variantes": [
+    {
+     "id": "Triceps_Pushdown_-_Rope_Attachment",
+     "etiqueta": "Cuerda",
+     "pop": 5
+    },
+    {
+     "id": "Triceps_Pushdown",
+     "etiqueta": "Barra",
+     "pop": 5
+    },
+    {
+     "id": "Triceps_Pushdown_-_V-Bar_Attachment",
+     "etiqueta": "Barra V",
+     "pop": 4
+    },
+    {
+     "id": "Cable_One_Arm_Tricep_Extension",
+     "etiqueta": "A una mano",
+     "pop": 3
+    },
+    {
+     "id": "Reverse_Grip_Triceps_Pushdown",
+     "etiqueta": "Agarre supino",
+     "pop": 2
+    }
+   ]
+  },
+  {
+   "nombre": "Extensión de tríceps sobre la cabeza",
+   "grupos": [
+    {
+     "nombre": "Polea",
+     "variantes": [
+      {
+       "id": "Cable_Rope_Overhead_Triceps_Extension",
+       "etiqueta": "Cuerda",
+       "pop": 4
+      },
+      {
+       "id": "Triceps_Overhead_Extension_with_Rope",
+       "etiqueta": "Cuerda de espaldas a la polea",
+       "pop": 2
+      },
+      {
+       "id": "Standing_Low-Pulley_One-Arm_Triceps_Extension",
+       "etiqueta": "A una mano en polea baja",
+       "pop": 1
+      },
+      {
+       "id": "Kneeling_Cable_Triceps_Extension",
+       "etiqueta": "Arrodillado",
+       "pop": 1
+      },
+      {
+       "id": "Cable_Incline_Triceps_Extension",
+       "etiqueta": "Inclinado",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Mancuernas",
+     "variantes": [
+      {
+       "id": "Seated_Triceps_Press",
+       "etiqueta": "Sentado (copa)",
+       "pop": 4
+      },
+      {
+       "id": "Standing_Dumbbell_Triceps_Extension",
+       "etiqueta": "De pie (copa)",
+       "pop": 3
+      },
+      {
+       "id": "Dumbbell_One-Arm_Triceps_Extension",
+       "etiqueta": "A un brazo",
+       "pop": 2
+      }
+     ]
+    },
+    {
+     "nombre": "Barra y otros",
+     "variantes": [
+      {
+       "id": "Standing_Overhead_Barbell_Triceps_Extension",
+       "etiqueta": "Barra de pie",
+       "pop": 2
+      },
+      {
+       "id": "Kettlebell_Overhead_Triceps_Extension",
+       "etiqueta": "Kettlebell",
+       "pop": 1
+      },
+      {
+       "id": "Speed_Band_Overhead_Triceps",
+       "etiqueta": "Liga",
+       "pop": 1
+      },
+      {
+       "id": "Standing_Towel_Triceps_Extension",
+       "etiqueta": "Toalla",
+       "pop": 1
+      },
+      {
+       "id": "Sled_Overhead_Triceps_Extension",
+       "etiqueta": "Trineo",
+       "pop": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "nombre": "Rompecráneos (press francés)",
+   "variantes": [
+    {
+     "id": "EZ-Bar_Skullcrusher",
+     "etiqueta": "Barra Z",
+     "pop": 5
+    },
+    {
+     "id": "Lying_Dumbbell_Tricep_Extension",
+     "etiqueta": "Mancuernas",
+     "pop": 3
+    },
+    {
+     "id": "Lying_Close-Grip_Barbell_Triceps_Extension_Behind_The_Head",
+     "etiqueta": "Barra tras la cabeza",
+     "pop": 2
+    },
+    {
+     "id": "Lying_Close-Grip_Barbell_Triceps_Press_To_Chin",
+     "etiqueta": "Barra Z a la barbilla",
+     "pop": 2
+    },
+    {
+     "id": "Cable_Lying_Triceps_Extension",
+     "etiqueta": "Polea con barra",
+     "pop": 2
+    },
+    {
+     "id": "Low_Cable_Triceps_Extension",
+     "etiqueta": "Polea con cuerda",
+     "pop": 1
+    },
+    {
+     "id": "Incline_Barbell_Triceps_Extension",
+     "etiqueta": "Barra en banco inclinado",
+     "pop": 1
+    },
+    {
+     "id": "Decline_Dumbbell_Triceps_Extension",
+     "etiqueta": "Mancuernas en banco declinado",
+     "pop": 1
+    },
+    {
+     "id": "Decline_EZ_Bar_Triceps_Extension",
+     "etiqueta": "Barra Z en banco declinado",
+     "pop": 1
+    },
+    {
+     "id": "Decline_Close-Grip_Bench_To_Skull_Crusher",
+     "etiqueta": "Press declinado a rompecráneos",
+     "pop": 1
+    },
+    {
+     "id": "Dumbbell_Tricep_Extension_-Pronated_Grip",
+     "etiqueta": "Mancuernas agarre prono",
+     "pop": 1
+    },
+    {
+     "id": "One_Arm_Pronated_Dumbbell_Triceps_Extension",
+     "etiqueta": "Mancuerna a un brazo prono",
+     "pop": 1
+    },
+    {
+     "id": "One_Arm_Supinated_Dumbbell_Triceps_Extension",
+     "etiqueta": "Mancuerna a un brazo supino",
+     "pop": 1
+    },
+    {
+     "id": "Band_Skull_Crusher",
+     "etiqueta": "Liga",
+     "pop": 1
+    },
+    {
+     "id": "Tate_Press",
+     "etiqueta": "Press Tate",
+     "pop": 1
+    },
+    {
+     "id": "JM_Press",
+     "etiqueta": "Press JM",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Patada de tríceps",
+   "variantes": [
+    {
+     "id": "Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension",
+     "etiqueta": "A un brazo",
+     "pop": 5
+    },
+    {
+     "id": "Tricep_Dumbbell_Kickback",
+     "etiqueta": "Dos brazos",
+     "pop": 3
+    },
+    {
+     "id": "Seated_Bent-Over_One-Arm_Dumbbell_Triceps_Extension",
+     "etiqueta": "Sentado a un brazo",
+     "pop": 1
+    },
+    {
+     "id": "Seated_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension",
+     "etiqueta": "Sentado a dos brazos",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Curl de muñeca",
+   "grupos": [
+    {
+     "nombre": "Palmas arriba",
+     "variantes": [
+      {
+       "id": "Palms-Up_Barbell_Wrist_Curl_Over_A_Bench",
+       "etiqueta": "Barra sobre banco",
+       "pop": 2
+      },
+      {
+       "id": "Palms-Up_Dumbbell_Wrist_Curl_Over_A_Bench",
+       "etiqueta": "Mancuernas sobre banco",
+       "pop": 2
+      },
+      {
+       "id": "Seated_Palm-Up_Barbell_Wrist_Curl",
+       "etiqueta": "Barra sentado",
+       "pop": 2
+      },
+      {
+       "id": "Seated_Dumbbell_Palms-Up_Wrist_Curl",
+       "etiqueta": "Mancuerna sentado",
+       "pop": 1
+      },
+      {
+       "id": "Seated_One-Arm_Dumbbell_Palms-Up_Wrist_Curl",
+       "etiqueta": "Mancuerna a un brazo",
+       "pop": 1
+      },
+      {
+       "id": "Seated_Two-Arm_Palms-Up_Low-Pulley_Wrist_Curl",
+       "etiqueta": "Polea baja",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Palmas abajo",
+     "variantes": [
+      {
+       "id": "Palms-Down_Wrist_Curl_Over_A_Bench",
+       "etiqueta": "Barra sobre banco",
+       "pop": 2
+      },
+      {
+       "id": "Palms-Down_Dumbbell_Wrist_Curl_Over_A_Bench",
+       "etiqueta": "Mancuernas sobre banco",
+       "pop": 2
+      },
+      {
+       "id": "Seated_Palms-Down_Barbell_Wrist_Curl",
+       "etiqueta": "Barra sentado",
+       "pop": 2
+      },
+      {
+       "id": "Seated_Dumbbell_Palms-Down_Wrist_Curl",
+       "etiqueta": "Mancuerna sentado",
+       "pop": 1
+      },
+      {
+       "id": "Seated_One-Arm_Dumbbell_Palms-Down_Wrist_Curl",
+       "etiqueta": "Mancuerna a un brazo",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Otras",
+     "variantes": [
+      {
+       "id": "Standing_Palms-Up_Barbell_Behind_The_Back_Wrist_Curl",
+       "etiqueta": "Barra tras la espalda",
+       "pop": 2
+      },
+      {
+       "id": "Wrist_Roller",
+       "etiqueta": "Rodillo de muñeca",
+       "pop": 2
+      },
+      {
+       "id": "Cable_Wrist_Curl",
+       "etiqueta": "Polea",
+       "pop": 1
+      },
+      {
+       "id": "Finger_Curls",
+       "etiqueta": "Curl de dedos",
+       "pop": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "nombre": "Sentadilla",
+   "grupos": [
+    {
+     "nombre": "Con barra atrás",
+     "variantes": [
+      {
+       "id": "Barbell_Squat",
+       "etiqueta": "Barra",
+       "pop": 5
+      },
+      {
+       "id": "Olympic_Squat",
+       "etiqueta": "Olímpica",
+       "pop": 2
+      },
+      {
+       "id": "Wide_Stance_Barbell_Squat",
+       "etiqueta": "Postura amplia",
+       "pop": 2
+      },
+      {
+       "id": "Barbell_Full_Squat",
+       "etiqueta": "Profunda",
+       "pop": 2
+      },
+      {
+       "id": "Narrow_Stance_Squats",
+       "etiqueta": "Postura cerrada",
+       "pop": 1
+      },
+      {
+       "id": "Squat_with_Bands",
+       "etiqueta": "Con ligas",
+       "pop": 1
+      },
+      {
+       "id": "Squat_with_Chains",
+       "etiqueta": "Con cadenas",
+       "pop": 1
+      },
+      {
+       "id": "Reverse_Band_Power_Squat",
+       "etiqueta": "Con ligas invertidas",
+       "pop": 1
+      },
+      {
+       "id": "Speed_Squats",
+       "etiqueta": "Con velocidad",
+       "pop": 1
+      },
+      {
+       "id": "Squat_with_Plate_Movers",
+       "etiqueta": "Con deslizamiento de disco",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Frontal",
+     "variantes": [
+      {
+       "id": "Front_Barbell_Squat",
+       "etiqueta": "Barra",
+       "pop": 4
+      },
+      {
+       "id": "Front_Squat_Clean_Grip",
+       "etiqueta": "Agarre de cargada",
+       "pop": 1
+      },
+      {
+       "id": "Front_Squats_With_Two_Kettlebells",
+       "etiqueta": "Dos kettlebells",
+       "pop": 1
+      },
+      {
+       "id": "Frankenstein_Squat",
+       "etiqueta": "Frankenstein",
+       "pop": 1
+      },
+      {
+       "id": "Front_Barbell_Squat_To_A_Bench",
+       "etiqueta": "Al banco",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Smith y máquina",
+     "variantes": [
+      {
+       "id": "Smith_Machine_Squat",
+       "etiqueta": "Smith",
+       "pop": 4
+      },
+      {
+       "id": "Lying_Machine_Squat",
+       "etiqueta": "Acostado en máquina",
+       "pop": 1
+      },
+      {
+       "id": "Chair_Squat",
+       "etiqueta": "Tipo silla",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Mancuerna o kettlebell",
+     "variantes": [
+      {
+       "id": "Goblet_Squat",
+       "etiqueta": "Goblet",
+       "pop": 5
+      },
+      {
+       "id": "Dumbbell_Squat",
+       "etiqueta": "Mancuernas",
+       "pop": 3
+      },
+      {
+       "id": "Plie_Dumbbell_Squat",
+       "etiqueta": "Plié con mancuerna",
+       "pop": 3
+      }
+     ]
+    },
+    {
+     "nombre": "Peso corporal y ligas",
+     "variantes": [
+      {
+       "id": "Bodyweight_Squat",
+       "etiqueta": "Peso corporal",
+       "pop": 5
+      },
+      {
+       "id": "Freehand_Jump_Squat",
+       "etiqueta": "Con salto",
+       "pop": 3
+      },
+      {
+       "id": "Squats_-_With_Bands",
+       "etiqueta": "Ligas",
+       "pop": 2
+      },
+      {
+       "id": "Weighted_Jump_Squat",
+       "etiqueta": "Con salto y peso",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Al cajón o al banco",
+     "variantes": [
+      {
+       "id": "Box_Squat",
+       "etiqueta": "Al cajón con barra",
+       "pop": 2
+      },
+      {
+       "id": "Barbell_Squat_To_A_Bench",
+       "etiqueta": "Al banco con barra",
+       "pop": 2
+      },
+      {
+       "id": "Dumbbell_Squat_To_A_Bench",
+       "etiqueta": "Al banco con mancuerna",
+       "pop": 1
+      },
+      {
+       "id": "Box_Squat_with_Bands",
+       "etiqueta": "Al cajón con ligas",
+       "pop": 1
+      },
+      {
+       "id": "Box_Squat_with_Chains",
+       "etiqueta": "Al cajón con cadenas",
+       "pop": 1
+      },
+      {
+       "id": "Reverse_Band_Box_Squat",
+       "etiqueta": "Al cajón con ligas invertidas",
+       "pop": 1
+      },
+      {
+       "id": "Speed_Box_Squat",
+       "etiqueta": "Al cajón con velocidad",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Otras",
+     "variantes": [
+      {
+       "id": "Zercher_Squats",
+       "etiqueta": "Zercher",
+       "pop": 2
+      },
+      {
+       "id": "Overhead_Squat",
+       "etiqueta": "Overhead con barra",
+       "pop": 2
+      },
+      {
+       "id": "Weighted_Sissy_Squat",
+       "etiqueta": "Sissy",
+       "pop": 2
+      },
+      {
+       "id": "Kettlebell_Pistol_Squat",
+       "etiqueta": "Pistola con kettlebell",
+       "pop": 2
+      },
+      {
+       "id": "Smith_Machine_Pistol_Squat",
+       "etiqueta": "Pistola en Smith",
+       "pop": 1
+      },
+      {
+       "id": "One-Arm_Overhead_Kettlebell_Squats",
+       "etiqueta": "Overhead a un brazo",
+       "pop": 1
+      },
+      {
+       "id": "Jefferson_Squats",
+       "etiqueta": "Jefferson",
+       "pop": 1
+      },
+      {
+       "id": "Weighted_Squat",
+       "etiqueta": "Con cinturón de lastre",
+       "pop": 1
+      },
+      {
+       "id": "Barbell_Side_Split_Squat",
+       "etiqueta": "Lateral con barra",
+       "pop": 1
+      },
+      {
+       "id": "Kneeling_Squat",
+       "etiqueta": "De rodillas",
+       "pop": 1
+      },
+      {
+       "id": "Kneeling_Jump_Squat",
+       "etiqueta": "Con salto desde rodillas",
+       "pop": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "nombre": "Sentadilla hack",
+   "variantes": [
+    {
+     "id": "Hack_Squat",
+     "etiqueta": "Máquina",
+     "pop": 5
+    },
+    {
+     "id": "Barbell_Hack_Squat",
+     "etiqueta": "Barra",
+     "pop": 2
+    },
+    {
+     "id": "Narrow_Stance_Hack_Squats",
+     "etiqueta": "Postura cerrada",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Prensa de piernas",
+   "variantes": [
+    {
+     "id": "Leg_Press",
+     "etiqueta": "Máquina",
+     "pop": 5
+    },
+    {
+     "id": "Narrow_Stance_Leg_Press",
+     "etiqueta": "Postura cerrada",
+     "pop": 2
+    },
+    {
+     "id": "Smith_Machine_Leg_Press",
+     "etiqueta": "Smith",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Sentadilla búlgara",
+   "variantes": [
+    {
+     "id": "Split_Squat_with_Dumbbells",
+     "etiqueta": "Mancuernas",
+     "pop": 5
+    },
+    {
+     "id": "One_Leg_Barbell_Squat",
+     "etiqueta": "Barra",
+     "pop": 3
+    },
+    {
+     "id": "Smith_Single-Leg_Split_Squat",
+     "etiqueta": "Smith",
+     "pop": 3
+    },
+    {
+     "id": "Suspended_Split_Squat",
+     "etiqueta": "Suspensión",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Desplantes",
+   "grupos": [
+    {
+     "nombre": "Fijos o hacia atrás",
+     "variantes": [
+      {
+       "id": "Dumbbell_Lunges",
+       "etiqueta": "Mancuernas",
+       "pop": 4
+      },
+      {
+       "id": "Dumbbell_Rear_Lunge",
+       "etiqueta": "Hacia atrás con mancuernas",
+       "pop": 4
+      },
+      {
+       "id": "Barbell_Lunge",
+       "etiqueta": "Barra",
+       "pop": 3
+      },
+      {
+       "id": "Elevated_Back_Lunge",
+       "etiqueta": "Hacia atrás elevado con barra",
+       "pop": 1
+      },
+      {
+       "id": "Lunge_Pass_Through",
+       "etiqueta": "Con pase por debajo (kettlebell)",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Caminando",
+     "variantes": [
+      {
+       "id": "Bodyweight_Walking_Lunge",
+       "etiqueta": "Peso corporal",
+       "pop": 4
+      },
+      {
+       "id": "Barbell_Walking_Lunge",
+       "etiqueta": "Barra",
+       "pop": 2
+      }
+     ]
+    },
+    {
+     "nombre": "Con salto",
+     "variantes": [
+      {
+       "id": "Split_Jump",
+       "etiqueta": "Salto en el lugar",
+       "pop": 2
+      },
+      {
+       "id": "Split_Squats",
+       "etiqueta": "Salto alternando piernas",
+       "pop": 1
+      },
+      {
+       "id": "Lunge_Sprint",
+       "etiqueta": "Alternado en Smith",
+       "pop": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "nombre": "Subida al cajón",
+   "variantes": [
+    {
+     "id": "Dumbbell_Step_Ups",
+     "etiqueta": "Mancuernas",
+     "pop": 4
+    },
+    {
+     "id": "Barbell_Step_Ups",
+     "etiqueta": "Barra",
+     "pop": 2
+    },
+    {
+     "id": "Step-up_with_Knee_Raise",
+     "etiqueta": "Con elevación de rodilla",
+     "pop": 2
+    },
+    {
+     "id": "Single-Leg_High_Box_Squat",
+     "etiqueta": "Cajón alto a una pierna",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Extensión de piernas",
+   "variantes": [
+    {
+     "id": "Leg_Extensions",
+     "etiqueta": "Máquina",
+     "pop": 5
+    },
+    {
+     "id": "Single-Leg_Leg_Extension",
+     "etiqueta": "Una pierna",
+     "pop": 2
+    }
+   ]
+  },
+  {
+   "nombre": "Curl femoral",
+   "variantes": [
+    {
+     "id": "Lying_Leg_Curls",
+     "etiqueta": "Acostado en máquina",
+     "pop": 5
+    },
+    {
+     "id": "Seated_Leg_Curl",
+     "etiqueta": "Sentado en máquina",
+     "pop": 5
+    },
+    {
+     "id": "Standing_Leg_Curl",
+     "etiqueta": "De pie en máquina",
+     "pop": 3
+    },
+    {
+     "id": "Floor_Glute-Ham_Raise",
+     "etiqueta": "Nórdico",
+     "pop": 3
+    },
+    {
+     "id": "Natural_Glute_Ham_Raise",
+     "etiqueta": "Nórdico en banco",
+     "pop": 2
+    },
+    {
+     "id": "Ball_Leg_Curl",
+     "etiqueta": "En pelota",
+     "pop": 2
+    },
+    {
+     "id": "Platform_Hamstring_Slides",
+     "etiqueta": "Deslizamientos en el piso",
+     "pop": 2
+    },
+    {
+     "id": "Seated_Band_Hamstring_Curl",
+     "etiqueta": "Sentado con liga",
+     "pop": 1
+    },
+    {
+     "id": "Prone_Manual_Hamstring",
+     "etiqueta": "Con compañero",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Glute-ham raise",
+   "variantes": [
+    {
+     "id": "Glute_Ham_Raise",
+     "etiqueta": "Máquina",
+     "pop": 2
+    }
+   ]
+  },
+  {
+   "nombre": "Hip thrust",
+   "variantes": [
+    {
+     "id": "Barbell_Hip_Thrust",
+     "etiqueta": "Barra",
+     "pop": 5
+    },
+    {
+     "id": "Hip_Lift_with_Band",
+     "etiqueta": "Liga",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Puente de glúteos",
+   "variantes": [
+    {
+     "id": "Butt_Lift_Bridge",
+     "etiqueta": "Peso corporal",
+     "pop": 4
+    },
+    {
+     "id": "Barbell_Glute_Bridge",
+     "etiqueta": "Barra",
+     "pop": 3
+    },
+    {
+     "id": "Single_Leg_Glute_Bridge",
+     "etiqueta": "A una pierna",
+     "pop": 3
+    },
+    {
+     "id": "Physioball_Hip_Bridge",
+     "etiqueta": "En pelota",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Patada de glúteo",
+   "variantes": [
+    {
+     "id": "One-Legged_Cable_Kickback",
+     "etiqueta": "Polea",
+     "pop": 4
+    },
+    {
+     "id": "Glute_Kickback",
+     "etiqueta": "Peso corporal",
+     "pop": 3
+    },
+    {
+     "id": "Hip_Extension_with_Bands",
+     "etiqueta": "Liga",
+     "pop": 2
+    }
+   ]
+  },
+  {
+   "nombre": "Aducción de cadera",
+   "variantes": [
+    {
+     "id": "Thigh_Adductor",
+     "etiqueta": "Máquina",
+     "pop": 4
+    },
+    {
+     "id": "Cable_Hip_Adduction",
+     "etiqueta": "Polea",
+     "pop": 1
+    },
+    {
+     "id": "Band_Hip_Adductions",
+     "etiqueta": "Liga",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Abducción de cadera",
+   "variantes": [
+    {
+     "id": "Thigh_Abductor",
+     "etiqueta": "Máquina",
+     "pop": 4
+    },
+    {
+     "id": "Monster_Walk",
+     "etiqueta": "Caminata de monstruo con ligas",
+     "pop": 2
+    }
+   ]
+  },
+  {
+   "nombre": "Elevación de pantorrilla",
+   "grupos": [
+    {
+     "nombre": "De pie",
+     "variantes": [
+      {
+       "id": "Standing_Calf_Raises",
+       "etiqueta": "Máquina",
+       "pop": 5
+      },
+      {
+       "id": "Smith_Machine_Calf_Raise",
+       "etiqueta": "Smith",
+       "pop": 3
+      },
+      {
+       "id": "Standing_Dumbbell_Calf_Raise",
+       "etiqueta": "Mancuernas",
+       "pop": 3
+      },
+      {
+       "id": "Standing_Barbell_Calf_Raise",
+       "etiqueta": "Barra",
+       "pop": 2
+      },
+      {
+       "id": "Donkey_Calf_Raises",
+       "etiqueta": "Tipo burro",
+       "pop": 2
+      },
+      {
+       "id": "Calf_Raise_On_A_Dumbbell",
+       "etiqueta": "Sobre mancuerna",
+       "pop": 1
+      },
+      {
+       "id": "Calf_Raises_-_With_Bands",
+       "etiqueta": "Liga",
+       "pop": 1
+      },
+      {
+       "id": "Rocking_Standing_Calf_Raise",
+       "etiqueta": "Con balanceo",
+       "pop": 1
+      },
+      {
+       "id": "Smith_Machine_Reverse_Calf_Raises",
+       "etiqueta": "Inversa en Smith",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Sentado",
+     "variantes": [
+      {
+       "id": "Seated_Calf_Raise",
+       "etiqueta": "Máquina",
+       "pop": 4
+      },
+      {
+       "id": "Barbell_Seated_Calf_Raise",
+       "etiqueta": "Barra",
+       "pop": 1
+      },
+      {
+       "id": "Dumbbell_Seated_One-Leg_Calf_Raise",
+       "etiqueta": "Mancuerna a una pierna",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "En prensa",
+     "variantes": [
+      {
+       "id": "Calf_Press_On_The_Leg_Press_Machine",
+       "etiqueta": "En prensa de piernas",
+       "pop": 4
+      },
+      {
+       "id": "Calf_Press",
+       "etiqueta": "Prensa de pantorrilla",
+       "pop": 2
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "nombre": "Crunch",
+   "grupos": [
+    {
+     "nombre": "En el piso",
+     "variantes": [
+      {
+       "id": "Crunches",
+       "etiqueta": "Clásico",
+       "pop": 5
+      },
+      {
+       "id": "Tuck_Crunch",
+       "etiqueta": "Piernas elevadas",
+       "pop": 2
+      },
+      {
+       "id": "Weighted_Crunches",
+       "etiqueta": "Con peso",
+       "pop": 2
+      },
+      {
+       "id": "Crunch_-_Hands_Overhead",
+       "etiqueta": "Brazos extendidos",
+       "pop": 1
+      },
+      {
+       "id": "Crunch_-_Legs_On_Exercise_Ball",
+       "etiqueta": "Piernas sobre pelota",
+       "pop": 1
+      },
+      {
+       "id": "Cross-Body_Crunch",
+       "etiqueta": "Cruzado",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Oblicuo",
+     "variantes": [
+      {
+       "id": "Air_Bike",
+       "etiqueta": "Bicicleta",
+       "pop": 4
+      },
+      {
+       "id": "Oblique_Crunches",
+       "etiqueta": "Oblicuo",
+       "pop": 3
+      },
+      {
+       "id": "Elbow_to_Knee",
+       "etiqueta": "Codo a rodilla",
+       "pop": 2
+      },
+      {
+       "id": "Alternate_Heel_Touchers",
+       "etiqueta": "Toques de talón",
+       "pop": 2
+      },
+      {
+       "id": "Oblique_Crunches_-_On_The_Floor",
+       "etiqueta": "Oblicuo en el piso",
+       "pop": 1
+      },
+      {
+       "id": "Decline_Oblique_Crunch",
+       "etiqueta": "Oblicuo declinado",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Declinado",
+     "variantes": [
+      {
+       "id": "Decline_Crunch",
+       "etiqueta": "Declinado",
+       "pop": 3
+      },
+      {
+       "id": "Weighted_Sit-Ups_-_With_Bands",
+       "etiqueta": "Con ligas en banco declinado",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Invertido",
+     "variantes": [
+      {
+       "id": "Reverse_Crunch",
+       "etiqueta": "Invertido",
+       "pop": 4
+      },
+      {
+       "id": "Decline_Reverse_Crunch",
+       "etiqueta": "Invertido declinado",
+       "pop": 1
+      },
+      {
+       "id": "Cable_Reverse_Crunch",
+       "etiqueta": "Invertido en polea",
+       "pop": 1
+      },
+      {
+       "id": "Suspended_Reverse_Crunch",
+       "etiqueta": "Invertido en suspensión",
+       "pop": 1
+      },
+      {
+       "id": "Smith_Machine_Hip_Raise",
+       "etiqueta": "Invertido en Smith",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Polea o máquina",
+     "variantes": [
+      {
+       "id": "Rope_Crunch",
+       "etiqueta": "Polea con cuerda",
+       "pop": 4
+      },
+      {
+       "id": "Ab_Crunch_Machine",
+       "etiqueta": "Máquina",
+       "pop": 4
+      },
+      {
+       "id": "Cable_Seated_Crunch",
+       "etiqueta": "Sentado en polea",
+       "pop": 1
+      },
+      {
+       "id": "Standing_Rope_Crunch",
+       "etiqueta": "De pie en polea",
+       "pop": 1
+      },
+      {
+       "id": "Kneeling_Cable_Crunch_With_Alternating_Oblique_Twists",
+       "etiqueta": "Polea con giro",
+       "pop": 1
+      },
+      {
+       "id": "Bosu_Ball_Cable_Crunch_With_Side_Bends",
+       "etiqueta": "En bosu con polea",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Pelota",
+     "variantes": [
+      {
+       "id": "Exercise_Ball_Crunch",
+       "etiqueta": "Pelota de estabilidad",
+       "pop": 2
+      },
+      {
+       "id": "Exercise_Ball_Pull-In",
+       "etiqueta": "Encogimiento de rodillas",
+       "pop": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "nombre": "Abdominal (sit-up)",
+   "variantes": [
+    {
+     "id": "Sit-Up",
+     "etiqueta": "Completo",
+     "pop": 3
+    },
+    {
+     "id": "Jackknife_Sit-Up",
+     "etiqueta": "Navaja",
+     "pop": 2
+    },
+    {
+     "id": "3_4_Sit-Up",
+     "etiqueta": "3/4",
+     "pop": 1
+    },
+    {
+     "id": "Janda_Sit-Up",
+     "etiqueta": "Janda",
+     "pop": 1
+    },
+    {
+     "id": "Frog_Sit-Ups",
+     "etiqueta": "De rana",
+     "pop": 1
+    },
+    {
+     "id": "Press_Sit-Up",
+     "etiqueta": "Con press de barra",
+     "pop": 1
+    },
+    {
+     "id": "Otis-Up",
+     "etiqueta": "Otis-up",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Elevación de piernas",
+   "grupos": [
+    {
+     "nombre": "Colgado",
+     "variantes": [
+      {
+       "id": "Hanging_Leg_Raise",
+       "etiqueta": "Colgado",
+       "pop": 4
+      },
+      {
+       "id": "Wind_Sprints",
+       "etiqueta": "Alternas de rodillas",
+       "pop": 2
+      },
+      {
+       "id": "Hanging_Pike",
+       "etiqueta": "Pike",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "En paralelas",
+     "variantes": [
+      {
+       "id": "Knee_Hip_Raise_On_Parallel_Bars",
+       "etiqueta": "Paralelas",
+       "pop": 3
+      }
+     ]
+    },
+    {
+     "nombre": "En el piso o banco",
+     "variantes": [
+      {
+       "id": "Flat_Bench_Lying_Leg_Raise",
+       "etiqueta": "Banco plano",
+       "pop": 3
+      },
+      {
+       "id": "Scissor_Kick",
+       "etiqueta": "Tijeras",
+       "pop": 3
+      },
+      {
+       "id": "Flat_Bench_Leg_Pull-In",
+       "etiqueta": "Encogimiento en banco plano",
+       "pop": 1
+      },
+      {
+       "id": "Seated_Flat_Bench_Leg_Pull-In",
+       "etiqueta": "Sentado en banco",
+       "pop": 1
+      },
+      {
+       "id": "Bent-Knee_Hip_Raise",
+       "etiqueta": "Elevación de cadera",
+       "pop": 1
+      },
+      {
+       "id": "Bottoms_Up",
+       "etiqueta": "Bottoms up",
+       "pop": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "nombre": "Plancha",
+   "variantes": [
+    {
+     "id": "Plank",
+     "etiqueta": "Frontal",
+     "pop": 5
+    },
+    {
+     "id": "Side_Bridge",
+     "etiqueta": "Lateral",
+     "pop": 4
+    },
+    {
+     "id": "Butt-Ups",
+     "etiqueta": "Con elevación de glúteos",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Giro ruso",
+   "variantes": [
+    {
+     "id": "Russian_Twist",
+     "etiqueta": "Peso corporal",
+     "pop": 4
+    },
+    {
+     "id": "Plate_Twist",
+     "etiqueta": "Con disco",
+     "pop": 3
+    },
+    {
+     "id": "Cable_Russian_Twists",
+     "etiqueta": "Polea",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Rueda abdominal (rollout)",
+   "variantes": [
+    {
+     "id": "Ab_Roller",
+     "etiqueta": "Rueda",
+     "pop": 4
+    },
+    {
+     "id": "Barbell_Ab_Rollout",
+     "etiqueta": "Barra",
+     "pop": 2
+    },
+    {
+     "id": "Barbell_Ab_Rollout_-_On_Knees",
+     "etiqueta": "Barra de rodillas",
+     "pop": 2
+    },
+    {
+     "id": "Barbell_Rollout_from_Bench",
+     "etiqueta": "Desde banco",
+     "pop": 1
+    },
+    {
+     "id": "Suspended_Fallout",
+     "etiqueta": "Suspensión (fallout)",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Leñador en polea",
+   "variantes": [
+    {
+     "id": "Standing_Cable_Wood_Chop",
+     "etiqueta": "Descendente",
+     "pop": 3
+    },
+    {
+     "id": "Standing_Cable_Lift",
+     "etiqueta": "Ascendente",
+     "pop": 3
+    }
+   ]
+  },
+  {
+   "nombre": "Press Pallof",
+   "variantes": [
+    {
+     "id": "Pallof_Press",
+     "etiqueta": "Pallof",
+     "pop": 3
+    },
+    {
+     "id": "Pallof_Press_With_Rotation",
+     "etiqueta": "Con rotación",
+     "pop": 2
+    }
+   ]
+  },
+  {
+   "nombre": "Flexión lateral",
+   "variantes": [
+    {
+     "id": "Dumbbell_Side_Bend",
+     "etiqueta": "Mancuerna",
+     "pop": 3
+    },
+    {
+     "id": "Barbell_Side_Bend",
+     "etiqueta": "Barra",
+     "pop": 1
+    },
+    {
+     "id": "One-Arm_High-Pulley_Cable_Side_Bends",
+     "etiqueta": "Polea alta",
+     "pop": 1
+    },
+    {
+     "id": "Weighted_Ball_Side_Bend",
+     "etiqueta": "Pelota con peso",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Molino con kettlebell",
+   "variantes": [
+    {
+     "id": "Kettlebell_Windmill",
+     "etiqueta": "Kettlebell",
+     "pop": 1
+    },
+    {
+     "id": "Double_Kettlebell_Windmill",
+     "etiqueta": "Dos kettlebells",
+     "pop": 1
+    },
+    {
+     "id": "Advanced_Kettlebell_Windmill",
+     "etiqueta": "Avanzado",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Cargada (clean)",
+   "grupos": [
+    {
+     "nombre": "Completa",
+     "variantes": [
+      {
+       "id": "Clean",
+       "etiqueta": "Cargada",
+       "pop": 3
+      },
+      {
+       "id": "Power_Clean",
+       "etiqueta": "De potencia (power clean)",
+       "pop": 3
+      },
+      {
+       "id": "Hang_Clean",
+       "etiqueta": "Colgante",
+       "pop": 2
+      },
+      {
+       "id": "Hang_Clean_-_Below_the_Knees",
+       "etiqueta": "Colgante debajo de las rodillas",
+       "pop": 1
+      },
+      {
+       "id": "Clean_from_Blocks",
+       "etiqueta": "Desde bloques",
+       "pop": 1
+      },
+      {
+       "id": "Power_Clean_from_Blocks",
+       "etiqueta": "De potencia desde bloques",
+       "pop": 1
+      },
+      {
+       "id": "Split_Clean",
+       "etiqueta": "En tijera",
+       "pop": 1
+      },
+      {
+       "id": "Dumbbell_Clean",
+       "etiqueta": "Mancuerna",
+       "pop": 1
+      },
+      {
+       "id": "Smith_Machine_Hang_Power_Clean",
+       "etiqueta": "Smith colgante",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Ejercicios técnicos",
+     "variantes": [
+      {
+       "id": "Clean_Deadlift",
+       "etiqueta": "Peso muerto de cargada",
+       "pop": 1
+      },
+      {
+       "id": "Clean_Pull",
+       "etiqueta": "Jalón de cargada",
+       "pop": 1
+      },
+      {
+       "id": "Clean_Shrug",
+       "etiqueta": "Encogimiento de cargada",
+       "pop": 1
+      },
+      {
+       "id": "Rack_Delivery",
+       "etiqueta": "Recepción al rack",
+       "pop": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "nombre": "Clean con kettlebell",
+   "variantes": [
+    {
+     "id": "Two-Arm_Kettlebell_Clean",
+     "etiqueta": "Dos brazos",
+     "pop": 1
+    },
+    {
+     "id": "Kettlebell_Dead_Clean",
+     "etiqueta": "Desde el piso",
+     "pop": 1
+    },
+    {
+     "id": "Kettlebell_Hang_Clean",
+     "etiqueta": "Colgante",
+     "pop": 1
+    },
+    {
+     "id": "One-Arm_Kettlebell_Clean",
+     "etiqueta": "Un brazo",
+     "pop": 1
+    },
+    {
+     "id": "One-Arm_Open_Palm_Kettlebell_Clean",
+     "etiqueta": "Palma abierta a un brazo",
+     "pop": 1
+    },
+    {
+     "id": "Open_Palm_Kettlebell_Clean",
+     "etiqueta": "Palma abierta",
+     "pop": 1
+    },
+    {
+     "id": "Alternating_Hang_Clean",
+     "etiqueta": "Colgante alternada",
+     "pop": 1
+    },
+    {
+     "id": "Double_Kettlebell_Alternating_Hang_Clean",
+     "etiqueta": "Colgante alternada con dos",
+     "pop": 1
+    },
+    {
+     "id": "Bottoms-Up_Clean_From_The_Hang_Position",
+     "etiqueta": "Invertida desde colgado",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Arranque (snatch)",
+   "grupos": [
+    {
+     "nombre": "Completo",
+     "variantes": [
+      {
+       "id": "Snatch",
+       "etiqueta": "Arranque",
+       "pop": 2
+      },
+      {
+       "id": "Power_Snatch",
+       "etiqueta": "De potencia (power snatch)",
+       "pop": 2
+      },
+      {
+       "id": "Hang_Snatch",
+       "etiqueta": "Colgante",
+       "pop": 1
+      },
+      {
+       "id": "Hang_Snatch_-_Below_Knees",
+       "etiqueta": "Colgante debajo de las rodillas",
+       "pop": 1
+      },
+      {
+       "id": "Snatch_from_Blocks",
+       "etiqueta": "Desde bloques",
+       "pop": 1
+      },
+      {
+       "id": "Power_Snatch_from_Blocks",
+       "etiqueta": "De potencia desde bloques",
+       "pop": 1
+      },
+      {
+       "id": "Split_Snatch",
+       "etiqueta": "En tijera",
+       "pop": 1
+      },
+      {
+       "id": "Muscle_Snatch",
+       "etiqueta": "Muscle snatch",
+       "pop": 1
+      }
+     ]
+    },
+    {
+     "nombre": "Ejercicios técnicos",
+     "variantes": [
+      {
+       "id": "Snatch_Balance",
+       "etiqueta": "Snatch balance",
+       "pop": 1
+      },
+      {
+       "id": "Heaving_Snatch_Balance",
+       "etiqueta": "Snatch balance con impulso",
+       "pop": 1
+      },
+      {
+       "id": "Snatch_Deadlift",
+       "etiqueta": "Peso muerto de arranque",
+       "pop": 1
+      },
+      {
+       "id": "Snatch_Pull",
+       "etiqueta": "Jalón de arranque",
+       "pop": 1
+      },
+      {
+       "id": "Snatch_Shrug",
+       "etiqueta": "Encogimiento de arranque",
+       "pop": 1
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "nombre": "Arranque con kettlebell",
+   "variantes": [
+    {
+     "id": "One-Arm_Kettlebell_Snatch",
+     "etiqueta": "Un brazo",
+     "pop": 1
+    },
+    {
+     "id": "One-Arm_Kettlebell_Split_Snatch",
+     "etiqueta": "Split a un brazo",
+     "pop": 1
+    },
+    {
+     "id": "Double_Kettlebell_Snatch",
+     "etiqueta": "Dos kettlebells",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Envión (jerk)",
+   "variantes": [
+    {
+     "id": "Clean_and_Jerk",
+     "etiqueta": "Cargada y envión",
+     "pop": 2
+    },
+    {
+     "id": "Power_Jerk",
+     "etiqueta": "De potencia (power jerk)",
+     "pop": 1
+    },
+    {
+     "id": "Split_Jerk",
+     "etiqueta": "En tijera (split jerk)",
+     "pop": 1
+    },
+    {
+     "id": "Squat_Jerk",
+     "etiqueta": "En sentadilla",
+     "pop": 1
+    },
+    {
+     "id": "Jerk_Balance",
+     "etiqueta": "Jerk balance",
+     "pop": 1
+    },
+    {
+     "id": "Jerk_Dip_Squat",
+     "etiqueta": "Dip de jerk",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Envión con kettlebell",
+   "variantes": [
+    {
+     "id": "Two-Arm_Kettlebell_Jerk",
+     "etiqueta": "Dos brazos",
+     "pop": 1
+    },
+    {
+     "id": "Double_Kettlebell_Jerk",
+     "etiqueta": "Dos kettlebells",
+     "pop": 1
+    },
+    {
+     "id": "One-Arm_Kettlebell_Jerk",
+     "etiqueta": "Un brazo",
+     "pop": 1
+    },
+    {
+     "id": "One-Arm_Kettlebell_Split_Jerk",
+     "etiqueta": "Split a un brazo",
+     "pop": 1
+    },
+    {
+     "id": "One-Arm_Kettlebell_Clean_and_Jerk",
+     "etiqueta": "Clean y jerk a un brazo",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Swing",
+   "variantes": [
+    {
+     "id": "One-Arm_Kettlebell_Swings",
+     "etiqueta": "Kettlebell a un brazo",
+     "pop": 3
+    },
+    {
+     "id": "Vertical_Swing",
+     "etiqueta": "Mancuerna",
+     "pop": 2
+    }
+   ]
+  },
+  {
+   "nombre": "Levantada turca",
+   "variantes": [
+    {
+     "id": "Kettlebell_Turkish_Get-Up_Lunge_style",
+     "etiqueta": "Estilo desplante",
+     "pop": 2
+    },
+    {
+     "id": "Kettlebell_Turkish_Get-Up_Squat_style",
+     "etiqueta": "Estilo sentadilla",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Caminadora",
+   "variantes": [
+    {
+     "id": "Running_Treadmill",
+     "etiqueta": "Correr",
+     "pop": 4
+    },
+    {
+     "id": "Walking_Treadmill",
+     "etiqueta": "Caminar",
+     "pop": 5
+    },
+    {
+     "id": "Jogging_Treadmill",
+     "etiqueta": "Trotar",
+     "pop": 2
+    }
+   ]
+  },
+  {
+   "nombre": "Bicicleta",
+   "variantes": [
+    {
+     "id": "Bicycling_Stationary",
+     "etiqueta": "Fija",
+     "pop": 4
+    },
+    {
+     "id": "Recumbent_Bike",
+     "etiqueta": "Reclinada",
+     "pop": 3
+    },
+    {
+     "id": "Bicycling",
+     "etiqueta": "Ciclismo al aire libre",
+     "pop": 2
+    }
+   ]
+  },
+  {
+   "nombre": "Escaladora",
+   "variantes": [
+    {
+     "id": "Stairmaster",
+     "etiqueta": "De pedales",
+     "pop": 3
+    },
+    {
+     "id": "Step_Mill",
+     "etiqueta": "De escalones",
+     "pop": 2
+    }
+   ]
+  },
+  {
+   "nombre": "Trineo",
+   "variantes": [
+    {
+     "id": "Sled_Push",
+     "etiqueta": "Empuje",
+     "pop": 2
+    },
+    {
+     "id": "Prowler_Sprint",
+     "etiqueta": "Sprint (prowler)",
+     "pop": 2
+    },
+    {
+     "id": "Sled_Drag_-_Harness",
+     "etiqueta": "Arrastre con arnés",
+     "pop": 1
+    },
+    {
+     "id": "Backward_Drag",
+     "etiqueta": "Arrastre hacia atrás",
+     "pop": 1
+    },
+    {
+     "id": "Bear_Crawl_Sled_Drags",
+     "etiqueta": "Arrastre en cuadrupedia",
+     "pop": 1
+    },
+    {
+     "id": "Forward_Drag_with_Press",
+     "etiqueta": "Arrastre con press",
+     "pop": 1
+    },
+    {
+     "id": "Sled_Row",
+     "etiqueta": "Remo",
+     "pop": 1
+    },
+    {
+     "id": "Sled_Reverse_Flye",
+     "etiqueta": "Vuelo invertido",
+     "pop": 1
+    },
+    {
+     "id": "Sled_Overhead_Backward_Walk",
+     "etiqueta": "Caminata hacia atrás",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Pase de pecho con balón medicinal",
+   "variantes": [
+    {
+     "id": "Medicine_Ball_Chest_Pass",
+     "etiqueta": "De pie",
+     "pop": 2
+    },
+    {
+     "id": "Chest_Push_multiple_response",
+     "etiqueta": "Repeticiones continuas",
+     "pop": 1
+    },
+    {
+     "id": "Chest_Push_single_response",
+     "etiqueta": "Una sola repetición",
+     "pop": 1
+    },
+    {
+     "id": "Chest_Push_from_3_point_stance",
+     "etiqueta": "Desde 3 apoyos",
+     "pop": 1
+    },
+    {
+     "id": "Chest_Push_with_Run_Release",
+     "etiqueta": "Con salida a sprint",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Lanzamiento de balón medicinal",
+   "variantes": [
+    {
+     "id": "Backward_Medicine_Ball_Throw",
+     "etiqueta": "Hacia atrás",
+     "pop": 1
+    },
+    {
+     "id": "Medicine_Ball_Scoop_Throw",
+     "etiqueta": "Desde sentadilla (scoop)",
+     "pop": 1
+    },
+    {
+     "id": "Standing_Two-Arm_Overhead_Throw",
+     "etiqueta": "Sobre la cabeza a dos manos",
+     "pop": 1
+    },
+    {
+     "id": "Supine_Chest_Throw",
+     "etiqueta": "De pecho acostado",
+     "pop": 1
+    },
+    {
+     "id": "Supine_One-Arm_Overhead_Throw",
+     "etiqueta": "Sobre la cabeza a una mano acostado",
+     "pop": 1
+    },
+    {
+     "id": "Supine_Two-Arm_Overhead_Throw",
+     "etiqueta": "Sobre la cabeza a dos manos acostado",
+     "pop": 1
+    },
+    {
+     "id": "Catch_and_Overhead_Throw",
+     "etiqueta": "Atrapada y lanzamiento sobre la cabeza",
+     "pop": 1
+    },
+    {
+     "id": "Return_Push_from_Stance",
+     "etiqueta": "Devolución de pase",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Slam de balón medicinal",
+   "variantes": [
+    {
+     "id": "Overhead_Slam",
+     "etiqueta": "Dos manos",
+     "pop": 3
+    },
+    {
+     "id": "One-Arm_Medicine_Ball_Slam",
+     "etiqueta": "Un brazo",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Salto al cajón",
+   "variantes": [
+    {
+     "id": "Box_Jump_Multiple_Response",
+     "etiqueta": "Repeticiones continuas",
+     "pop": 3
+    },
+    {
+     "id": "Front_Box_Jump",
+     "etiqueta": "Frontal",
+     "pop": 3
+    },
+    {
+     "id": "Quick_Leap",
+     "etiqueta": "Rápido",
+     "pop": 1
+    },
+    {
+     "id": "Lateral_Box_Jump",
+     "etiqueta": "Lateral",
+     "pop": 1
+    },
+    {
+     "id": "Dumbbell_Seated_Box_Jump",
+     "etiqueta": "Desde sentado con mancuernas",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Liberación con rodillo (foam roller)",
+   "variantes": [
+    {
+     "id": "Quadriceps-SMR",
+     "etiqueta": "Cuádriceps",
+     "pop": 2
+    },
+    {
+     "id": "Hamstring-SMR",
+     "etiqueta": "Femorales",
+     "pop": 2
+    },
+    {
+     "id": "Calves-SMR",
+     "etiqueta": "Pantorrillas",
+     "pop": 2
+    },
+    {
+     "id": "Iliotibial_Tract-SMR",
+     "etiqueta": "Banda iliotibial",
+     "pop": 2
+    },
+    {
+     "id": "Latissimus_Dorsi-SMR",
+     "etiqueta": "Dorsales",
+     "pop": 2
+    },
+    {
+     "id": "Lower_Back-SMR",
+     "etiqueta": "Lumbar",
+     "pop": 1
+    },
+    {
+     "id": "Piriformis-SMR",
+     "etiqueta": "Piriforme",
+     "pop": 1
+    },
+    {
+     "id": "Rhomboids-SMR",
+     "etiqueta": "Romboides",
+     "pop": 1
+    },
+    {
+     "id": "Adductor",
+     "etiqueta": "Aductores",
+     "pop": 1
+    },
+    {
+     "id": "Anterior_Tibialis-SMR",
+     "etiqueta": "Tibial anterior",
+     "pop": 1
+    },
+    {
+     "id": "Brachialis-SMR",
+     "etiqueta": "Braquial",
+     "pop": 1
+    },
+    {
+     "id": "Peroneals-SMR",
+     "etiqueta": "Peroneos",
+     "pop": 1
+    },
+    {
+     "id": "Neck-SMR",
+     "etiqueta": "Cuello",
+     "pop": 1
+    },
+    {
+     "id": "Foot-SMR",
+     "etiqueta": "Pie",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Estiramiento de femorales",
+   "variantes": [
+    {
+     "id": "Hamstring_Stretch",
+     "etiqueta": "Acostado con liga",
+     "pop": 2
+    },
+    {
+     "id": "Seated_Floor_Hamstring_Stretch",
+     "etiqueta": "Sentado en el piso",
+     "pop": 2
+    },
+    {
+     "id": "Lying_Hamstring",
+     "etiqueta": "Acostado con compañero",
+     "pop": 2
+    },
+    {
+     "id": "90_90_Hamstring",
+     "etiqueta": "90/90",
+     "pop": 1
+    },
+    {
+     "id": "Leg-Up_Hamstring_Stretch",
+     "etiqueta": "Con pierna arriba",
+     "pop": 1
+    },
+    {
+     "id": "Seated_Hamstring",
+     "etiqueta": "Sentado con compañero",
+     "pop": 1
+    },
+    {
+     "id": "Seated_Hamstring_and_Calf_Stretch",
+     "etiqueta": "Femorales y pantorrilla sentado",
+     "pop": 1
+    },
+    {
+     "id": "Standing_Hamstring_and_Calf_Stretch",
+     "etiqueta": "Femorales y pantorrilla de pie",
+     "pop": 1
+    },
+    {
+     "id": "Chair_Leg_Extended_Stretch",
+     "etiqueta": "En silla",
+     "pop": 1
+    },
+    {
+     "id": "Standing_Toe_Touches",
+     "etiqueta": "Toque de puntas de pie",
+     "pop": 2
+    },
+    {
+     "id": "Runners_Stretch",
+     "etiqueta": "Del corredor",
+     "pop": 1
+    },
+    {
+     "id": "The_Straddle",
+     "etiqueta": "En V sentado",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Estiramiento de cuádriceps",
+   "variantes": [
+    {
+     "id": "Standing_Elevated_Quad_Stretch",
+     "etiqueta": "Con pie elevado",
+     "pop": 2
+    },
+    {
+     "id": "Quad_Stretch",
+     "etiqueta": "De lado con liga",
+     "pop": 1
+    },
+    {
+     "id": "On_Your_Side_Quad_Stretch",
+     "etiqueta": "De lado",
+     "pop": 1
+    },
+    {
+     "id": "Lying_Prone_Quadriceps",
+     "etiqueta": "Boca abajo",
+     "pop": 1
+    },
+    {
+     "id": "On-Your-Back_Quad_Stretch",
+     "etiqueta": "Boca arriba en banco",
+     "pop": 1
+    },
+    {
+     "id": "All_Fours_Quad_Stretch",
+     "etiqueta": "En cuatro puntos",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Estiramiento de pantorrilla",
+   "variantes": [
+    {
+     "id": "Calf_Stretch_Hands_Against_Wall",
+     "etiqueta": "Manos en la pared",
+     "pop": 2
+    },
+    {
+     "id": "Standing_Gastrocnemius_Calf_Stretch",
+     "etiqueta": "Gastrocnemio de pie",
+     "pop": 1
+    },
+    {
+     "id": "Standing_Soleus_And_Achilles_Stretch",
+     "etiqueta": "Sóleo y Aquiles de pie",
+     "pop": 1
+    },
+    {
+     "id": "Calf_Stretch_Elbows_Against_Wall",
+     "etiqueta": "Codos en la pared",
+     "pop": 1
+    },
+    {
+     "id": "Seated_Calf_Stretch",
+     "etiqueta": "Sentado",
+     "pop": 1
+    },
+    {
+     "id": "Peroneals_Stretch",
+     "etiqueta": "Peroneos",
+     "pop": 1
+    },
+    {
+     "id": "Posterior_Tibialis_Stretch",
+     "etiqueta": "Tibial posterior",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Estiramiento de tríceps",
+   "variantes": [
+    {
+     "id": "Triceps_Stretch",
+     "etiqueta": "Tríceps",
+     "pop": 2
+    },
+    {
+     "id": "Overhead_Triceps",
+     "etiqueta": "Sobre la cabeza",
+     "pop": 1
+    },
+    {
+     "id": "Tricep_Side_Stretch",
+     "etiqueta": "Lateral",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Círculos de movilidad",
+   "variantes": [
+    {
+     "id": "Arm_Circles",
+     "etiqueta": "Brazos",
+     "pop": 2
+    },
+    {
+     "id": "Shoulder_Circles",
+     "etiqueta": "Hombros",
+     "pop": 2
+    },
+    {
+     "id": "Standing_Hip_Circles",
+     "etiqueta": "Cadera de pie",
+     "pop": 2
+    },
+    {
+     "id": "Elbow_Circles",
+     "etiqueta": "Codos",
+     "pop": 1
+    },
+    {
+     "id": "Wrist_Circles",
+     "etiqueta": "Muñecas",
+     "pop": 1
+    },
+    {
+     "id": "Knee_Circles",
+     "etiqueta": "Rodillas",
+     "pop": 1
+    },
+    {
+     "id": "Ankle_Circles",
+     "etiqueta": "Tobillos",
+     "pop": 1
+    },
+    {
+     "id": "Hip_Circles_prone",
+     "etiqueta": "Cadera en cuatro puntos",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Estiramiento de glúteo",
+   "variantes": [
+    {
+     "id": "Ankle_On_The_Knee",
+     "etiqueta": "Tobillo sobre la rodilla",
+     "pop": 2
+    },
+    {
+     "id": "Lying_Glute",
+     "etiqueta": "Acostado",
+     "pop": 2
+    },
+    {
+     "id": "Knee_Across_The_Body",
+     "etiqueta": "Rodilla cruzada al cuerpo",
+     "pop": 1
+    },
+    {
+     "id": "One_Knee_To_Chest",
+     "etiqueta": "Rodilla al pecho",
+     "pop": 1
+    },
+    {
+     "id": "IT_Band_and_Glute_Stretch",
+     "etiqueta": "Banda iliotibial y glúteo",
+     "pop": 1
+    },
+    {
+     "id": "Seated_Glute",
+     "etiqueta": "Sentado con compañero",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Estiramiento de aductores (ingle)",
+   "variantes": [
+    {
+     "id": "Intermediate_Groin_Stretch",
+     "etiqueta": "Ingle",
+     "pop": 1
+    },
+    {
+     "id": "Side_Lying_Groin_Stretch",
+     "etiqueta": "Acostado de lado",
+     "pop": 1
+    },
+    {
+     "id": "Lying_Bent_Leg_Groin",
+     "etiqueta": "Acostado con piernas flexionadas",
+     "pop": 1
+    },
+    {
+     "id": "Groin_and_Back_Stretch",
+     "etiqueta": "Ingle y espalda",
+     "pop": 1
+    },
+    {
+     "id": "Adductor_Groin",
+     "etiqueta": "Con compañero",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Estiramiento de flexores de cadera",
+   "variantes": [
+    {
+     "id": "Kneeling_Hip_Flexor",
+     "etiqueta": "Arrodillado",
+     "pop": 2
+    },
+    {
+     "id": "Standing_Hip_Flexors",
+     "etiqueta": "De pie",
+     "pop": 1
+    },
+    {
+     "id": "Intermediate_Hip_Flexor_and_Quad_Stretch",
+     "etiqueta": "Con cuádriceps",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Estiramiento de pecho y hombro",
+   "variantes": [
+    {
+     "id": "Chest_And_Front_Of_Shoulder_Stretch",
+     "etiqueta": "Pecho y hombro frontal",
+     "pop": 2
+    },
+    {
+     "id": "Shoulder_Stretch",
+     "etiqueta": "Hombro",
+     "pop": 2
+    },
+    {
+     "id": "Behind_Head_Chest_Stretch",
+     "etiqueta": "Pecho detrás de la cabeza",
+     "pop": 1
+    },
+    {
+     "id": "Dynamic_Chest_Stretch",
+     "etiqueta": "Pecho dinámico",
+     "pop": 1
+    },
+    {
+     "id": "Chest_Stretch_on_Stability_Ball",
+     "etiqueta": "Pecho en pelota",
+     "pop": 1
+    },
+    {
+     "id": "Elbows_Back",
+     "etiqueta": "Codos hacia atrás",
+     "pop": 1
+    },
+    {
+     "id": "Round_The_World_Shoulder_Stretch",
+     "etiqueta": "Hombros con bastón",
+     "pop": 1
+    },
+    {
+     "id": "Seated_Front_Deltoid",
+     "etiqueta": "Deltoide frontal con compañero",
+     "pop": 1
+    },
+    {
+     "id": "Side_Wrist_Pull",
+     "etiqueta": "Hombro con jalón de muñeca",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Estiramiento de espalda",
+   "variantes": [
+    {
+     "id": "Childs_Pose",
+     "etiqueta": "Postura del niño",
+     "pop": 2
+    },
+    {
+     "id": "Cat_Stretch",
+     "etiqueta": "Gato",
+     "pop": 2
+    },
+    {
+     "id": "Middle_Back_Stretch",
+     "etiqueta": "Espalda media",
+     "pop": 1
+    },
+    {
+     "id": "Upper_Back_Stretch",
+     "etiqueta": "Espalda alta",
+     "pop": 1
+    },
+    {
+     "id": "Spinal_Stretch",
+     "etiqueta": "Columna",
+     "pop": 1
+    },
+    {
+     "id": "Chair_Lower_Back_Stretch",
+     "etiqueta": "Espalda baja en silla",
+     "pop": 1
+    },
+    {
+     "id": "Dynamic_Back_Stretch",
+     "etiqueta": "Espalda dinámico",
+     "pop": 1
+    },
+    {
+     "id": "Hug_Knees_To_Chest",
+     "etiqueta": "Rodillas al pecho",
+     "pop": 1
+    },
+    {
+     "id": "Upper_Back-Leg_Grab",
+     "etiqueta": "Abrazo de piernas sentado",
+     "pop": 1
+    },
+    {
+     "id": "One_Arm_Against_Wall",
+     "etiqueta": "Dorsal contra la pared",
+     "pop": 1
+    },
+    {
+     "id": "Overhead_Lat",
+     "etiqueta": "Dorsal sobre la cabeza",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Ejercicios de cuello",
+   "variantes": [
+    {
+     "id": "Isometric_Neck_Exercise_-_Front_And_Back",
+     "etiqueta": "Isométrico frente y nuca",
+     "pop": 1
+    },
+    {
+     "id": "Isometric_Neck_Exercise_-_Sides",
+     "etiqueta": "Isométrico laterales",
+     "pop": 1
+    },
+    {
+     "id": "Lying_Face_Down_Plate_Neck_Resistance",
+     "etiqueta": "Boca abajo con disco",
+     "pop": 1
+    },
+    {
+     "id": "Lying_Face_Up_Plate_Neck_Resistance",
+     "etiqueta": "Boca arriba con disco",
+     "pop": 1
+    },
+    {
+     "id": "Seated_Head_Harness_Neck_Resistance",
+     "etiqueta": "Sentado con arnés",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Saltos",
+   "variantes": [
+    {
+     "id": "Star_Jump",
+     "etiqueta": "De estrella",
+     "pop": 3
+    },
+    {
+     "id": "Knee_Tuck_Jump",
+     "etiqueta": "Rodillas al pecho",
+     "pop": 2
+    },
+    {
+     "id": "Standing_Long_Jump",
+     "etiqueta": "Longitud sin impulso",
+     "pop": 2
+    },
+    {
+     "id": "Rocket_Jump",
+     "etiqueta": "Cohete",
+     "pop": 1
+    },
+    {
+     "id": "Side_Standing_Long_Jump",
+     "etiqueta": "Largo lateral",
+     "pop": 1
+    },
+    {
+     "id": "Lateral_Bound",
+     "etiqueta": "Lateral",
+     "pop": 1
+    },
+    {
+     "id": "Lateral_Cone_Hops",
+     "etiqueta": "Laterales sobre conos",
+     "pop": 1
+    },
+    {
+     "id": "Front_Cone_Hops_or_hurdle_hops",
+     "etiqueta": "Frontales sobre conos",
+     "pop": 1
+    },
+    {
+     "id": "Hurdle_Hops",
+     "etiqueta": "De valla",
+     "pop": 1
+    },
+    {
+     "id": "Single-Leg_Lateral_Hop",
+     "etiqueta": "Lateral a una pierna",
+     "pop": 1
+    },
+    {
+     "id": "Depth_Jump_Leap",
+     "etiqueta": "De profundidad con rebote",
+     "pop": 1
+    },
+    {
+     "id": "Linear_Depth_Jump",
+     "etiqueta": "De profundidad lineal",
+     "pop": 1
+    }
+   ]
+  },
+  {
+   "nombre": "Acarreos",
+   "variantes": [
+    {
+     "id": "Farmers_Walk",
+     "etiqueta": "Caminata del granjero",
+     "pop": 3
+    },
+    {
+     "id": "Yoke_Walk",
+     "etiqueta": "Con yugo",
+     "pop": 1
+    },
+    {
+     "id": "Rickshaw_Carry",
+     "etiqueta": "Rickshaw",
+     "pop": 1
+    }
+   ]
+  }
+ ],
+ "sueltos": {
+  "Face_Pull": 4,
+  "Mountain_Climbers": 4,
+  "Elliptical_Trainer": 4,
+  "Dead_Bug": 3,
+  "Battling_Ropes": 3,
+  "Rope_Jumping": 3,
+  "Rowing_Stationary": 3,
+  "Machine_Triceps_Extension": 3,
+  "Worlds_Greatest_Stretch": 2,
+  "Handstand_Push-Ups": 2,
+  "Alternating_Renegade_Row": 2,
+  "Kettlebell_Thruster": 2,
+  "Clean_and_Press": 2,
+  "Pull_Through": 2,
+  "Inchworm": 2,
+  "Hip_Flexion_with_Band": 2
+ },
+ "ocultos": [
+  "Neck_Press",
+  "Decline_Smith_Press",
+  "Hammer_Grip_Incline_DB_Bench_Press",
+  "Decline_Push-Up",
+  "Dumbbell_Shoulder_Press",
+  "Seated_Barbell_Military_Press",
+  "Lying_Triceps_Press",
+  "Standing_Bent-Over_Two-Arm_Dumbbell_Triceps_Extension",
+  "Cable_Crunch",
+  "Scissors_Jump",
+  "Overhead_Cable_Curl",
+  "Seated_Leg_Tucks",
+  "Leg_Pull-In",
+  "Dumbbell_Lying_Rear_Lateral_Raise",
+  "Standing_One-Arm_Dumbbell_Triceps_Extension",
+  "Bent_Over_One-Arm_Long_Bar_Row",
+  "Dumbbell_Raise"
+ ]
+}

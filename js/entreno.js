@@ -32,6 +32,7 @@
 // ═════════════════════════════════════════════════════════════════════════════
 
 import * as almacen from './almacen.js';
+import { construirMaestros, buscarMaestros, filtrosVacios, cuentaFiltros, OPCIONES_FILTRO, NOMBRES_FILTRO } from './biblioteca.js';
 import { crearDescanso, formatear, pedirWakeLock, liberarWakeLock,
          prepararAudio, avisarFin } from './temporizador.js';
 
@@ -638,6 +639,8 @@ const SVG_VOLVER = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
 const SVG_ASA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 8h14M5 12h14M5 16h14"/></svg>';
 const SVG_MAS = '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><circle cx="6" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="18" cy="12" r="1.6"/></svg>';
 const SVG_CERRAR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+const SVG_FILTROS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h4M12 17h8"/><circle cx="16" cy="7" r="2"/><circle cx="10" cy="17" r="2"/></svg>';
+const SVG_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 9.5L12 15l5.5-5.5"/></svg>';
 const SVG_PAPELERA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 12a2 2 0 0 0 2 1.8h7a2 2 0 0 0 2-1.8l1-12M9 7V4.5h6V7"/></svg>';
 const SVG_ESLABON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/></svg>';
 
@@ -676,8 +679,11 @@ let verSesionId = null;      // sesión del historial abierta en modo lectura
 let verProgresoId = null;    // ejercicio abierto en "progreso"
 let fichaId = null;          // ejercicio abierto en su ficha (Biblioteca o sesión)
 let vistaVivo = 'foco';      // 'foco' (Sesión en vivo) | 'ejercicios' (lista editable)
-let filtroMusculo = '';      // filtros de la Biblioteca (combinables con la búsqueda)
-let filtroEquipo = '';
+let filtrosBib = filtrosVacios(); // casillas de la Biblioteca (combinables con la búsqueda)
+let panelFiltros = false;    // panel de casillas abierto
+let abiertosBib = new Map(); // maestro → abierto/cerrado a mano (si no, se abre solo con pocos resultados)
+let masBib = new Set();      // grupos de variantes con «+N más» ya desplegado
+let volverBib = null;        // { y, id }: dónde estaba la Biblioteca al abrir una ficha
 let consultaBib = '';        // texto del buscador (sobrevive repintados)
 
 let descansoObj = null;      // objeto de crearDescanso() del descanso vivo
@@ -690,6 +696,7 @@ let timerOcultar = null;
 let catEstado = 'nada';      // 'nada' | 'cargando' | 'listo' | 'fallo'
 let catalogo = [];
 let porId = new Map();
+let maestrosCat = [];        // catálogo agrupado en ejercicios maestros (biblioteca.js)
 let rutEstado = 'nada';
 let rutinasBase = [];
 
@@ -1093,12 +1100,20 @@ function cargarCatalogo() {
 async function cargarCatalogoReal() {
   catEstado = 'cargando';
   try {
-    catalogo = await cargarJSON('data/ejercicios.json', 'ejercicios');
+    // Los grupos son opcionales: si no llegan, cada ejercicio va solo y la
+    // biblioteca sigue funcionando igual que antes.
+    const [cat, grupos] = await Promise.all([
+      cargarJSON('data/ejercicios.json', 'ejercicios'),
+      fetch('data/grupos-ejercicios.json').then(r => (r.ok ? r.json() : null)).catch(() => null),
+    ]);
+    catalogo = cat;
     porId = new Map(catalogo.map(e => [e.id, e]));
+    maestrosCat = construirMaestros(catalogo, grupos);
     catEstado = 'listo';
   } catch {
     catalogo = [];
     porId = new Map();
+    maestrosCat = [];
     catEstado = 'fallo';
   }
 }
@@ -1131,7 +1146,7 @@ function selectorFoco(el) {
   if (!el || el === document.body || !ctx.raiz.contains(el)) return null;
   if (el.id) return '#' + CSS.escape(el.id);
   const d = el.dataset || {};
-  const attrs = ['acc', 'id', 'idx', 'tramo', 'tab', 'sid', 'ej', 'serie', 'v', 'campo', 'dtab', 'periodo'].filter(k => d[k] !== undefined)
+  const attrs = ['acc', 'id', 'idx', 'tramo', 'tab', 'sid', 'ej', 'serie', 'v', 'f', 'clave', 'k', 'lugar', 'campo', 'dtab', 'periodo'].filter(k => d[k] !== undefined)
     .map(k => `[data-${k}="${CSS.escape(d[k])}"]`).join('');
   return attrs ? el.tagName.toLowerCase() + attrs : null;
 }
@@ -2127,6 +2142,15 @@ function agregarEjercicioARutina(id, nombre) {
 
 // ── Biblioteca (pestaña y overlay "agregar a la sesión") ─────────────────────
 
+// Tope de maestros pintados: pintar 876 botones por tecla congelaba teléfonos
+// medios (long tasks de 65–117 ms medidos) y, con foto por fila, bajaba los
+// JPG completos del CDN (~64 KB cada uno). La lista corta + "sigue
+// escribiendo" es más rápida Y más usable que un rollo infinito.
+const CAP_MAESTROS = 60;
+// Un grupo con muchas variantes enseña las primeras (las más usadas) y un
+// «+N más»: 17 etiquetas juntas eran justo la sopa que se quería evitar.
+const VARIANTES_VISIBLES = 6;
+
 // destino: null (pestaña Biblioteca), 'sesion' o 'rutina' (overlay que agrega
 // el ejercicio a la sesión viva o a la rutina del editor).
 function pintarBiblioteca(cont, destino) {
@@ -2145,100 +2169,98 @@ function pintarBiblioteca(cont, destino) {
     </div>${enSesion ? htmlBarraDescanso() : ''}`;
     cont.querySelector('[data-acc="volver"]').addEventListener('click', () => {
       modoBiblioteca = null;
+      panelFiltros = false;
       render();
     });
     if (enSesion) conectarBarraDescanso(cont);
     cont = cont.querySelector('.en-panel');
   }
 
-  const q = normalizar(consultaBib.trim());
-  const filtrando = !!(q || filtroMusculo || filtroEquipo);
-  const filtra = e => {
-    // Filtros por grupo muscular (principal) y por equipo: se combinan entre
-    // sí y con el texto. "Pecho + Mancuernas" es la pregunta real en el gym.
-    if (filtroMusculo && !(e.musculosPrimarios || []).includes(filtroMusculo)) return false;
-    if (filtroEquipo && e.equipo !== filtroEquipo) return false;
-    if (!q) return true;
-    const pajar = normalizar([e.nombre, e.nombreEn, (e.musculosPrimarios || []).join(' '),
-      (e.musculosSecundarios || []).join(' '), e.equipo].filter(Boolean).join(' '));
-    return q.split(/\s+/).every(t => pajar.includes(t));
-  };
-  const opciones = (vals, sel) => [...new Set(vals)].filter(Boolean).sort((a, b) => a.localeCompare(b, 'es'))
-    .map(v => `<option value="${esc(v)}"${v === sel ? ' selected' : ''}>${esc(capital(v))}</option>`).join('');
-  const filtrosHTML = catEstado === 'listo' ? `
-    <div class="en-filtros">
-      <label class="en-filtro"><span>Músculo</span>
-        <select class="en-sel" data-filtro="musculo"><option value="">Todos</option>${opciones(catalogo.flatMap(e => e.musculosPrimarios || []), filtroMusculo)}</select>
-      </label>
-      <label class="en-filtro"><span>Equipo</span>
-        <select class="en-sel" data-filtro="equipo"><option value="">Todo</option>${opciones(catalogo.map(e => e.equipo), filtroEquipo)}</select>
-      </label>
-    </div>` : '';
-  const todas = catEstado === 'listo' ? catalogo.filter(filtra) : [];
-  // Tope de filas: pintar 876 botones por tecla congelaba teléfonos medios
-  // (long tasks de 65–117 ms medidos) y, con foto por fila, bajaba los JPG
-  // completos del CDN (~64 KB cada uno). La lista corta + "sigue escribiendo"
-  // es más rápida Y más usable que un rollo infinito.
-  const CAP = 60;
-  const lista = todas.slice(0, CAP);
-  const recortadas = todas.length - lista.length;
-  const recientes = !filtrando && catEstado === 'listo'
-    ? estado.recientes.ejercicios.map(id => porId.get(id)).filter(Boolean).slice(0, 5)
-    : [];
-  const accion = overlay ? 'Agregar' : 'Ver';
-
-  // Foto en cada fila, perezosa: con el tope de 60 filas y loading="lazy" solo
-  // bajan las que entran en pantalla (el CDN sirve los JPG completos, así que
-  // sin tope ni lazy recorrer la lista costaba ~55 MB).
-  const fila = e => `
-    <button type="button" class="en-ej-row" data-acc="ej" data-id="${esc(e.id)}">
-      <span class="en-thumb">${e.imagenes?.[0]
-        ? `<img loading="lazy" src="${esc(URL_IMG + e.imagenes[0])}" alt="">` : ''}</span>
-      <span class="en-ej-row-txt">
-        <span class="en-ej-row-nombre">${esc(e.nombre)}</span>
-        <span class="en-ej-row-sub">${esc([capital(e.musculosPrimarios?.[0]), e.equipo].filter(Boolean).join(' · '))}</span>
-      </span>
-      <span class="en-ej-row-acc">${accion}</span>
-    </button>`;
-
+  const listo = catEstado === 'listo';
+  const res = datosBiblioteca();
+  const nf = cuentaFiltros(filtrosBib);
   cont.innerHTML = `
     <div class="en-busca">
       ${SVG_LUPA}
-      <input type="search" class="en-busca-in" placeholder="Buscar por nombre, músculo o equipo"
+      <input type="search" id="en-busca-in" class="en-busca-in" placeholder="Buscar ejercicio"
         value="${esc(consultaBib)}" aria-label="Buscar ejercicio">
+      ${listo ? `<button type="button" class="en-filtros-btn${nf ? ' en-filtros-btn-on' : ''}" data-acc="filtros"
+        aria-expanded="${panelFiltros}" aria-controls="en-fpanel">${SVG_FILTROS}<span>${textoBotonFiltros(nf)}</span></button>` : ''}
     </div>
-    ${filtrosHTML}
+    ${listo ? htmlFiltrosActivos() + htmlPanelFiltros(res) : ''}
     <p class="en-sr en-busca-estado" role="status" aria-live="polite"></p>
-    <div class="en-busca-res">
-    ${catEstado === 'cargando' || catEstado === 'nada' ? '<p class="en-vacio">Cargando ejercicios…</p>'
-      : catEstado === 'fallo' || !catalogo.length
-        ? `<p class="en-vacio">La biblioteca no está disponible por ahora. Puedes escribir el nombre de tu ejercicio y registrarlo igual.</p>${htmlLibre(q)}`
-        : `${recientes.length ? `<div class="en-sec-lbl">Recientes</div>${recientes.map(fila).join('')}` : ''}
-           <div class="en-sec-lbl">${filtrando ? `${todas.length} ${todas.length === 1 ? 'ejercicio' : 'ejercicios'}` : 'Todos'}</div>
-           ${lista.length ? lista.map(fila).join('')
-             : `<p class="en-vacio">${q ? `Nada con «${esc(consultaBib.trim())}»` : 'Nada con esos filtros'}.</p>${htmlLibre(q)}`}
-           ${recortadas > 0 ? `<p class="en-vacio">Mostrando ${CAP} de ${todas.length}. Sigue escribiendo para afinar.</p>` : ''}`}
-    </div>`;
+    ${htmlResultadosBiblioteca(destino, res)}`;
 
   const input = cont.querySelector('.en-busca-in');
   input.addEventListener('input', () => {
     consultaBib = input.value;
-    // Debounce de 160 ms: re-filtrar y re-pintar 876 filas POR TECLA daba
-    // long tasks de >100 ms en CPU de teléfono. Solo se repinta la lista:
-    // repintar todo robaría el foco del buscador.
+    // Búsqueda nueva, estado nuevo: lo que abriste o cerraste a mano en otra
+    // búsqueda no debe esconder el mejor resultado de esta.
+    abiertosBib = new Map();
+    // Debounce de 160 ms: re-filtrar y re-pintar POR TECLA daba long tasks
+    // de >100 ms en CPU de teléfono. Solo se repinta la lista: repintar
+    // todo robaría el foco del buscador.
     clearTimeout(input._t);
-    input._t = setTimeout(() => pintarListaBiblioteca(cont, destino), 160);
+    input._t = setTimeout(() => actualizarBiblioteca(cont, destino), 160);
   });
-  cont.querySelectorAll('.en-sel').forEach(sel => sel.addEventListener('change', () => {
-    if (sel.dataset.filtro === 'musculo') filtroMusculo = sel.value;
-    else filtroEquipo = sel.value;
-    pintarListaBiblioteca(cont, destino);
-  }));
+  // Casillas: dentro de un filtro suman, entre filtros se combinan. Cada
+  // cambio repinta la lista al momento y el panel se queda abierto.
+  cont.addEventListener('change', e => {
+    const c = e.target.closest('input[type="checkbox"][data-f]');
+    if (!c) return;
+    if (c.checked) filtrosBib[c.dataset.f].add(c.value);
+    else filtrosBib[c.dataset.f].delete(c.value);
+    actualizarBiblioteca(cont, destino);
+  });
   cont.addEventListener('click', e => {
     const b = e.target.closest('[data-acc]');
     if (!b) return;
-    if (b.dataset.acc === 'ej') elegirEjercicio(b.dataset.id, destino);
-    if (b.dataset.acc === 'libre') elegirLibre(destino);
+    const acc = b.dataset.acc;
+    if (acc === 'ej') elegirEjercicio(b.dataset.id, destino);
+    else if (acc === 'libre') elegirLibre(destino);
+    else if (acc === 'maestro') {
+      const clave = b.dataset.clave;
+      abiertosBib.set(clave, b.getAttribute('aria-expanded') !== 'true');
+      actualizarBiblioteca(cont, destino);
+      cont.querySelector(`[data-acc="maestro"][data-clave="${CSS.escape(clave)}"]`)?.focus({ preventScroll: true });
+    } else if (acc === 'var-mas') {
+      const k = b.dataset.k;
+      masBib.add(k);
+      actualizarBiblioteca(cont, destino);
+      // El foco cae en la primera variante que estaba escondida.
+      cont.querySelector(`.en-var-grupo[data-k="${CSS.escape(k)}"]`)
+        ?.querySelectorAll('.en-var')[VARIANTES_VISIBLES]?.focus({ preventScroll: true });
+    } else if (acc === 'filtros') {
+      panelFiltros = !panelFiltros;
+      b.setAttribute('aria-expanded', String(panelFiltros));
+      cont.querySelector('.en-fpanel').hidden = !panelFiltros;
+      cont.querySelector('.en-factivos')?.replaceWith(htmlANodo(htmlFiltrosActivos()));
+    } else if (acc === 'filtros-ver') {
+      panelFiltros = false;
+      cont.querySelector('.en-fpanel').hidden = true;
+      cont.querySelector('.en-factivos')?.replaceWith(htmlANodo(htmlFiltrosActivos()));
+      const fb = cont.querySelector('[data-acc="filtros"]');
+      fb.setAttribute('aria-expanded', 'false');
+      // El buscador queda arriba de la pantalla, con el botón Filtros (que
+      // recibe el foco) a la vista y los resultados justo debajo.
+      cont.querySelector('.en-busca')?.scrollIntoView({ block: 'start' });
+      fb.focus({ preventScroll: true });
+    } else if (acc === 'quitar-filtro') {
+      const todas = [...cont.querySelectorAll('[data-acc="quitar-filtro"]')];
+      const i = todas.indexOf(b);
+      filtrosBib[b.dataset.f].delete(b.dataset.v);
+      actualizarBiblioteca(cont, destino);
+      // El foco pasa a la etiqueta que quedó en su lugar, o al botón Filtros.
+      const quedan = cont.querySelectorAll('[data-acc="quitar-filtro"]');
+      (quedan[Math.min(i, quedan.length - 1)] || cont.querySelector('[data-acc="filtros"]'))?.focus({ preventScroll: true });
+    } else if (acc === 'limpiar-filtros') {
+      const enPanel = !!b.closest('.en-fpanel');
+      filtrosBib = filtrosVacios();
+      actualizarBiblioteca(cont, destino);
+      // Desde el pie del panel el foco se queda ahí («Limpiar» se deshabilita
+      // y el botón Filtros puede estar muy arriba, fuera de la pantalla).
+      cont.querySelector(enPanel ? '.en-fver' : '[data-acc="filtros"]')?.focus({ preventScroll: true });
+    }
   });
   if (enSesion) {
     pintarDescanso();
@@ -2246,23 +2268,172 @@ function pintarBiblioteca(cont, destino) {
   }
 }
 
-// El buscador se queda; solo la lista de resultados se vuelve a pintar.
-function pintarListaBiblioteca(cont, destino) {
-  const marcador = document.createElement('div');
-  cont.querySelector('.en-busca-res').replaceWith(marcador);
-  const html = document.createElement('div');
-  // Reusar pintarBiblioteca entero movería el foco; se reconstruye solo la
-  // parte de resultados con el mismo generador.
-  pintarBiblioteca(html, destino);
-  const nueva = html.querySelector('.en-busca-res');
-  marcador.replaceWith(nueva);
+function datosBiblioteca() {
+  return catEstado === 'listo' ? buscarMaestros(maestrosCat, consultaBib, filtrosBib) : [];
+}
+
+function textoBotonFiltros(nf) { return nf ? `Filtros (${nf})` : 'Filtros'; }
+
+function textoEjercicios(n) { return `${n} ${n === 1 ? 'ejercicio' : 'ejercicios'}`; }
+
+// Etiquetas de lo marcado, arriba de la lista: se ve qué filtra y se quita
+// con un toque sin abrir el panel. Siempre existe el contenedor (vacío y
+// oculto si no hay nada) para poder reemplazarlo al actualizar. Con el panel
+// abierto se esconden: cada fila nueva de etiquetas empujaba las casillas
+// hacia abajo y el siguiente toque caía en otra (las casillas ya dicen qué
+// está marcado).
+function htmlFiltrosActivos() {
+  const activos = Object.keys(OPCIONES_FILTRO).flatMap(f =>
+    OPCIONES_FILTRO[f].filter(v => filtrosBib[f].has(v)).map(v => ({ f, v })));
+  if (!activos.length) return '<div class="en-factivos" hidden></div>';
+  return `<div class="en-factivos"${panelFiltros ? ' hidden' : ''}>${activos.map(({ f, v }) => `
+    <button type="button" class="en-fchip" data-acc="quitar-filtro" data-f="${f}" data-v="${esc(v)}"
+      aria-label="${esc(capital(v))}, quitar filtro"><span>${esc(capital(v))}</span>${SVG_CERRAR}</button>`).join('')}
+    <button type="button" class="en-flimpiar" data-acc="limpiar-filtros">Limpiar</button></div>`;
+}
+
+function htmlPanelFiltros(res) {
+  const nf = cuentaFiltros(filtrosBib);
+  return `
+    <div class="en-fpanel" id="en-fpanel"${panelFiltros ? '' : ' hidden'}>
+      ${Object.keys(OPCIONES_FILTRO).map(f => `
+      <fieldset class="en-fgrupo">
+        <legend class="en-flegend">${NOMBRES_FILTRO[f]}</legend>
+        <div class="en-fopc">${OPCIONES_FILTRO[f].map(v => `
+          <label class="en-fcasilla"><input type="checkbox" data-f="${f}" data-v="${esc(v)}" value="${esc(v)}"${
+            filtrosBib[f].has(v) ? ' checked' : ''}><span>${esc(capital(v))}</span></label>`).join('')}
+        </div>
+      </fieldset>`).join('')}
+      <div class="en-fpie">
+        <button type="button" class="en-btn en-btn-ghost" data-acc="limpiar-filtros"${nf ? '' : ' disabled'}>Limpiar</button>
+        <button type="button" class="en-btn en-btn-main en-fver" data-acc="filtros-ver">${textoVer(res)}</button>
+      </div>
+    </div>`;
+}
+
+function textoVer(res) {
+  const n = res.reduce((s, r) => s + r.n, 0);
+  return n ? `Ver ${textoEjercicios(n)}` : 'Sin resultados';
+}
+
+function htmlResultadosBiblioteca(destino, res) {
+  const overlay = destino === 'sesion' || destino === 'rutina';
+  if (catEstado === 'cargando' || catEstado === 'nada') return '<div class="en-busca-res"><p class="en-vacio">Cargando ejercicios…</p></div>';
+  const q = consultaBib.trim();
+  if (catEstado === 'fallo' || !catalogo.length) {
+    return `<div class="en-busca-res"><p class="en-vacio">La biblioteca no está disponible por ahora. Puedes escribir el nombre de tu ejercicio y registrarlo igual.</p>${htmlLibre(q)}</div>`;
+  }
+  const filtrando = !!(q || cuentaFiltros(filtrosBib));
+  const total = res.reduce((s, r) => s + r.n, 0);
+  const lista = res.slice(0, CAP_MAESTROS);
+  // Con pocos resultados los maestros se abren solos, y al escribir se abre
+  // siempre el primero: buscar «press militar» y tener que tocar otra vez
+  // para ver las variantes sería un paso de más.
+  const pocos = filtrando && res.filter(r => r.m.n > 1).length <= 3;
+  const primero = q ? res.find(r => r.m.n > 1)?.m.clave : null;
+  const recientes = !filtrando
+    ? estado.recientes.ejercicios.map(id => porId.get(id)).filter(Boolean).slice(0, 5)
+    : [];
+  const accion = overlay ? 'Agregar' : 'Ver';
+  return `<div class="en-busca-res">
+    ${recientes.length ? `<div class="en-sec-lbl">Recientes</div>${recientes.map(e => htmlFilaEjercicio(e, accion)).join('')}` : ''}
+    <div class="en-sec-lbl">${filtrando ? textoEjercicios(total) : 'Todos · los más usados primero'}</div>
+    ${lista.length ? lista.map(r => htmlMaestro(r, overlay, accion, pocos || r.m.clave === primero)).join('')
+      : `<p class="en-vacio">${q ? `Nada con «${esc(q)}»` : 'Nada con esos filtros'}.</p>${htmlLibre(q)}`}
+    ${res.length > lista.length ? `<p class="en-vacio">Mostrando ${CAP_MAESTROS} de ${res.length} grupos. Sigue escribiendo o usa Filtros para afinar.</p>` : ''}
+  </div>`;
+}
+
+// Foto en cada fila, perezosa: con el tope de filas y loading="lazy" solo
+// bajan las que entran en pantalla (el CDN sirve los JPG completos, así que
+// sin tope ni lazy recorrer la lista costaba ~55 MB).
+function htmlFoto(e) {
+  return `<span class="en-thumb">${e.imagenes?.[0] ? `<img loading="lazy" src="${esc(URL_IMG + e.imagenes[0])}" alt="">` : ''}</span>`;
+}
+
+function htmlFilaEjercicio(e, accion) {
+  return `
+    <button type="button" class="en-ej-row" data-acc="ej" data-id="${esc(e.id)}">
+      ${htmlFoto(e)}
+      <span class="en-ej-row-txt">
+        <span class="en-ej-row-nombre">${esc(e.nombre)}</span>
+        <span class="en-ej-row-sub">${esc([capital(e.musculosPrimarios?.[0]), e.equipo].filter(Boolean).join(' · '))}</span>
+      </span>
+      <span class="en-ej-row-acc">${accion}</span>
+    </button>`;
+}
+
+// Un maestro con una sola variante es una fila normal. Con varias, la fila
+// se despliega ahí mismo y enseña sus grupos (ángulo o tipo) con las
+// variantes como etiquetas; tocar una etiqueta es elegir ese ejercicio.
+function htmlMaestro(r, overlay, accion, auto) {
+  if (r.m.n === 1) return htmlFilaEjercicio(r.grupos[0].variantes[0].e, accion);
+  const abierto = abiertosBib.has(r.m.clave) ? abiertosBib.get(r.m.clave) : auto;
+  const top = r.grupos[0].variantes[0].e;
+  const cuantas = r.n === r.m.n ? `${r.n} variantes` : `${r.n} de ${r.m.n} variantes`;
+  const id = 'en-var-' + r.m.clave.replace(/[^a-z0-9]+/g, '-');
+  return `
+    <div class="en-maestro${abierto ? ' en-maestro-on' : ''}">
+      <button type="button" class="en-ej-row en-maestro-btn" data-acc="maestro" data-clave="${esc(r.m.clave)}"
+        aria-expanded="${abierto}"${abierto ? ` aria-controls="${id}"` : ''}>
+        ${htmlFoto(top)}
+        <span class="en-ej-row-txt">
+          <span class="en-ej-row-nombre">${esc(r.m.nombre)}</span>
+          <span class="en-ej-row-sub">${esc([capital(top.musculosPrimarios?.[0]), cuantas].filter(Boolean).join(' · '))}</span>
+        </span>
+        <span class="en-maestro-chev">${SVG_CHEV}</span>
+      </button>
+      ${abierto ? `<div class="en-variantes" id="${id}">${r.grupos.map(g => htmlGrupoVariantes(r.m, g, overlay)).join('')}</div>` : ''}
+    </div>`;
+}
+
+function htmlGrupoVariantes(m, g, overlay) {
+  const k = m.clave + '|' + g.nombre;
+  // Solo se recorta si quedan escondidas al menos 3: un «+1 más» cuesta lo
+  // mismo que enseñar la etiqueta.
+  const corto = g.variantes.length > VARIANTES_VISIBLES + 2 && !masBib.has(k);
+  const vs = corto ? g.variantes.slice(0, VARIANTES_VISIBLES) : g.variantes;
+  const contexto = m.nombre + (g.nombre ? ' ' + g.nombre.toLowerCase() : '');
+  return `
+    <div class="en-var-grupo" data-k="${esc(k)}">
+      ${g.nombre ? `<div class="en-var-lbl">${esc(g.nombre)}</div>` : ''}
+      <div class="en-var-chips">${vs.map(v => `
+        <button type="button" class="en-var" data-acc="ej" data-lugar="var" data-id="${esc(v.e.id)}"
+          aria-label="${esc(v.etiqueta)}, ${esc(contexto)}">${overlay ? SVG_SUMAR : ''}<span>${esc(v.etiqueta)}</span></button>`).join('')}
+        ${corto ? `<button type="button" class="en-var en-var-mas" data-acc="var-mas" data-k="${esc(k)}">+${g.variantes.length - VARIANTES_VISIBLES} más</button>` : ''}
+      </div>
+    </div>`;
+}
+
+function htmlANodo(html) {
+  const t = document.createElement('template');
+  t.innerHTML = html.trim();
+  return t.content.firstElementChild;
+}
+
+// Repinta resultados y etiquetas de filtros sin tocar el buscador ni el panel
+// de casillas: así ni el teclado ni la casilla recién tocada pierden el foco.
+function actualizarBiblioteca(cont, destino) {
+  const res = datosBiblioteca();
+  const nf = cuentaFiltros(filtrosBib);
+  cont.querySelector('.en-busca-res')?.replaceWith(htmlANodo(htmlResultadosBiblioteca(destino, res)));
+  cont.querySelector('.en-factivos')?.replaceWith(htmlANodo(htmlFiltrosActivos()));
+  const fb = cont.querySelector('[data-acc="filtros"]');
+  if (fb) {
+    fb.classList.toggle('en-filtros-btn-on', nf > 0);
+    fb.querySelector('span').textContent = textoBotonFiltros(nf);
+  }
+  cont.querySelectorAll('.en-fpanel input[data-f]').forEach(c => { c.checked = filtrosBib[c.dataset.f].has(c.value); });
+  const ver = cont.querySelector('.en-fver');
+  if (ver) ver.textContent = textoVer(res);
+  const lim = cont.querySelector('.en-fpanel [data-acc="limpiar-filtros"]');
+  if (lim) lim.disabled = !nf;
   // Mensaje de estado (WCAG 4.1.3): el conteo, no la lista.
   const est = cont.querySelector('.en-busca-estado');
   if (est) {
-    const n = nueva.querySelectorAll('.en-ej-row').length;
-    est.textContent = (consultaBib.trim() || filtroMusculo || filtroEquipo) ? (n ? `${n} ${n === 1 ? 'ejercicio' : 'ejercicios'}` : 'Sin resultados') : '';
+    const n = res.reduce((s, r) => s + r.n, 0);
+    est.textContent = (consultaBib.trim() || nf) ? (n ? textoEjercicios(n) : 'Sin resultados') : '';
   }
-  // Los clicks ya los atiende el listener delegado de `cont`.
 }
 
 function htmlLibre(q) {
@@ -2273,11 +2444,15 @@ function htmlLibre(q) {
 
 function elegirEjercicio(id, destino) {
   const f = porId.get(id);
+  // La próxima vez que se abra la biblioteca empieza con el panel cerrado (los
+  // filtros marcados siguen, visibles como etiquetas).
+  panelFiltros = false;
   if (destino === 'sesion') { consultaBib = ''; agregarEjercicioASesion(id, f?.nombre ?? id); return; }
   if (destino === 'rutina') { consultaBib = ''; agregarEjercicioARutina(id, f?.nombre ?? id); return; }
   // Desde la Biblioteca se abre su FICHA (instrucciones, fotos, músculos): antes
   // tocar la fila arrancaba una sesión al instante, y las instrucciones
   // traducidas de 871 ejercicios no se veían en ninguna pantalla.
+  volverBib = { y: window.scrollY, id };
   fichaId = id;
   render();
   window.scrollTo(0, 0);
@@ -2309,7 +2484,19 @@ function pintarFicha(raiz, id) {
   raiz.querySelector('.en-wrap').addEventListener('click', ev => {
     const b = ev.target.closest('[data-acc]');
     if (!b) return;
-    if (b.dataset.acc === 'ficha-volver') { fichaId = null; render(); }
+    if (b.dataset.acc === 'ficha-volver') {
+      fichaId = null;
+      render();
+      // De vuelta en la Biblioteca: misma altura y foco en la etiqueta o fila
+      // de donde se salió, para revisar variantes una tras otra sin perderse.
+      const v = volverBib;
+      volverBib = null;
+      if (v) {
+        window.scrollTo(0, v.y);
+        const sel = `[data-acc="ej"][data-id="${CSS.escape(v.id)}"]`;
+        (ctx.raiz.querySelector(`.en-variantes ${sel}`) || ctx.raiz.querySelector(`.en-busca-res ${sel}`))?.focus({ preventScroll: true });
+      }
+    }
     if (b.dataset.acc === 'ficha-empezar') { const fid = fichaId; fichaId = null; consultaBib = ''; empezarConEjercicio(fid); }
   });
   // Dentro de la sesión, leer la ficha no pausa nada: el crono y el descanso
