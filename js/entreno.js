@@ -32,7 +32,8 @@
 // ═════════════════════════════════════════════════════════════════════════════
 
 import * as almacen from './almacen.js';
-import { construirMaestros, buscarMaestros, filtrosVacios, cuentaFiltros, OPCIONES_FILTRO, NOMBRES_FILTRO } from './biblioteca.js';
+import { construirMaestros, buscarMaestros, filtrosVacios, cuentaFiltros, marcarFiltro, quitarFiltro,
+         partesMarcadas, zonasParaAfinar, nombreParte, ZONAS, OPCIONES_FILTRO, NOMBRES_FILTRO } from './biblioteca.js';
 import { crearDescanso, formatear, pedirWakeLock, liberarWakeLock,
          prepararAudio, avisarFin } from './temporizador.js';
 
@@ -847,9 +848,15 @@ function empezarConEjercicio(id) {
 // ejercicio de la rutina ("lo que sugiere la rutina").
 async function empezarDesdeRutina(rutina, dia, descansoS = null) {
   inicioPendiente = null;
+  sesionArrancando = true;
   // Los nombres salen del catálogo; si no carga, el id hace de nombre y la
-  // sesión funciona igual (el nombre es presentación, no dato).
+  // sesión funciona igual (el nombre es presentación, no dato). Si la carga
+  // que había en curso (p. ej. la del editor, para sus fotos) falló, se
+  // intenta una vez más: la señal pudo volver.
   await cargarCatalogo();
+  if (catEstado !== 'listo') await cargarCatalogo();
+  if (!sesionArrancando) return;
+  sesionArrancando = false;
   sesion = nuevaSesion(rutina.id);
   let grupo = 0;
   for (const bloque of dia.bloques || []) {
@@ -1080,10 +1087,34 @@ function pararReloj() {
 
 // ── Datos lazy: catálogo de ejercicios y rutinas sugeridas ───────────────────
 
+// Se corta si la descarga se queda SIN AVANZAR (no si es lenta): una señal
+// que se va a medias dejaba la promesa colgada para siempre y, con ella, a
+// todas las pantallas que la esperan. Mientras lleguen datos, sigue. Al
+// cortarse pasa a 'fallo' y el reintento normal se encarga.
+const SIN_AVANCE_MS = 8000;
+async function pedirConLimite(ruta) {
+  const corte = new AbortController();
+  let t = 0;
+  const vigilar = () => { clearTimeout(t); t = setTimeout(() => corte.abort(), SIN_AVANCE_MS); };
+  vigilar();
+  try {
+    const r = await fetch(ruta, { signal: corte.signal });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    if (!r.body?.getReader) return await r.json();
+    vigilar();
+    const lector = r.body.getReader();
+    const partes = [];
+    for (;;) {
+      const { done, value } = await lector.read();
+      if (done) break;
+      partes.push(value);
+      vigilar();
+    }
+    return JSON.parse(await new Blob(partes).text());
+  } finally { clearTimeout(t); }
+}
 async function cargarJSON(ruta, clave) {
-  const r = await fetch(ruta);
-  if (!r.ok) throw new Error('HTTP ' + r.status);
-  const d = await r.json();
+  const d = await pedirConLimite(ruta);
   // Se acepta lista pelada u objeto envoltorio: el formato lo fija el
   // pipeline de datos y este lector no debe romperse por un sobre de más.
   if (Array.isArray(d)) return d;
@@ -1091,7 +1122,35 @@ async function cargarJSON(ruta, clave) {
   return [];
 }
 
-let catPromesa = null, rutPromesa = null;
+let catPromesa = null, rutPromesa = null, catFalloMs = 0;
+// Mientras empezarDesdeRutina espera el catálogo (los nombres salen de ahí):
+// si la persona se va con «Rutinas», la sesión ya no arranca por sorpresa.
+let sesionArrancando = false;
+// ¿Le toca a esta pantalla pedir el catálogo y repintarse al llegar? También
+// mientras está 'cargando': quien lo pidió primero pudo ser otra pantalla (el
+// editor lo pide solo para las fotos y no repinta la Biblioteca). Tras un
+// fallo se reintenta, pero no en cada repintado: sin señal en el gimnasio,
+// cada toque lanzaría otra descarga de 850 KB.
+function faltaCatalogo(esperaTrasFalloMs = 20000) {
+  if (catEstado === 'nada' || catEstado === 'cargando') return true;
+  return catEstado === 'fallo' && Date.now() - catFalloMs >= esperaTrasFalloMs;
+}
+// Repintar porque llegó el catálogo sin pisar lo que se está escribiendo: con
+// un campo de texto en uso (reps, peso, notas, nombre de la rutina) solo se
+// ponen las fotos en su sitio, porque repintar tiraría lo tecleado que aún no
+// se guardó (se guarda al salir del campo); lo demás sale en el siguiente
+// repintado normal. Si la carga falló no hay nada nuevo que pintar, salvo
+// donde un «Cargando…» tiene que cambiar (conFallo).
+function repintarConCatalogo(siSigue, conFallo = false) {
+  if (!siSigue() || (catEstado !== 'listo' && !conFallo)) return;
+  const a = document.activeElement;
+  if (a && ctx.raiz.contains(a) && (a.tagName === 'TEXTAREA'
+    || (a.tagName === 'INPUT' && !/^(checkbox|radio|button|submit|reset)$/i.test(a.type)))) {
+    rellenarFotos(ctx.raiz);
+    return;
+  }
+  render();
+}
 function cargarCatalogo() {
   if (catEstado === 'listo') return Promise.resolve();
   if (!catPromesa) catPromesa = cargarCatalogoReal().finally(() => { catPromesa = null; });
@@ -1104,7 +1163,7 @@ async function cargarCatalogoReal() {
     // biblioteca sigue funcionando igual que antes.
     const [cat, grupos] = await Promise.all([
       cargarJSON('data/ejercicios.json', 'ejercicios'),
-      fetch('data/grupos-ejercicios.json').then(r => (r.ok ? r.json() : null)).catch(() => null),
+      pedirConLimite('data/grupos-ejercicios.json').catch(() => null),
     ]);
     catalogo = cat;
     porId = new Map(catalogo.map(e => [e.id, e]));
@@ -1115,6 +1174,7 @@ async function cargarCatalogoReal() {
     porId = new Map();
     maestrosCat = [];
     catEstado = 'fallo';
+    catFalloMs = Date.now();
   }
 }
 
@@ -1152,9 +1212,20 @@ function selectorFoco(el) {
 }
 
 function render() {
-  const foco = selectorFoco(document.activeElement);
+  const a = document.activeElement;
+  const foco = selectorFoco(a);
+  // El cursor de un campo de texto vuelve a su sitio: sin esto, lo que se
+  // escribía tras un repintado (p. ej. al llegar el catálogo mientras se
+  // busca) caía al principio: «press» + « banca» → « bancapress».
+  let cursor = null;
+  try { if (foco && typeof a.selectionStart === 'number') cursor = [a.selectionStart, a.selectionEnd]; } catch { /* sin cursor */ }
   renderVista();
-  if (foco) ctx.raiz.querySelector(foco)?.focus({ preventScroll: true });
+  if (!foco) return;
+  const n = ctx.raiz.querySelector(foco);
+  n?.focus({ preventScroll: true });
+  if (cursor && n && typeof n.value === 'string' && n.value.length >= cursor[1]) {
+    try { n.setSelectionRange(cursor[0], cursor[1]); } catch { /* tipo sin cursor */ }
+  }
 }
 
 function renderVista() {
@@ -1163,7 +1234,7 @@ function renderVista() {
   // El resumen y el historial necesitan el catálogo (grupos musculares) y las
   // rutinas base (nombre de la sesión): si aún no están, se piden y se
   // repinta al llegar. Los flags de carga evitan pedirlos dos veces.
-  if ((sesion || verSesionId) && catEstado === 'nada') cargarCatalogo().then(() => render());
+  if ((sesion || verSesionId) && faltaCatalogo()) cargarCatalogo().then(() => repintarConCatalogo(() => !!(sesion || verSesionId)));
   if ((sesion?.rutinaId || verSesionId) && rutEstado === 'nada') cargarRutinas().then(() => render());
   if (sesion && !sesion.finMs) {
     if (fichaId) { pintarFicha(raiz, fichaId); return; }
@@ -1366,14 +1437,21 @@ function pintarElegirDescanso(raiz) {
       ${sugerida ? opcion('rutina', 'Lo que sugiere la rutina',
         rango.min === rango.max ? etiquetaDescanso(rango.min) : `De ${etiquetaDescanso(rango.min)} a ${etiquetaDescanso(rango.max)}, según el ejercicio`) : ''}
     </div>
+    <p class="en-sub en-desc-espera" role="status" aria-live="polite"></p>
   </div>`;
   raiz.querySelector('.en-wrap').addEventListener('click', e => {
     const b = e.target.closest('[data-acc]');
     if (!b) return;
-    if (b.dataset.acc === 'desc-volver') { inicioPendiente = null; render(); return; }
+    if (b.dataset.acc === 'desc-volver') { inicioPendiente = null; sesionArrancando = false; render(); return; }
     if (b.dataset.acc === 'descanso') {
       if (!inicioPendiente) return;   // doble toque: la sesión ya está arrancando
       const v = b.dataset.v === 'rutina' ? null : +b.dataset.v;
+      // Si hay que esperar al catálogo, que se note: antes el toque no hacía
+      // nada visible hasta que llegaba.
+      if (catEstado !== 'listo') {
+        b.setAttribute('aria-busy', 'true');
+        raiz.querySelector('.en-desc-espera').textContent = 'Preparando tu rutina…';
+      }
       empezarDesdeRutina(rutina, dia, v);
     }
   });
@@ -1416,6 +1494,7 @@ function pintarEditorRutina(raiz) {
           ${n > 1 ? `<button type="button" class="en-ed-asa" data-acc="ed-asa" data-idx="${i}" aria-pressed="${lev?.tipo === 'ej' && lev.idx === i}"
             aria-label="Mover ${etiqueta ? etiqueta + ', ' : ''}${nombre}, posición ${i + 1} de ${n}" aria-describedby="en-ed-asa-ayuda">${SVG_ASA}</button>` : ''}
           ${etiqueta ? `<span class="en-ed-etq" aria-hidden="true">${etiqueta}</span>` : ''}
+          ${miniatura(ej.idEjercicio)}
           <span class="en-card-nombre">${nombre}</span>
           <button type="button" class="en-ed-quitar" data-acc="ed-quitar" data-idx="${i}" aria-label="Quitar ${nombre} de la rutina">${SVG_PAPELERA}</button>
           ${n > 1 ? `<button type="button" class="en-ed-mas" data-acc="ed-menu" data-idx="${i}" aria-expanded="${menuEjIdx === i}"
@@ -1505,6 +1584,10 @@ function pintarEditorRutina(raiz) {
   ${hojaTecnica ? htmlHojaTecnica() : ''}`;
 
   if (hojaTecnica) conectarHojaTecnica(raiz);
+  // Las fotos de las tarjetas salen del catálogo; si aún no está, se pide una
+  // sola vez y se ponen en su sitio al llegar (sin repintar: hay campos a
+  // medio escribir).
+  if (faltaCatalogo()) cargarCatalogo().then(() => { if (borrador) rellenarFotos(raiz); });
   const wrap = raiz.querySelector('.en-wrap');
   wrap.querySelector('#en-ed-nombre').addEventListener('input', e => {
     soltarSinRepintar();
@@ -2156,7 +2239,13 @@ const VARIANTES_VISIBLES = 6;
 function pintarBiblioteca(cont, destino) {
   const overlay = destino === 'sesion' || destino === 'rutina';
   const enSesion = destino === 'sesion';
-  if (catEstado === 'nada') { cargarCatalogo().then(() => render()); }
+  // La Biblioteca es lo esencial: tras un fallo reintenta en cuanto se vuelve
+  // a abrir (los 3 s solo evitan el bucle con el repintado que sigue al fallo).
+  if (faltaCatalogo(3000)) {
+    // Solo repinta si sigue en la Biblioteca: si ya volvió al editor, un
+    // repintado borraría las reps a medio escribir.
+    cargarCatalogo().then(() => { if (destino ? modoBiblioteca === destino : subtab === 'biblioteca' && !modoBiblioteca) render(); });
+  }
   if (overlay) {
     // En overlay la biblioteca ocupa la raíz entera, con vuelta a la sesión.
     // La barra de descanso viaja con ella: un descanso corriendo no se
@@ -2208,8 +2297,7 @@ function pintarBiblioteca(cont, destino) {
   cont.addEventListener('change', e => {
     const c = e.target.closest('input[type="checkbox"][data-f]');
     if (!c) return;
-    if (c.checked) filtrosBib[c.dataset.f].add(c.value);
-    else filtrosBib[c.dataset.f].delete(c.value);
+    marcarFiltro(filtrosBib, c.dataset.f, c.value, c.checked);
     actualizarBiblioteca(cont, destino);
   });
   cont.addEventListener('click', e => {
@@ -2218,6 +2306,11 @@ function pintarBiblioteca(cont, destino) {
     const acc = b.dataset.acc;
     if (acc === 'ej') elegirEjercicio(b.dataset.id, destino);
     else if (acc === 'libre') elegirLibre(destino);
+    else if (acc === 'reintentar-cat') {
+      // A mano, sin esperar: la señal pudo volver hace un segundo.
+      cargarCatalogo().then(() => { if (destino ? modoBiblioteca === destino : subtab === 'biblioteca' && !modoBiblioteca) render(); });
+      render();
+    }
     else if (acc === 'maestro') {
       const clave = b.dataset.clave;
       abiertosBib.set(clave, b.getAttribute('aria-expanded') !== 'true');
@@ -2248,7 +2341,7 @@ function pintarBiblioteca(cont, destino) {
     } else if (acc === 'quitar-filtro') {
       const todas = [...cont.querySelectorAll('[data-acc="quitar-filtro"]')];
       const i = todas.indexOf(b);
-      filtrosBib[b.dataset.f].delete(b.dataset.v);
+      quitarFiltro(filtrosBib, b.dataset.f, b.dataset.v);
       actualizarBiblioteca(cont, destino);
       // El foco pasa a la etiqueta que quedó en su lugar, o al botón Filtros.
       const quedan = cont.querySelectorAll('[data-acc="quitar-filtro"]');
@@ -2283,13 +2376,37 @@ function textoEjercicios(n) { return `${n} ${n === 1 ? 'ejercicio' : 'ejercicios
 // hacia abajo y el siguiente toque caía en otra (las casillas ya dicen qué
 // está marcado).
 function htmlFiltrosActivos() {
-  const activos = Object.keys(OPCIONES_FILTRO).flatMap(f =>
-    OPCIONES_FILTRO[f].filter(v => filtrosBib[f].has(v)).map(v => ({ f, v })));
+  // Una zona afinada se ve por sus partes («Bíceps»), no como «Brazos».
+  const activos = ZONAS.filter(z => filtrosBib.musculo.has(z.v)).flatMap(z => {
+    const finas = partesMarcadas(filtrosBib, z.v);
+    return finas.length ? finas.map(p => ({ f: 'parte', v: p, txt: nombreParte(p) })) : [{ f: 'musculo', v: z.v, txt: z.v }];
+  }).concat(['equipo', 'tipo', 'nivel'].flatMap(f =>
+    OPCIONES_FILTRO[f].filter(v => filtrosBib[f].has(v)).map(v => ({ f, v, txt: v }))));
   if (!activos.length) return '<div class="en-factivos" hidden></div>';
-  return `<div class="en-factivos"${panelFiltros ? ' hidden' : ''}>${activos.map(({ f, v }) => `
+  return `<div class="en-factivos"${panelFiltros ? ' hidden' : ''}>${activos.map(({ f, v, txt }) => `
     <button type="button" class="en-fchip" data-acc="quitar-filtro" data-f="${f}" data-v="${esc(v)}"
-      aria-label="${esc(capital(v))}, quitar filtro"><span>${esc(capital(v))}</span>${SVG_CERRAR}</button>`).join('')}
+      aria-label="${esc(capital(txt))}, quitar filtro"><span>${esc(capital(txt))}</span>${SVG_CERRAR}</button>`).join('')}
     <button type="button" class="en-flimpiar" data-acc="limpiar-filtros">Limpiar</button></div>`;
+}
+
+function htmlCasilla(f, v, txt) {
+  return `
+          <label class="en-fcasilla"><input type="checkbox" data-f="${f}" data-v="${esc(v)}" value="${esc(v)}"${
+            filtrosBib[f].has(v) ? ' checked' : ''}><span>${esc(capital(txt))}</span></label>`;
+}
+
+// «Afinar»: debajo de las zonas, una fila por cada zona marcada que tiene
+// partes. Es opcional y lo dice: sin tocarla, la zona trae todo. Va DEBAJO de
+// las zonas para que aparecer no mueva la casilla que se acaba de tocar.
+function htmlAfinar() {
+  const zs = zonasParaAfinar(filtrosBib);
+  return `<div class="en-fafinar" data-zonas="${esc(zs.join('|'))}"${zs.length ? '' : ' hidden'}>${zs.map(v => `
+        <fieldset class="en-fsub">
+          <legend class="en-fsub-lbl">Afinar ${esc(v)} <span>(opcional)</span></legend>
+          <div class="en-fopc">${ZONAS.find(z => z.v === v).partes.map(p => htmlCasilla('parte', p, nombreParte(p))).join('')}
+          </div>
+        </fieldset>`).join('')}
+      </div>`;
 }
 
 function htmlPanelFiltros(res) {
@@ -2299,10 +2416,9 @@ function htmlPanelFiltros(res) {
       ${Object.keys(OPCIONES_FILTRO).map(f => `
       <fieldset class="en-fgrupo">
         <legend class="en-flegend">${NOMBRES_FILTRO[f]}</legend>
-        <div class="en-fopc">${OPCIONES_FILTRO[f].map(v => `
-          <label class="en-fcasilla"><input type="checkbox" data-f="${f}" data-v="${esc(v)}" value="${esc(v)}"${
-            filtrosBib[f].has(v) ? ' checked' : ''}><span>${esc(capital(v))}</span></label>`).join('')}
+        <div class="en-fopc">${OPCIONES_FILTRO[f].map(v => htmlCasilla(f, v, v)).join('')}
         </div>
+        ${f === 'musculo' ? htmlAfinar() : ''}
       </fieldset>`).join('')}
       <div class="en-fpie">
         <button type="button" class="en-btn en-btn-ghost" data-acc="limpiar-filtros"${nf ? '' : ' disabled'}>Limpiar</button>
@@ -2321,7 +2437,8 @@ function htmlResultadosBiblioteca(destino, res) {
   if (catEstado === 'cargando' || catEstado === 'nada') return '<div class="en-busca-res"><p class="en-vacio">Cargando ejercicios…</p></div>';
   const q = consultaBib.trim();
   if (catEstado === 'fallo' || !catalogo.length) {
-    return `<div class="en-busca-res"><p class="en-vacio">La biblioteca no está disponible por ahora. Puedes escribir el nombre de tu ejercicio y registrarlo igual.</p>${htmlLibre(q)}</div>`;
+    return `<div class="en-busca-res"><p class="en-vacio">La biblioteca no está disponible por ahora. Puedes escribir el nombre de tu ejercicio y registrarlo igual.</p>
+      <button type="button" class="en-btn en-btn-ghost en-reintentar" data-acc="reintentar-cat">Reintentar</button>${htmlLibre(q)}</div>`;
   }
   const filtrando = !!(q || cuentaFiltros(filtrosBib));
   const total = res.reduce((s, r) => s + r.n, 0);
@@ -2423,6 +2540,10 @@ function actualizarBiblioteca(cont, destino) {
     fb.classList.toggle('en-filtros-btn-on', nf > 0);
     fb.querySelector('span').textContent = textoBotonFiltros(nf);
   }
+  // La fila de «Afinar» se rehace solo si cambió qué zonas la llevan: rehacerla
+  // al tocar una de sus casillas le quitaría el foco.
+  const af = cont.querySelector('.en-fafinar');
+  if (af && af.dataset.zonas !== zonasParaAfinar(filtrosBib).join('|')) af.replaceWith(htmlANodo(htmlAfinar()));
   cont.querySelectorAll('.en-fpanel input[data-f]').forEach(c => { c.checked = filtrosBib[c.dataset.f].has(c.value); });
   const ver = cont.querySelector('.en-fver');
   if (ver) ver.textContent = textoVer(res);
@@ -2663,7 +2784,7 @@ function textoMejor(m, unidad) {
 
 function pintarPanelProgreso(panel) {
   const sesiones = estado.entreno.sesiones;
-  if (catEstado === 'nada') cargarCatalogo().then(() => { if (subtab === 'progreso' && !sesion) render(); });
+  if (faltaCatalogo()) cargarCatalogo().then(() => repintarConCatalogo(() => subtab === 'progreso' && !sesion, true));
   if (!sesiones.length) {
     panel.innerHTML = `<div class="en-prog-vacio">
       <p class="en-vacio">Aquí verás cuánto levantas, tus series y tus récords. Termina tu primera sesión y empieza la cuenta.</p>
@@ -2730,7 +2851,7 @@ function htmlSesionEjercicio(h, unidad, n) {
 
 function pintarDetalleEjercicio(raiz, id) {
   const sesiones = estado.entreno.sesiones;
-  if (catEstado === 'nada') cargarCatalogo().then(() => { if (verProgresoId) render(); });
+  if (faltaCatalogo()) cargarCatalogo().then(() => repintarConCatalogo(() => !!verProgresoId, true));
   const f = porId.get(id);
   const hist = historialEjercicio(sesiones, id);
   const nombre = f?.nombre || hist[hist.length - 1]?.nombre || id;
@@ -2824,9 +2945,16 @@ function nombreSesion(s) {
 // ni un segundo.
 
 function miniatura(idEjercicio, clase = 'en-thumb') {
-  const f = porId.get(idEjercicio);
-  const img = f?.imagenes?.[0];
-  return `<span class="${clase}">${img ? `<img loading="lazy" src="${esc(URL_IMG + img)}" alt="">` : ''}</span>`;
+  return `<span class="${clase}" data-foto="${esc(idEjercicio ?? '')}">${htmlImgFoto(idEjercicio)}</span>`;
+}
+function htmlImgFoto(idEjercicio) {
+  const img = porId.get(idEjercicio)?.imagenes?.[0];
+  return img ? `<img loading="lazy" src="${esc(URL_IMG + img)}" alt="">` : '';
+}
+// Si el catálogo llega cuando la pantalla ya está pintada, las miniaturas se
+// llenan en su sitio: repintar todo movería el foco y la posición.
+function rellenarFotos(raiz) {
+  raiz.querySelectorAll('[data-foto]').forEach(s => { if (!s.firstElementChild) s.innerHTML = htmlImgFoto(s.dataset.foto); });
 }
 
 function serieEnCursoValida() {

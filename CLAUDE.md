@@ -28,8 +28,11 @@ solo lectura y aquí `MODO_DEMO` queda encendido (ver "Modo demo").
   la reemplaza cuando su pipeline termine), `ejercicios.json` (free-exercise-db
   traducido, Unlicense; imágenes por CDN, no en el repo), `rutinas.json`,
   `grupos-ejercicios.json` (curado a mano: agrupa los ejercicios en maestros
-  → grupo por ángulo o tipo → variantes con etiqueta y popularidad 1–5; lo
-  lee `js/biblioteca.js`; si falta, cada ejercicio va solo).
+  → grupo por ángulo o tipo → variantes con etiqueta y popularidad 1–5, y
+  `tambien`: músculos extra SOLO para el filtro, p. ej. búlgara también en
+  Glúteos; lo lee `js/biblioteca.js`; si falta, cada ejercicio va solo).
+  El filtro de Músculo va por 7 zonas (`ZONAS` en `js/biblioteca.js`); un
+  músculo nuevo en el catálogo necesita su zona o el test de datos falla.
   Cada JSON se carga al abrir SU pestaña.
 - El shell (`app.js`: `goTab`, `renderHoy`, persistencia de perfil,
   `agregarPlatoAlDiario`) lo edita UNA sola persona/agente a la vez.

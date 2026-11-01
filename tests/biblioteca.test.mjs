@@ -5,6 +5,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { normalizar, equipoDe, construirMaestros, buscarMaestros, filtrosVacios, cuentaFiltros,
+         marcarFiltro, quitarFiltro, partesMarcadas, zonasParaAfinar, zonaDe, nombreParte, ZONAS,
          OPCIONES_FILTRO } from '../js/biblioteca.js';
 
 const ej = (id, nombre, equipo, musculo, extra = {}) => ({ id, nombre, nombreEn: id, equipo,
@@ -100,6 +101,75 @@ test('buscarMaestros: casillas del mismo filtro suman y filtros distintos se com
   assert.deepEqual(buscarMaestros(ms, '', t).map(x => x.m.nombre), ['Abdominal raro']);
 });
 
+test('Músculo filtra por zonas generales y se puede afinar dentro de una zona', () => {
+  const cat = [
+    ej('CB', 'Curl de bíceps - Barra', 'barra', 'bíceps'),
+    ej('TP', 'Extensión de tríceps - Polea', 'polea', 'tríceps'),
+    ej('MU', 'Curl de muñeca - Barra', 'barra', 'antebrazos'),
+    ej('SQ', 'Sentadilla - Barra', 'barra', 'cuádriceps'),
+    ej('SH', 'Encogimientos - Barra', 'barra', 'trapecios'),
+    ej('PM', 'Peso muerto - Barra', 'barra', 'lumbar'),
+  ];
+  const ms = construirMaestros(cat, null);
+  const nombres = f => buscarMaestros(ms, '', f).map(x => x.m.nombre.split(' ')[0]).sort();
+  const f = filtrosVacios();
+  marcarFiltro(f, 'musculo', 'brazos', true);
+  assert.deepEqual(nombres(f), ['Curl', 'Curl', 'Extensión'], 'Brazos trae bíceps, tríceps y antebrazos');
+  assert.equal(cuentaFiltros(f), 1);
+  assert.deepEqual(zonasParaAfinar(f), ['brazos']);
+  marcarFiltro(f, 'parte', 'bíceps', true);
+  assert.deepEqual(buscarMaestros(ms, '', f).map(x => x.m.nombre), ['Curl de bíceps - Barra'], 'afinado: solo bíceps');
+  assert.deepEqual(partesMarcadas(f, 'brazos'), ['bíceps']);
+  assert.equal(cuentaFiltros(f), 1, 'la zona afinada cuenta por sus partes, no doble');
+  marcarFiltro(f, 'parte', 'tríceps', true);
+  assert.equal(cuentaFiltros(f), 2);
+  marcarFiltro(f, 'musculo', 'piernas', true);
+  assert.deepEqual(nombres(f), ['Curl', 'Extensión', 'Sentadilla'], 'otra zona sin afinar suma entera');
+  assert.deepEqual(zonasParaAfinar(f), ['brazos', 'piernas'], 'en orden de cuerpo');
+  // Desmarcar la zona se lleva sus partes: al volver a marcarla sale entera.
+  marcarFiltro(f, 'musculo', 'brazos', false);
+  assert.equal(f.parte.size, 0);
+  marcarFiltro(f, 'musculo', 'brazos', true);
+  assert.equal(buscarMaestros(ms, '', f).length, 4);
+  // Quitar la etiqueta de la última parte quita la zona (si no, seguiría
+  // filtrando sin que se vea).
+  const g = filtrosVacios();
+  marcarFiltro(g, 'musculo', 'brazos', true); marcarFiltro(g, 'parte', 'bíceps', true); marcarFiltro(g, 'parte', 'tríceps', true);
+  quitarFiltro(g, 'parte', 'bíceps');
+  assert.ok(g.musculo.has('brazos') && g.parte.has('tríceps'), 'queda tríceps');
+  quitarFiltro(g, 'parte', 'tríceps');
+  assert.ok(!g.musculo.has('brazos') && cuentaFiltros(g) === 0, 'sin partes se va la zona');
+  // Trapecios va con Hombros y lumbar con Espalda (como «espalda baja»).
+  const h = filtrosVacios();
+  marcarFiltro(h, 'musculo', 'hombros', true);
+  assert.deepEqual(buscarMaestros(ms, '', h).map(x => x.m.nombre), ['Encogimientos - Barra']);
+  const e2 = filtrosVacios();
+  marcarFiltro(e2, 'musculo', 'espalda', true);
+  assert.deepEqual(buscarMaestros(ms, '', e2).map(x => x.m.nombre), ['Peso muerto - Barra']);
+  assert.equal(nombreParte('lumbar'), 'espalda baja');
+  assert.equal(nombreParte('bíceps'), 'bíceps');
+});
+
+test('«tambien» suma músculos al filtro sin cambiar el ejercicio', () => {
+  const cat = [ej('BUL', 'Sentadilla búlgara - Mancuernas', 'mancuernas', 'cuádriceps'), ej('HT', 'Hip thrust - Barra', 'barra', 'glúteos')];
+  const ms = construirMaestros(cat, { maestros: [], tambien: { BUL: ['glúteos'], NO_EXISTE: ['pecho'] } });
+  const f = filtrosVacios();
+  marcarFiltro(f, 'musculo', 'glúteos', true);
+  assert.deepEqual(buscarMaestros(ms, '', f).map(x => x.m.nombre).sort(), ['Hip thrust - Barra', 'Sentadilla búlgara - Mancuernas']);
+  const p = filtrosVacios();
+  marcarFiltro(p, 'musculo', 'piernas', true);
+  assert.deepEqual(buscarMaestros(ms, '', p).map(x => x.m.nombre), ['Sentadilla búlgara - Mancuernas'], 'sigue en su zona de siempre');
+  assert.deepEqual(cat[0].musculosPrimarios, ['cuádriceps'], 'el ejercicio no se toca');
+  assert.equal(construirMaestros(cat, { tambien: 'roto' }).length, 2, 'un «tambien» roto no rompe nada');
+});
+
+test('zonas: cada músculo en una sola zona y solo se afina lo que tiene varias partes', () => {
+  const vistos = new Set();
+  for (const z of ZONAS) for (const p of z.partes) { assert.ok(!vistos.has(p), `${p} en dos zonas`); vistos.add(p); }
+  for (const z of ZONAS) if (z.afinar) assert.ok(z.partes.length > 1, `${z.v} no tiene qué afinar`);
+  assert.deepEqual(OPCIONES_FILTRO.musculo, ['pecho', 'espalda', 'hombros', 'brazos', 'abdomen', 'glúteos', 'piernas']);
+});
+
 test('buscarMaestros sin coincidencias devuelve lista vacía', () => {
   assert.deepEqual(buscarMaestros(construirMaestros(CATALOGO, GRUPOS), 'zzz', filtrosVacios()), []);
 });
@@ -132,6 +202,14 @@ test('grupos-ejercicios.json: ids existentes, sin repetidos, pop 1–5 y etiquet
   for (const id of grupos.ocultos) {
     assert.ok(ids.has(id) && !vistos.has(id) && !(id in grupos.sueltos), `oculto inválido ${id}`);
   }
+  const porIdReal = new Map(catalogo.map(e => [e.id, e]));
+  for (const [id, ms] of Object.entries(grupos.tambien || {})) {
+    assert.ok(ids.has(id), `tambien con id inexistente ${id}`);
+    for (const m of ms) {
+      assert.ok(zonaDe(m), `tambien con músculo sin zona: ${id} ${m}`);
+      assert.ok(!porIdReal.get(id).musculosPrimarios.includes(m), `tambien repite el principal: ${id} ${m}`);
+    }
+  }
 });
 
 test('datos reales: cada ejercicio no oculto queda en algún maestro y las casillas cubren todo', () => {
@@ -141,8 +219,16 @@ test('datos reales: cada ejercicio no oculto queda en algún maestro y las casil
     assert.ok(OPCIONES_FILTRO.equipo.includes(equipoDe(e)), `equipo sin casilla: ${equipoDe(e)}`);
     assert.ok(OPCIONES_FILTRO.tipo.includes(e.categoria), `tipo sin casilla: ${e.categoria}`);
     assert.ok(OPCIONES_FILTRO.nivel.includes(e.nivel), `nivel sin casilla: ${e.nivel}`);
-    for (const m of e.musculosPrimarios) assert.ok(OPCIONES_FILTRO.musculo.includes(m), `músculo sin casilla: ${m}`);
+    for (const m of e.musculosPrimarios) assert.ok(zonaDe(m), `músculo sin zona: ${m}`);
   }
+  // Los básicos de glúteo salen al marcar Glúteos aunque su músculo principal sea otro.
+  const gl = filtrosVacios();
+  marcarFiltro(gl, 'musculo', 'glúteos', true);
+  const glu = buscarMaestros(ms, '', gl).slice(0, 8).map(x => x.m.nombre);
+  for (const n of ['Hip thrust', 'Sentadilla búlgara', 'Desplantes', 'Peso muerto']) assert.ok(glu.includes(n), `Glúteos sin ${n}: ${glu}`);
+  const ab = filtrosVacios();
+  marcarFiltro(ab, 'musculo', 'abdomen', true);
+  assert.ok(buscarMaestros(ms, '', ab).some(x => x.m.nombre === 'Escaladores'), 'Escaladores también en Abdomen');
   const top = buscarMaestros(ms, '', filtrosVacios()).slice(0, 3).map(x => x.m.nombre);
   assert.ok(top.includes('Press de banca') && top.includes('Sentadilla'), `los básicos primero: ${top}`);
 });
