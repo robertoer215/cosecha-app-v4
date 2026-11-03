@@ -104,14 +104,20 @@ export function incluyePalabra(texto, p) {
 // que sea la variante de uso diario en México, que ya esté cocinado (es lo que
 // se registra) y que el nombre sea simple; las variantes raras restan.
 const PREFERIDOS = {
-  tortilla: ['maiz'], pollo: ['pechuga', 'muslo', 'pierna'], huevo: ['entero'],
+  tortilla: ['maiz'], pollo: ['pechuga', 'muslo', 'pierna'],
+  // "huevo": el cocido y el revuelto son lo que se registra a diario; después
+  // el frito, el crudo y las claras. Codorniz y pato son RAROS.
+  huevo: ['entero cocido', 'revuelto', 'entero frito', 'entero crudo', 'clara', 'entero'],
   arroz: ['blanco'], frijol: ['negro', 'pinto', 'bayo', 'de la olla', 'refrito'],
   platano: ['tabasco', 'maduro y semimaduro', 'crudo'], leche: ['entera', 'descremada', 'semidescremada', 'deslactosada'],
   queso: ['panela', 'fresco', 'oaxaca', 'manchego', 'cotija'], carne: ['res', 'molida'],
   res: ['molida', 'bistec', 'arrachera'], pan: ['bolillo', 'blanco', 'integral'],
   avena: ['hojuela'], papa: ['hervida', 'cocida'], atun: ['en agua'], yogur: ['natural', 'griego'],
   cafe: ['negro', 'americano'], manzana: ['cruda'], jitomate: ['crudo'], aguacate: ['crudo'],
-  nopal: ['cocido'], pescado: ['tilapia', 'mojarra'], cerdo: ['lomo'], pavo: ['pechuga']
+  nopal: ['cocido'], pescado: ['tilapia', 'mojarra'], cerdo: ['lomo'], pavo: ['pechuga'],
+  // Quien escribe "proteína" busca su whey, no el aislado de soya; "aceite" es
+  // el de oliva antes que el de coco.
+  proteina: ['suero', 'whey'], aceite: ['oliva', 'vegetal', 'canola', 'aguacate', 'coco']
 };
 const RAROS = ['codorniz', 'pato', 'ganso', 'polvo', 'deshidratad', 'liofiliz', 'enlatad', 'de lata',
   'refrigerad', 'empacad', 'larga vida', 'restaurante', 'comida rapida', 'comercial', 'para bebe',
@@ -125,7 +131,9 @@ export function puntuar(item, palabras, q) {
   const primera = n.split(/[\s,()]+/)[0];
   const alInicioDePalabra = w => (' ' + n.replace(/[,()]/g, ' ')).includes(' ' + raizPalabra(w));
   let p = 0;
-  if (n.startsWith(q)) p += 60;
+  // Empezar por lo buscado vale lo mismo en singular que en plural: con
+  // "huevos", «Huevos rancheros» no debe adelantar a «Huevo entero cocido».
+  if (n.startsWith(q) || (palabras.length === 1 && raizPalabra(primera) === raizPalabra(q))) p += 60;
   else if (palabras.some(w => raizPalabra(primera) === raizPalabra(w))) p += 50;
   else if (palabras.every(alInicioDePalabra)) p += 30;
   else if (palabras.every(w => incluyePalabra(n, w))) p += 15;
@@ -142,7 +150,13 @@ export function puntuar(item, palabras, q) {
   if (/ con (?!piel|hueso|cascara)/.test(n) && !q.includes(' con ')) p -= 18;
   const est = item.alimento?.estado;
   if (est === 'cocido' || est === 'listo para comer') p += 6;
-  p -= Math.min(20, n.length / 6);
+  // A igual pieza, la versión «sin piel» es la que se registra (pechuga).
+  if (n.includes('sin piel')) p += 4;
+  // Lo entre paréntesis aclara, no alarga: «Leche entera (3.25% grasa)» es
+  // tan simple como «Leche entera». Un nombre compuesto («revuelto u omelet»)
+  // va detrás del simple.
+  p -= Math.min(20, n.replace(/\s*\([^)]*\)/g, '').length / 6);
+  if (/ u /.test(n)) p -= 8;
   return p;
 }
 
@@ -953,13 +967,20 @@ function htmlResultados() {
       <button type="button" class="btn btn-ghost" data-accion="manual">Registrar «${esc(consulta)}» a mano</button>
     </div>`;
   }
+  // Cada fila enseña la kcal de la PORCIÓN con la que se va a registrar (1
+  // pieza, 1 cucharada), como hacen MyFitnessPal o Yazio: «884 kcal» de aceite
+  // por 100 g asusta y no es lo que nadie se sirve. Es la misma porción y
+  // cantidad con la que abre el detalle, así el número no cambia al entrar.
+  // Sin porción casera, por 100 g.
   const fila = a => {
-    const kcal = Math.round(kcalDerivada({ prot: a.proteina_g, carb: a.carbohidratos_g, gras: a.grasa_g }));
     const p = porcionDe(a);
+    const { gramos, macros } = p ? macrosDeCantidad(a, 1, p) : macrosDeCantidad(a, 100);
+    const kcal = Math.round(kcalDerivada(macros));
+    const medida = p ? `${esc(p.nombre)} · ${fmt1(gramos)} ${unidadDe(a)}` : `por 100 ${unidadDe(a)}`;
     return `<li><button type="button" class="dia-entrada" data-accion="resultado" data-id="${esc(a.id)}">
       <span class="dia-e-main">
         <span class="dia-e-nm">${esc(a.nombre)}</span>
-        <span class="dia-e-sub">P${fmt1(a.proteina_g)} C${fmt1(a.carbohidratos_g)} G${fmt1(a.grasa_g)} · por 100 ${unidadDe(a)}${p ? ` · ${esc(p.nombre)}` : ''}</span>
+        <span class="dia-e-sub">${medida} · P${fmt1(macros.prot)} C${fmt1(macros.carb)} G${fmt1(macros.gras)}</span>
       </span>
       <span class="dia-e-kcal">${kcal} kcal</span>
     </button></li>`;

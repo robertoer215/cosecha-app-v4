@@ -284,3 +284,75 @@ test('pidePlatillo: solo cuando la búsqueda nombra un platillo', () => {
   assert.equal(pidePlatillo('Tamal'), true);
   assert.equal(pidePlatillo('pollo en mole'), true);
 });
+
+// ── Orden "lo que la gente come" (3-nov-2026) ───────────────────────────────
+
+const BASE_HUEVO = [
+  { id: 'E1', nombre: 'Huevo entero frito', grupo: 'Lácteos y huevo', estado: 'cocido' },
+  { id: 'E2', nombre: 'Huevo entero cocido (duro)', grupo: 'Lácteos y huevo', estado: 'cocido' },
+  { id: 'E3', nombre: 'Huevos rancheros', grupo: 'Lácteos y huevo', estado: 'listo para comer' },
+  { id: 'E4', nombre: 'Huevo revuelto u omelet sin grasa añadida', grupo: 'Lácteos y huevo', estado: 'cocido' },
+  { id: 'E5', nombre: 'Huevo revuelto', grupo: 'Lácteos y huevo', estado: 'cocido' },
+  { id: 'E6', nombre: 'Huevo de codorniz entero crudo', grupo: 'Lácteos y huevo', estado: 'crudo' },
+  { id: 'E7', nombre: 'Burrito de huevo con chorizo', grupo: 'Platillos y antojitos (FNDDS)', estado: 'listo para comer' },
+];
+
+test('orden: "huevo" y "huevos" abren con el cocido y el revuelto; el platillo y lo compuesto van detrás', () => {
+  const idx = construirIndice(BASE_HUEVO);
+  for (const q of ['huevo', 'huevos', 'HUEVOS']) {
+    const ids = buscar(idx, q).map(a => a.id);
+    assert.deepEqual(ids.slice(0, 3), ['E2', 'E5', 'E1'], q);
+    assert.ok(ids.indexOf('E3') > ids.indexOf('E1'), 'rancheros después del frito');
+    assert.ok(ids.indexOf('E4') > ids.indexOf('E5'), 'el «u omelet» después del revuelto simple');
+    assert.ok(ids.indexOf('E6') > ids.indexOf('E3'), 'codorniz después de los rancheros');
+  }
+  // El burrito con chorizo no es un alimento: va a Platillos, no a la lista principal.
+  const g = buscarAgrupado(idx, 'huevos');
+  assert.ok(!g.alimentos.some(a => a.id === 'E7'));
+  assert.deepEqual(g.platillos.map(a => a.id), ['E7']);
+});
+
+test('orden: lo entre paréntesis no alarga el nombre («Leche entera (3.25% grasa)» antes que la deslactosada)', () => {
+  const idx = construirIndice([
+    { id: 'L1', nombre: 'Leche deslactosada entera', grupo: 'Lácteos y huevo', estado: 'listo para comer' },
+    { id: 'L2', nombre: 'Leche entera (3.25% grasa)', grupo: 'Lácteos y huevo', estado: 'listo para comer' },
+  ]);
+  assert.equal(buscar(idx, 'leche')[0].id, 'L2');
+});
+
+test('proteína de suero: se encuentra por "whey", "proteína en polvo", "scoop" y va antes que la soya', () => {
+  const idx = construirIndice([
+    { id: 'S1', nombre: 'proteína aislada de soya', sinonimos: [], grupo: 'Leguminosas, semillas y grasas', estado: 'listo para comer' },
+    { id: 'W1', nombre: 'Proteína de suero de leche (whey) en polvo', grupo: 'Lácteos y huevo', estado: 'listo para comer',
+      sinonimos: ['whey', 'whey protein', 'proteína en polvo', 'proteína whey', 'scoop de proteína', 'suero de leche en polvo'] },
+  ]);
+  for (const q of ['whey', 'proteina en polvo', 'scoop', 'suero', 'Proteína']) {
+    assert.equal(buscar(idx, q)[0].id, 'W1', q);
+  }
+  assert.deepEqual(buscar(idx, 'proteina').map(a => a.id), ['W1', 'S1']);
+});
+
+test('orden: "aceite" abre con el de oliva; "pollo" con la pechuga sin piel', () => {
+  const idx = construirIndice([
+    { id: 'O1', nombre: 'aceite de coco', grupo: 'Leguminosas, semillas y grasas', estado: 'listo para comer' },
+    { id: 'O2', nombre: 'aceite de oliva', grupo: 'Leguminosas, semillas y grasas', estado: 'listo para comer' },
+    { id: 'P1', nombre: 'Pechuga de pollo con piel, rostizada', grupo: 'Carnes y aves', estado: 'cocido' },
+    { id: 'P2', nombre: 'Pechuga de pollo sin piel, rostizada', grupo: 'Carnes y aves', estado: 'cocido' },
+  ]);
+  assert.equal(buscar(idx, 'aceite')[0].id, 'O2');
+  assert.equal(buscar(idx, 'pollo')[0].id, 'P2');
+});
+
+test('la base real tiene proteína de suero y el huevo crudo trae su pieza', async () => {
+  const { readFileSync } = await import('node:fs');
+  const base = JSON.parse(readFileSync(new URL('../data/alimentos.json', import.meta.url), 'utf8'));
+  const idx = construirIndice(base);
+  const w = buscar(idx, 'whey')[0];
+  assert.ok(w && /suero de leche/i.test(w.nombre));
+  assert.equal(w.fuente, 'USDA FDC (FNDDS)');
+  assert.ok(w.porciones.some(p => /scoop/i.test(p.nombre) && p.g > 0));
+  const crudo = base.find(a => a.nombre === 'Huevo entero crudo (grande)');
+  assert.ok(crudo.porciones.some(p => /pieza/i.test(p.nombre) && p.g === 50.3));
+  assert.equal(new Set(base.map(a => a.id)).size, base.length, 'ids únicos');
+  assert.equal(new Set(base.map(a => a.fuente + a.id_fuente)).size, base.length, 'id_fuente únicos');
+});

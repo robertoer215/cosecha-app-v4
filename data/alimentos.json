@@ -18394,7 +18394,13 @@
   "fuente": "USDA FDC (Foundation)",
   "id_fuente": 747997,
   "licencia": "CC0 1.0",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 clara (huevo grande)",
+    "g": 34,
+    "fuente": "USDA FDC"
+   }
+  ],
   "kcalDesvia": false
  },
  {
@@ -18804,7 +18810,13 @@
   "fuente": "USDA FDC (Foundation)",
   "id_fuente": 748967,
   "licencia": "CC0 1.0",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 pieza grande",
+    "g": 50.3,
+    "fuente": "USDA FDC"
+   }
+  ],
   "kcalDesvia": false
  },
  {
@@ -21381,7 +21393,13 @@
   "fuente": "USDA FDC (Foundation)",
   "id_fuente": 748236,
   "licencia": "CC0 1.0",
-  "porciones": [],
+  "porciones": [
+   {
+    "nombre": "1 yema (huevo grande)",
+    "g": 17,
+    "fuente": "USDA FDC"
+   }
+  ],
   "kcalDesvia": false
  },
  {
@@ -39328,6 +39346,43 @@
    {
     "nombre": "1 rebanada",
     "g": 3,
+    "fuente": "USDA FDC"
+   }
+  ],
+  "kcalDesvia": false
+ },
+ {
+  "id": "ALI-1511",
+  "nombre": "Proteína de suero de leche (whey) en polvo",
+  "sinonimos": [
+   "whey",
+   "whey protein",
+   "proteína en polvo",
+   "proteína whey",
+   "scoop de proteína",
+   "suero de leche en polvo",
+   "proteína de suero",
+   "batido de proteína"
+  ],
+  "grupo": "Lácteos y huevo",
+  "estado": "listo para comer",
+  "kcal": 352,
+  "proteina_g": 78.13,
+  "carbohidratos_g": 6.25,
+  "grasa_g": 1.56,
+  "fibra_g": 3.1,
+  "fuente": "USDA FDC (FNDDS)",
+  "id_fuente": 2710742,
+  "licencia": "CC0 1.0",
+  "porciones": [
+   {
+    "nombre": "1 scoop (medida)",
+    "g": 26,
+    "fuente": "USDA FDC"
+   },
+   {
+    "nombre": "1 cucharada",
+    "g": 13,
     "fuente": "USDA FDC"
    }
   ],

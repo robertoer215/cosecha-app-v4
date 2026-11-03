@@ -62,6 +62,12 @@ Los datos del usuario viven SOLO en el dispositivo (`localStorage`, esquema vers
 
 «Busco tortilla y salen tacos; pollo y sale un guisado». Antes el orden era alfabético dentro de cada grupo y lo raro salía primero. Ahora cada resultado se puntúa (nombre que empieza por lo buscado, variante de uso diario en México, ya cocinado, nombre simple; variantes raras restan) y los resultados van en tres secciones: **Alimentos → Platillos → Del menú COSECHA**, con «Ver N más». Verificado en la URL pública: «tortilla» abre con la de maíz y los tacos van a Platillos; «pollo» abre con pechuga, el mole y el guisado en Platillos.
 
+**Alimentos: lo que la gente come primero, whey y kcal por porción (pedido de Roberto, 3-nov).** «Si pongo huevos, que sean huevos solamente.»
+- Orden: «huevo» y «huevos» abren con el cocido, el revuelto y el frito; lo compuesto («revuelto u omelet…»), los rancheros y codorniz van detrás; los platillos (burrito, quesadilla) siguen fuera de la lista principal. Singular y plural puntúan igual; lo entre paréntesis no alarga el nombre («Leche entera (3.25% grasa)» antes que la deslactosada); «aceite» abre con el de oliva, «proteína» con la de suero, «pollo» con la pechuga sin piel.
+- Cada fila enseña la kcal y los macros de la **porción con la que se va a registrar** (1 pieza, 1 cucharada, 1 scoop), como MyFitnessPal/Yazio, y es la misma con la que abre el detalle. Sin porción casera, por 100 g.
+- Base: **Proteína de suero de leche (whey) en polvo** (USDA FNDDS 2710742, 1 scoop 26 g / 1 cucharada 13 g; sinónimos whey, proteína en polvo, scoop…); el huevo, la clara y la yema crudos de Foundation traen ahora su pieza (50.3 / 34 / 17 g, USDA). Excel y JSON sincronizados (ida y vuelta idéntica; 1.496 alimentos).
+- 249 tests; Chrome a 375 y 320 px: orden, whey, kcal por pieza, detalle igual que la fila, 0 errores JS.
+
 ## Entrenar: rutinas primero, crear rutina y descanso al empezar (pedido de Roberto, 30-oct)
 
 - Entrenar abre siempre en **Rutinas**; orden Rutinas · Progreso · Historial · Biblioteca.
