@@ -45,6 +45,10 @@ export function formatear(s) {
 // no existe navigator ni AudioContext y este módulo debe importar igual.
 // ─────────────────────────────────────────────────────────────────────────────
 
+// En la app de iPhone (Capacitor) los plugins nativos cuelgan de
+// globalThis.Capacitor.Plugins; en la web y en Node no existe y queda undefined.
+const nativo = (nombre) => globalThis.Capacitor?.Plugins?.[nombre];
+
 // El sentinel vive aquí, no en quien pide: así liberarWakeLock() siempre sabe
 // qué soltar y pedir dos veces no acumula bloqueos.
 let sentinel = null;
@@ -117,4 +121,40 @@ export function avisarFin() {
   if (typeof navigator !== 'undefined') {
     try { navigator.vibrate?.([200, 100, 200]); } catch (e) { /* opcional */ }
   }
+  // iOS no tiene navigator.vibrate: en la app de iPhone vibra el plugin nativo.
+  nativo('Haptics')?.vibrate().catch(() => {});
+}
+
+// ── Solo app de iPhone ───────────────────────────────────────────────────────
+// Con la pantalla bloqueada iOS congela el JS: ni beep ni vibración. El fin del
+// descanso lo avisa entonces una notificación local que programa iOS.
+const AVISO = { id: 1 };
+
+// Llamar dentro de un gesto (el botón "Sí, avísame"): iOS pregunta una sola vez.
+export function pedirPermisoAvisos() {
+  nativo('LocalNotifications')?.requestPermissions().catch(() => {});
+}
+
+// true solo en el iPhone y si iOS aún no ha preguntado (ni sí ni no todavía).
+export async function avisosPorPreguntar() {
+  try {
+    const { display } = await nativo('LocalNotifications').checkPermissions();
+    return display === 'prompt' || display === 'prompt-with-rationale';
+  } catch { return false; }
+}
+
+// finMs en el futuro: programa el aviso (el mismo id reemplaza al anterior).
+// Cualquier otro valor lo quita. Sin permiso, iOS lo rechaza y no pasa nada.
+export function programarAvisoNativo(finMs) {
+  const LN = nativo('LocalNotifications');
+  if (!LN) return;
+  const p = finMs > Date.now()
+    ? LN.schedule({ notifications: [{ ...AVISO, title: 'Descanso terminado',
+        body: 'Vuelve a COSECHA para tu siguiente serie.', schedule: { at: new Date(finMs), allowWhileIdle: true } }] })
+    : LN.cancel({ notifications: [AVISO] });
+  p.catch(() => {});
+}
+
+export function vibrarSerie() {
+  nativo('Haptics')?.impact({ style: 'LIGHT' }).catch(() => {});
 }

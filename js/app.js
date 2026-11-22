@@ -490,18 +490,21 @@ function errorFormulario(idError, ids) {
     const el = $(idc), lbl = document.querySelector(`label[for="${idc}"]`);
     const [nombre, unidad] = (lbl ? lbl.textContent : idc).split(' — ');
     if (el) { el.classList.add('invalid'); el.setAttribute('aria-invalid', 'true'); }
+    // Un <select> (sexo) no tiene rango: basta con su nombre.
+    if (!el?.min) return nombre.trim();
     return `${nombre.trim()} ${el.min}–${el.max}${unidad ? ' ' + unidad.trim() : ''}`;
   });
   const box = $(idError);
   // "el 0 es válido" solo aplica a los macros manuales: en la fórmula ningún
   // campo admite 0 y la coletilla contradecía al propio mensaje.
   const cero = idError === 'manual-error' ? '; el 0 es válido' : '';
-  if (box) box.textContent = `Revisa: ${partes.join(', ')}. Solo números dentro del rango${cero}.`;
+  const hayNumeros = ids.some(idc => $(idc)?.min);
+  if (box) box.textContent = `Revisa: ${partes.join(', ')}.${hayNumeros ? ` Solo números dentro del rango${cero}.` : ''}`;
   const primero = $(ids[0]);
   if (primero) primero.focus();
 }
 function limpiarErrores() {
-  document.querySelectorAll('input.invalid').forEach(el => { el.classList.remove('invalid'); el.removeAttribute('aria-invalid'); });
+  document.querySelectorAll('input.invalid, select.invalid').forEach(el => { el.classList.remove('invalid'); el.removeAttribute('aria-invalid'); });
   ['formula-error', 'manual-error'].forEach(idc => { const b = $(idc); if (b) b.textContent = ''; });
 }
 
@@ -534,7 +537,8 @@ window.calcular = function() {
       meta = metaManualTotal({ protTotal: numCampo('m-prot'), carbTotal: numCampo('m-carb'), grasTotal: numCampo('m-gras'), comidas: +$('m-comidas').value });
     }
   } else {
-    const m = malos(['edad', 'peso', 'altura']);
+    // El perfil empieza vacío: sin sexo elegido no hay fórmula que calcular.
+    const m = [...($('sexo').value ? [] : ['sexo']), ...malos(['edad', 'peso', 'altura'])];
     if (m.length) { errorFormulario('formula-error', m); return; }
     const edad = numCampo('edad'), peso = numCampo('peso'), altura = numCampo('altura');
     meta = calcularMeta({
@@ -676,7 +680,8 @@ function textoCercania(r) {
   }
   const v = r.desviacion[k];
   const n = Math.abs(Math.round(v * 10) / 10);
-  return { txt: `Te deja ${v < 0 ? '−' : '+'}${n} g ${MACRO_CORTO[k]}`, cierra: false };
+  // Lo que falta se dice en palabras; lo que sobra se queda con su "+" (sin regañar).
+  return { txt: v < 0 ? `Te faltan ${n} g de ${MACRO_CORTO[k]}` : `Te deja +${n} g ${MACRO_CORTO[k]}`, cierra: false };
 }
 
 function totals() {

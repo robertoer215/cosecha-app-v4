@@ -1,17 +1,14 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;350;400;500;600&family=IBM+Plex+Mono:wght@300;400&display=swap');
+@import url('fonts.css');
 /* El @import va OBLIGATORIAMENTE en la LÍNEA 1: un @import solo puede ir precedido
    de @charset y @layer. Debajo de cualquier regla de estilo el navegador lo descarta
    en silencio, las fuentes no se descargan y todo el paquete tipográfico cae a la
-   sans del sistema con las métricas equivocadas. Es la URL de la landing MÁS el peso
-   600 de Inter, que la landing no pide: .gt-kcal, .gt-bar-val y el <b> de .i-size-val
-   declaran font-weight:600 y sin esa cara Chrome coge la Medium y la engorda
-   SINTÉTICAMENTE (mismo avance —308,69px en la prueba—, 28% más de tinta), así que
-   ninguna negrita de la app sería una cara real. Como el avance no cambia, pedirla no
-   mueve ninguna reserva anti-salto. El resto es idéntico a la landing (300/350/400/500
-   de Inter, 300/400 del mono, display=swap, mismo orden de familias) y, como las dos
-   viven en robertoer215.github.io, el CSS de Google y los woff2 ya están en caché para
-   quien llega desde el CTA "Arma tu plato", que es el recorrido real. display=swap
-   evita el texto invisible durante la descarga. */
+   sans del sistema con las métricas equivocadas. fonts.css sirve desde la propia app
+   (sin Google: funciona sin red, dentro de la app de iPhone y sin mandar la IP del
+   usuario a terceros) los mismos pesos que pedía la landing MÁS el 600 de Inter:
+   .gt-kcal, .gt-bar-val y el <b> de .i-size-val declaran font-weight:600 y sin esa
+   cara el navegador engordaría la Medium SINTÉTICAMENTE (28% más de tinta). Inter es
+   variable: un solo woff2 da 300/350/400/500/600. display=swap evita el texto
+   invisible durante la carga. */
 
 /* El fallback va con métrica ajustada a propósito: Inter es 6,1% más ancha que
    la Helvetica del sistema, y TODAS las reservas anti-salto de esta hoja están
@@ -113,7 +110,7 @@ body{font-family:var(--sans);font-size:16px;font-weight:400;line-height:1.4;back
 /* La banda va en --surface y NO en --bg: era del mismo color que la página y el
    contenido parecía tocarla al hacer scroll. .gt-kcal en --accent-deep porque
    --accent-ink sobre --surface se queda en 4,42:1 y a 14px hace falta 4,5. */
-.global-tracker{position:sticky;top:0;z-index:100;background:var(--surface);border-bottom:1px solid var(--border-strong);padding:.875rem var(--gutter);display:none;box-shadow:var(--lift-sticky)}
+.global-tracker{position:sticky;top:env(safe-area-inset-top);z-index:100;background:var(--surface);border-bottom:1px solid var(--border-strong);padding:.875rem var(--gutter);display:none;box-shadow:var(--lift-sticky)}
 .global-tracker.visible{display:block}
 .gt-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;gap:12px}
 .gt-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;font-family:var(--sans);color:var(--muted)}
@@ -190,10 +187,17 @@ select option{font-family:sans-serif;background:var(--bg)}
 .obj-card.selected .od{color:rgba(255,255,255,.92)}
 .on{font-size:11px;font-family:var(--sans);font-weight:500;color:var(--text);margin-bottom:2px}
 .od{font-size:9px;color:var(--light);font-family:var(--sans)}
-.act-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:24px;border-radius:var(--r-sm);overflow:hidden}
-.act-card{background:var(--bg);padding:12px 4px;text-align:center;cursor:pointer;transition:background .2s}
+/* Nivel de actividad: lista vertical (una fila por nivel). En 5 columnas los textos
+   se partían en el iPhone ("Sin ejerci-cio"); en fila caben enteros y cada toque mide ≥52px. */
+.act-ayuda{font-family:var(--sans);font-size:13px;line-height:1.45;color:var(--muted-ink);margin:0 0 12px}
+.act-grid{display:flex;flex-direction:column;gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:24px;border-radius:var(--r-sm);overflow:hidden}
+.act-card{display:flex;align-items:center;gap:12px;min-height:52px;padding:12px 16px;background:var(--bg);cursor:pointer;transition:background .2s}
 .act-card:hover{background:var(--surface)}
 .act-card.selected{background:var(--accent-ink)}
+.act-dot{flex:none;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--border-strong);box-sizing:border-box}
+.act-card.selected .act-dot{border:6px solid #fff}
+.act-card .an{flex:1;font-size:15px;margin:0;hyphens:none}
+.act-card .ad{font-size:13px;text-align:right;hyphens:none}
 .act-card.selected .an,.act-card.selected .ad{color:#fff}
 .act-card.selected .ad{color:rgba(255,255,255,.92)}
 .an{font-size:10px;font-family:var(--sans);font-weight:500;color:var(--text);margin-bottom:1px}
@@ -426,7 +430,7 @@ select option{font-family:sans-serif;background:var(--bg)}
    con el campo subrayado en rojo. --danger sobre el fondo da 6,35:1. */
 .form-error{font-family:var(--sans);font-size:12px;line-height:1.5;color:var(--danger);margin:-.75rem 0 1.25rem}
 .form-error:empty{display:none}
-input.invalid{border-bottom-color:var(--danger)}
+input.invalid,select.invalid{border-bottom-color:var(--danger)}
 /* Las kcal derivadas de los macros, en vivo, pegadas a los campos.
    El line-height en px es OBLIGATORIO: 12px x el 1.4 heredado del body dan 16,8px
    y la reserva de 16px reventaría. */
@@ -748,7 +752,7 @@ input.invalid{border-bottom-color:var(--danger)}
 .btn-main:focus-visible{outline-color:var(--text);outline-offset:3px}
 .mt-btn.mt-active:focus-visible,.st-btn.st-active:focus-visible,.ss-pill.ss-on:focus-visible{outline-color:#fff}
 input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent-ink);outline-offset:2px}
-input.invalid:focus-visible{outline-color:var(--danger)}
+input.invalid:focus-visible,select.invalid:focus-visible{outline-color:var(--danger)}
 
 /* Estado pulsado: no existía ninguno. .sz-pill y .btn-ajustar NO llevan scale a
    propósito: viven dentro de .icard, que también es clicable, y sus handlers hacen
@@ -784,7 +788,9 @@ input.invalid:focus-visible{outline-color:var(--danger)}
 /* ── Shell de pestañas · Pedir / Diario / Entrenar ──────────────────────────
    La tabbar es fija abajo (patrón de app móvil); el padding del body reserva
    su espacio para que ningún contenido quede tapado. Solo tokens existentes. */
-body{padding-bottom:calc(64px + env(safe-area-inset-bottom))}
+body{padding-bottom:calc(64px + env(safe-area-inset-bottom));padding-top:env(safe-area-inset-top)}
+/* App de iPhone (viewport-fit=cover): franja sólida bajo la hora y la batería para que nada se lea encima al hacer scroll. En la web el inset vale 0 y no se ve. */
+body::before{content:"";position:fixed;top:0;left:0;right:0;height:env(safe-area-inset-top);background:var(--bg);z-index:1000}
 .vista-modulo[hidden]{display:none}
 .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:100;display:flex;background:var(--surface);border-top:1px solid var(--border);padding-bottom:env(safe-area-inset-bottom)}
 .tab-btn{flex:1;min-height:56px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;background:none;border:0;cursor:pointer;color:var(--muted-ink);font-family:var(--sans);font-size:11px;letter-spacing:.4px}

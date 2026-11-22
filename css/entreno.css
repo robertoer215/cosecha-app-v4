@@ -645,3 +645,10 @@ body:has(.en-descanso:not([hidden])) .en-fpie{bottom:calc(56px + 98px + env(safe
 /* Teléfonos de 320 px: columnas un poco más justas para que «Previa» no pise «kg»
    (va al final para ganarle al barrido de micro-rótulos). */
 @media (max-width:359px){.en-fila{grid-template-columns:14px minmax(0,1fr) 52px 42px 30px 44px;gap:6px}.en-fila-hd span{font-size:10px}}
+
+/* Permiso de avisos: se pide al empezar la sesión, diciendo para qué sirve. */
+.en-permiso{margin:0 0 20px;padding:16px;border:1px solid var(--border-strong);border-radius:var(--r-md);background:var(--surface)}
+.en-permiso-t{font-family:var(--sans);font-size:15px;font-weight:500;color:var(--text);margin:0 0 4px}
+.en-permiso-s{font-family:var(--sans);font-size:13px;line-height:1.45;color:var(--muted-ink);margin:0 0 14px}
+.en-permiso-btns{display:flex;gap:8px}
+.en-permiso-btns .en-btn{flex:1;padding-left:12px;padding-right:12px}

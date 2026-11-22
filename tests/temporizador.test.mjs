@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { crearDescanso, formatear, pedirWakeLock, liberarWakeLock, prepararAudio, avisarFin } from '../js/temporizador.js';
+import { crearDescanso, formatear, pedirWakeLock, liberarWakeLock, prepararAudio, avisarFin,
+         pedirPermisoAvisos, avisosPorPreguntar, programarAvisoNativo, vibrarSerie } from '../js/temporizador.js';
 
 // Reloj inyectado: los tests mueven el tiempo a mano, en saltos, igual que lo
 // hace una pestaña dormida. Nada de setTimeout reales.
@@ -115,4 +116,44 @@ test('la capa de navegador importa y se llama en Node sin romper (detección de 
   assert.doesNotThrow(() => liberarWakeLock());
   assert.equal(prepararAudio(), null);
   assert.doesNotThrow(() => avisarFin());
+});
+
+test('app de iPhone: programa el aviso con hora futura, lo quita si no, y un plugin que falla no rompe', async () => {
+  // Sin Capacitor (web y Node) no hace nada.
+  assert.doesNotThrow(() => { programarAvisoNativo(Date.now() + 60_000); pedirPermisoAvisos(); vibrarSerie(); });
+  const llamadas = [];
+  const ok = (n) => (arg) => { llamadas.push([n, arg]); return Promise.resolve(); };
+  globalThis.Capacitor = { Plugins: {
+    LocalNotifications: { schedule: ok('schedule'), cancel: ok('cancel'), requestPermissions: ok('permiso') },
+    Haptics: { impact: ok('impact'), vibrate: ok('vibrate') },
+  } };
+  try {
+    const fin = Date.now() + 90_000;
+    programarAvisoNativo(fin);
+    programarAvisoNativo(0);
+    programarAvisoNativo(Date.now() - 1);
+    assert.deepEqual(llamadas.map(l => l[0]), ['schedule', 'cancel', 'cancel']);
+    const n = llamadas[0][1].notifications[0];
+    assert.equal(n.id, 1);
+    assert.equal(n.schedule.at.getTime(), fin);
+    globalThis.Capacitor.Plugins.LocalNotifications.schedule = () => Promise.reject(new Error('sin permiso'));
+    assert.doesNotThrow(() => programarAvisoNativo(Date.now() + 1000));
+    await new Promise(r => setImmediate(r)); // el rechazo queda atrapado, sin unhandledRejection
+  } finally {
+    delete globalThis.Capacitor;
+  }
+});
+
+test('app de iPhone: la tarjeta de avisos sale solo si iOS aún no ha preguntado', async () => {
+  assert.equal(await avisosPorPreguntar(), false); // web y Node: nunca
+  const con = (display) => { globalThis.Capacitor = { Plugins: { LocalNotifications: { checkPermissions: () => Promise.resolve({ display }) } } }; };
+  try {
+    con('prompt'); assert.equal(await avisosPorPreguntar(), true);
+    con('granted'); assert.equal(await avisosPorPreguntar(), false);
+    con('denied'); assert.equal(await avisosPorPreguntar(), false);
+    globalThis.Capacitor.Plugins.LocalNotifications.checkPermissions = () => Promise.reject(new Error('x'));
+    assert.equal(await avisosPorPreguntar(), false);
+  } finally {
+    delete globalThis.Capacitor;
+  }
 });

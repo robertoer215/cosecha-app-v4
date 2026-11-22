@@ -6,8 +6,22 @@
   "scripts": {
     "dev": "npx serve . -p 3000",
     "start": "npx serve . -p 3000",
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "ios": "rm -rf www && mkdir www && cp -R index.html css js data assets www/ && cap sync ios"
   },
-  "keywords": ["foodtech", "nutricion", "fast-casual"],
-  "license": "MIT"
+  "keywords": [
+    "foodtech",
+    "nutricion",
+    "fast-casual"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "@capacitor/core": "8.6.0",
+    "@capacitor/haptics": "8.0.2",
+    "@capacitor/ios": "8.6.0",
+    "@capacitor/local-notifications": "8.3.1"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "8.6.0"
+  }
 }

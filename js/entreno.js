@@ -35,7 +35,8 @@ import * as almacen from './almacen.js';
 import { construirMaestros, buscarMaestros, filtrosVacios, cuentaFiltros, marcarFiltro, quitarFiltro,
          partesMarcadas, zonasParaAfinar, nombreParte, ZONAS, OPCIONES_FILTRO, NOMBRES_FILTRO } from './biblioteca.js';
 import { crearDescanso, formatear, pedirWakeLock, liberarWakeLock,
-         prepararAudio, avisarFin } from './temporizador.js';
+         prepararAudio, avisarFin, pedirPermisoAvisos, avisosPorPreguntar, programarAvisoNativo,
+         vibrarSerie } from './temporizador.js';
 
 // ── Funciones puras (exportadas para tests/entreno.test.mjs) ─────────────────
 
@@ -718,6 +719,13 @@ export function initEntreno({ raiz, getMeta }) {
   // pedir, y se repinta ya (el intervalo pudo estar congelado y el descanso,
   // derivado de su hora de fin, puede haber terminado mientras tanto).
   document.addEventListener('visibilitychange', () => {
+    // App de iPhone: al irse a segundo plano el aviso de fin lo da iOS; al volver
+    // se quita, porque en primer plano ya avisa el beep.
+    if (document.visibilityState === 'hidden') {
+      programarAvisoNativo(descansoObj && !avisadoFin ? descansoObj.finMs : 0);
+      return;
+    }
+    programarAvisoNativo(0);
     if (document.visibilityState !== 'visible' || !sesion || sesion.finMs) return;
     pedirWakeLock();
     tic();
@@ -788,7 +796,13 @@ function restaurarDescanso() {
 // eligió al empezar), no 90 s fijos; ya no hay control de descanso por tarjeta.
 const descansoDeSesion = () => sesion?.ejercicios?.at(-1)?.descansoS ?? 90;
 
+// Permiso de avisos: se pregunta al EMPEZAR la sesión, con una tarjeta que dice
+// para qué es, y no a media serie. "Ahora no" la oculta solo en esta sesión.
+let preguntarAvisos = false;
+
 function nuevaSesion(rutinaId) {
+  preguntarAvisos = false;
+  avisosPorPreguntar().then(v => { if (v && sesion && !sesion.finMs) { preguntarAvisos = true; render(); } });
   return { id: 'S-' + Date.now(), inicioMs: Date.now(), finMs: null, rutinaId: rutinaId ?? null, ejercicios: [], notas: '' };
 }
 
@@ -917,6 +931,7 @@ function alPalomear(idxEj, idxSerie, fila) {
     sesion.serieEnCurso = null;
   }
   prepararAudio();
+  if (serie.hecha) vibrarSerie();
   if (serie.hecha) heredarASiguiente(ej, idxSerie);
   if (serie.hecha && siguientePendiente(sesion.ejercicios) && debeArrancarDescanso(sesion.ejercicios, idxEj, idxSerie)) {
     const idxRest = ej.superGrupo == null ? idxEj : ultimoDelGrupo(ej.superGrupo);
@@ -3184,6 +3199,14 @@ function pintarVivo(raiz) {
       <div class="en-crono" role="timer" aria-label="Tiempo de sesión">${formatear((Date.now() - sesion.inicioMs) / 1000)}</div>
     </header>
     ${tabs}
+    ${preguntarAvisos ? `<div class="en-permiso" role="region" aria-labelledby="en-permiso-t">
+      <p class="en-permiso-t" id="en-permiso-t">¿Te avisamos cuando termine tu descanso?</p>
+      <p class="en-permiso-s">Te llega un aviso aunque bloquees el iPhone.</p>
+      <div class="en-permiso-btns">
+        <button type="button" class="en-btn en-btn-main" data-acc="avisos-si">Sí, avísame</button>
+        <button type="button" class="en-btn en-btn-ghost" data-acc="avisos-no">Ahora no</button>
+      </div>
+    </div>` : ''}
     ${vista === 'foco' ? htmlFoco(unidad) : htmlListaVivo(unidad)}
   </div>
   ${vista === 'ejercicios' ? htmlBarraDescanso() : ''}`;
@@ -3194,6 +3217,12 @@ function pintarVivo(raiz) {
     if (!b) return;
     const acc = b.dataset.acc;
     if (acc === 'vista') { vistaVivo = b.dataset.v; render(); return; }
+    if (acc === 'avisos-si' || acc === 'avisos-no') {
+      if (acc === 'avisos-si') pedirPermisoAvisos();   // dentro del toque: iOS muestra su ventana
+      preguntarAvisos = false;
+      render();
+      return;
+    }
     if (acc === 'ficha') { fichaId = b.dataset.id; render(); window.scrollTo(0, 0); return; }
     if (acc === 'empezar-serie') { empezarSerie(); return; }
     if (acc === 'fin-serie') { finDeSerie(); return; }
