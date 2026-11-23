@@ -95,12 +95,14 @@
    role=button: por eso las dos llevan line-height en px más abajo. */
 body{font-family:var(--sans);font-size:16px;font-weight:400;line-height:1.4;background:var(--bg);color:var(--text);min-height:100vh}
 .app{max-width:720px;margin:0 auto;padding-bottom:64px}
-.header{padding:2.5rem var(--gutter) 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-end}
+/* Cabecera en UNA línea (logotipo a la izquierda, lema a la derecha): medía 88 px en
+   las cuatro pestañas y ahora 49; esos 39 px son contenido que ya no hay que bajar a buscar. */
+.header{padding:12px var(--gutter);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px}
 /* El logotipo es .brand de la landing tal cual (Inter 500 / 17px), no una versión
    espaciada de Georgia: es lo primero que ve quien entra desde el CTA de la web.
    El ::after es su .brand i: el punto de 7px en --ember-dot que la landing pega a
    COSECHA en el nav y en el pie. Va con display:flex + gap:4px como allí; medido, no
-   mueve la línea base (el .logo sigue en 23,8px de alto y el .header en 87,98). */
+   mueve la línea base (el .logo sigue en 23,8px de alto). */
 .logo{font-family:var(--sans);font-size:17px;font-weight:500;letter-spacing:-.2px;text-transform:uppercase;display:flex;align-items:center;gap:4px}
 .logo::after{content:'';width:7px;height:7px;border-radius:50%;background:var(--ember-dot);flex-shrink:0}
 /* La misma cadena que la landing pone en Inter 350 a 13px: sale del barrido de mono
@@ -473,7 +475,6 @@ input.invalid,select.invalid{border-bottom-color:var(--danger)}
      13,6% extra es lo que hace que los 12px de cuerpo quepan sin partir líneas.
      NO publicar ninguna subida de tamaño sin esto. */
   :root{--gutter:20px}
-  .header{padding:24px var(--gutter) 20px}
   .stepper{padding:20px var(--gutter) 0}
   .global-tracker{padding:12px var(--gutter)}
   .screen{padding:24px var(--gutter) 32px}
@@ -846,7 +847,7 @@ main[hidden]{display:none}
    display pisando el [hidden] del navegador. Se corta la clase entera. */
 [hidden]{display:none!important}
 /* Hoy era la única vista sin gutter: su contenido pegaba al borde físico. */
-#vista-hoy{padding:2.5rem var(--gutter) 1.5rem}
+#vista-hoy{padding:24px var(--gutter) 1.5rem}   /* mismo arranque que Diario y Entrenar (eran 40 px solo aquí) */
 /* En modo demo no llega respuesta de cocina: la reserva de 268px dejaba un
    hueco vacío permanente bajo dos líneas de texto. */
 .cocina[data-estado="demo"] .cocina-body{min-height:0}

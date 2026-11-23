@@ -37,9 +37,11 @@
 .en-d-aj:focus-visible,.en-d-saltar:focus-visible,.en-serie-btn:focus-visible,.en-peligro:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* Descartar en --danger y como texto: destruir no debe parecer un CTA. */
 .en-peligro{background:none;border:none;min-height:44px;padding:12px;color:var(--danger);font-family:var(--sans);font-size:12px;cursor:pointer}
-.en-volver{display:inline-flex;align-items:center;gap:6px;background:none;border:none;min-height:44px;padding:10px 12px 10px 0;margin-bottom:8px;color:var(--muted-ink);font-family:var(--sans);font-size:13px;cursor:pointer}
-.en-volver svg{width:18px;height:18px}
-.en-volver:hover{color:var(--text)}
+/* «Volver» igual que en Diario (.dia-volver): naranja de acción y peso 500. En gris
+   parecía un rótulo, no algo que se toca. */
+.en-volver{display:inline-flex;align-items:center;gap:4px;background:none;border:none;min-height:44px;padding:10px 12px 10px 0;margin-bottom:8px;color:var(--accent-ink);font-family:var(--sans);font-size:13px;font-weight:500;letter-spacing:-.2px;cursor:pointer}
+.en-volver svg{width:20px;height:20px}
+.en-volver:hover{color:var(--accent-deep)}
 
 /* ── Subpestañas Rutinas · Biblioteca · Historial (patrón .sub-toggle) ────── */
 .en-tabs{display:flex;gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--r-pill);margin-bottom:20px}
