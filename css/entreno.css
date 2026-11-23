@@ -110,7 +110,7 @@
 .en-ed-quitar:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 /* Aviso «Quitaste… · Deshacer»: fijo encima de la tabbar, como la barra de
    descanso, para que se vea aunque la tarjeta quitada estuviera arriba. */
-.en-ed-deshacer{position:fixed;left:var(--gutter);right:var(--gutter);bottom:calc(56px + 12px + env(safe-area-inset-bottom));z-index:120;max-width:560px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:4px 4px 4px 16px;border-radius:var(--r-md);background:var(--text);color:var(--bg);font-family:var(--sans);font-size:14px;box-shadow:var(--lift-sticky)}
+.en-ed-deshacer{position:fixed;left:var(--gutter);right:var(--gutter);bottom:calc(56px + 12px + env(safe-area-inset-bottom));z-index:120;max-width:560px;margin:0 auto;display:flex;align-items:center;gap:12px;padding:4px 4px 4px 16px;border-radius:var(--r-burbuja);box-shadow:var(--burbuja-luz),var(--hielo-sombra);background:var(--text);color:var(--bg);font-family:var(--sans);font-size:14px;box-shadow:var(--lift-sticky)}
 .en-ed-deshacer span{flex:1;min-width:0;padding:8px 0;line-height:1.35;overflow:hidden;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2}
 .en-ed-deshacer button{flex-shrink:0;min-height:44px;padding:10px 14px;background:none;border:none;border-radius:var(--r-sm);color:var(--bg);font-family:var(--sans);font-size:14px;font-weight:600;text-decoration:underline;text-underline-offset:3px;cursor:pointer}
 .en-ed-deshacer button:focus-visible{outline:2px solid var(--bg);outline-offset:-4px}
@@ -160,7 +160,7 @@
    entra desde abajo solo con transform (y el barrido de reduced-motion la
    deja aparecer sin animación). */
 .en-hoja-fondo{position:fixed;inset:0;z-index:190;background:rgba(95,45,14,.45)}
-.en-hoja{position:fixed;left:0;right:0;bottom:0;z-index:200;max-width:720px;margin:0 auto;max-height:86dvh;overflow-y:auto;overscroll-behavior:contain;padding:18px var(--gutter) calc(18px + env(safe-area-inset-bottom));background:var(--bg);border-radius:var(--r-md) var(--r-md) 0 0;box-shadow:var(--lift-sticky);transition:transform .2s ease}
+.en-hoja{position:fixed;left:0;right:0;bottom:0;z-index:200;max-width:720px;margin:0 auto;max-height:86dvh;overflow-y:auto;overscroll-behavior:contain;padding:18px var(--gutter) calc(18px + env(safe-area-inset-bottom));background:var(--bg);border-radius:var(--r-hielo) var(--r-hielo) 0 0;box-shadow:var(--lift-sticky);transition:transform .2s ease}
 .en-hoja-anim{animation:en-hoja-entra .25s ease-out}
 @keyframes en-hoja-entra{from{transform:translateY(100%)}to{transform:none}}
 .en-hoja-cab{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:10px}
@@ -276,7 +276,9 @@
 /* ── Barra de descanso: fija encima de la tabbar (z 120 > 100) ───────────────
    Nace al palomear y cambia de contenido, nunca de caja: el estado "¡A darle!"
    mide lo mismo que la cuenta (regla anti-salto de toda la app). */
-.en-descanso{position:fixed;left:0;right:0;bottom:calc(56px + env(safe-area-inset-bottom));z-index:120;max-width:720px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:14px;min-height:96px;padding:10px var(--gutter);background:var(--surface);border-top:1px solid var(--border-strong);box-shadow:var(--lift-sticky)}
+/* Estilo nuevo (23-nov-2026): cuadro de vidrio casi opaco, flotando sobre la tabbar.
+   Misma altura y misma posición que antes: .en-fpie y el scroll-padding cuentan con ellas. */
+.en-descanso{position:fixed;left:8px;right:8px;bottom:calc(56px + env(safe-area-inset-bottom));z-index:120;max-width:704px;margin:0 auto;display:flex;align-items:center;justify-content:center;gap:14px;min-height:96px;padding:10px calc(var(--gutter) - 8px);background:rgba(255,255,255,.9);border-radius:var(--r-hielo);-webkit-backdrop-filter:var(--hielo-filtro);backdrop-filter:var(--hielo-filtro);box-shadow:inset 0 0 0 1px var(--hielo-borde),var(--hielo-luz),var(--hielo-sombra)}
 .en-descanso[hidden]{display:none}
 .en-d-circulo{width:76px;height:76px;border-radius:50%;background:var(--accent-ink);color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
 .en-d-tiempo{font-size:20px;font-weight:600;letter-spacing:-.5px;font-variant-numeric:tabular-nums;line-height:1.1}

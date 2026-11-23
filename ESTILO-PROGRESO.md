@@ -12,14 +12,16 @@ pestañas flotante. Solo estilo: sin cambiar textos, lógica ni el orden. Pidió
 | Hoy | Hecha y verificada | `ac52bde` |
 | Barra de pestañas (las 4 secciones) | Hecha y verificada | `ac52bde` |
 | Pedir: perfil (fórmula y manual), armar el plato (5 pasos), resumen y ticket | Hecha y verificada | `b293a0a` |
-| Diario: día (vacío y con comida), buscador, alimento, «Tu semana», «Tus datos», aviso con Deshacer | Hecha y verificada | commit «Estilo nuevo en Diario» |
-| Entrenar: rutinas, descanso, sesión en vivo, Ejercicios, resumen, Progreso, Historial, Biblioteca, ficha, editor, hojas | Sin empezar (sigue en crema) | pendiente |
-| Avisos del Diario y burbujas de la guía (forma y filo de luz) | Hechas; la burbuja no se revisó en todas sus posiciones | commit «Estilo nuevo en Diario» |
+| Diario: día (vacío y con comida), buscador, alimento, «Tu semana», «Tus datos», aviso con Deshacer | Hecha y verificada | `0e71a27` |
+| Entrenar: rutinas, elegir descanso, sesión en vivo (preparado, serie, descanso), Ejercicios con barra de descanso, resumen, Progreso, Historial, Biblioteca, ficha, editor, hoja de técnica, aviso «Deshacer» | Hecha y verificada | commit «Estilo nuevo en Entrenar» |
+| Avisos del Diario y burbujas de la guía (forma y filo de luz) | Hechas; la burbuja no se revisó en todas sus posiciones | `0e71a27` |
 
 ## Dónde está todo
 
 Un solo bloque al final de `css/styles.css`: «HIELO SOBRE DEGRADADO (23-nov-2026)».
-No se tocó `css/diario.css` ni `css/entreno.css`.
+No se tocó `css/diario.css`. En `css/entreno.css` solo cambiaron tres reglas, usando las
+variables compartidas: `.en-descanso` (cuadro de vidrio flotante), `.en-hoja` (esquinas) y
+`.en-ed-deshacer` (esquinas y filo de luz). No se tocó `js/entreno.js`.
 
 Variables compartidas (en `:root`):
 - `--hielo`, `--hielo-borde`, `--hielo-luz`, `--hielo-sombra`, `--hielo-filtro`, `--r-hielo`: el vidrio.
@@ -32,8 +34,10 @@ Cómo vestir una superficie nueva:
 1. Añadir su selector a la lista «TINTAS sobre vidrio» (oscurece los tokens de texto dentro).
 2. Si es la lámina de una pantalla, añadirlo también a la lista «LÁMINAS» (fondo, radio,
    desenfoque y el margen de 8px compensado en el padding, para no cambiar anchos).
-3. El fondo (`body::after`) se enciende en todo menos Entrenar: al adaptar Entrenar, quitar
-   el `:not(:has(#vista-entrenar...))` de esa regla y la regla del velo de `.tabbar`.
+3. El fondo (`body::after`) está encendido siempre, en las cuatro secciones.
+4. OJO: `backdrop-filter` en un contenedor saca de la ventana a sus hijos `position:fixed`.
+   Por eso en Entrenar el vidrio va en `.en-wrap::before` y no en `.en-wrap` (el editor lleva
+   dentro el aviso fijo «Deshacer»). Antes de vestir otro contenedor, mirar si tiene hijos fijos.
 
 ## Reglas que hay que respetar
 - El ancho del contenido no puede cambiar (335px a 375): Pedir tiene alturas reservadas
@@ -50,11 +54,20 @@ Cómo vestir una superficie nueva:
 - Sin errores en consola, regla de `prefers-reduced-motion` presente, `node --test tests/*.test.mjs`.
 
 ## No comprobado
+- Entrenar: rest-pause y drop set (mini-series y micro-descanso), el aviso verde de fin de
+  descanso, la tarjeta de permiso de avisos, el panel de filtros de la Biblioteca y el arrastre
+  para reordenar en el editor. Usan los mismos componentes ya revisados, pero no se abrieron.
+- Las burbujas de la guía en todas sus posiciones.
 - iPhone real (el desenfoque puede verse distinto o ir más lento).
 - `prefers-reduced-motion` activado de verdad (solo que la regla existe).
 - Teléfonos más bajos que 812px y ventana ancha de ordenador.
 
 ## Notas
+- Si tras actualizar no se ve un cambio de Entrenar o del Diario, recargar: el navegador guarda
+  en caché `css/entreno.css` y `css/diario.css` (se cargan aparte, al abrir su pestaña).
+- El orbe de «Sesión en vivo» toma su `color` de los tokens, que dentro del vidrio son un
+  escalón más oscuros: ámbar, verde y naranja se leen bien sobre el disco crema. No se tocó
+  `.en-foco-anillo` ni las funciones del orbe.
 - La tarjeta «Tu día» del Diario (`.dia-progreso`) conserva su degradado ember opaco, igual que antes; va dentro de la lámina.
 
 ## Decisiones pendientes de Roberto
