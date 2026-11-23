@@ -11,10 +11,10 @@ pestañas flotante. Solo estilo: sin cambiar textos, lógica ni el orden. Pidió
 |---|---|---|
 | Hoy | Hecha y verificada | `ac52bde` |
 | Barra de pestañas (las 4 secciones) | Hecha y verificada | `ac52bde` |
-| Pedir: perfil (fórmula y manual), armar el plato (5 pasos), resumen y ticket | Hecha y verificada | este commit |
-| Diario: día, buscador, alimento, «Tu semana», «Tus datos», avisos | Lámina puesta; falta verificar estados | pendiente |
+| Pedir: perfil (fórmula y manual), armar el plato (5 pasos), resumen y ticket | Hecha y verificada | `b293a0a` |
+| Diario: día (vacío y con comida), buscador, alimento, «Tu semana», «Tus datos», aviso con Deshacer | Hecha y verificada | commit «Estilo nuevo en Diario» |
 | Entrenar: rutinas, descanso, sesión en vivo, Ejercicios, resumen, Progreso, Historial, Biblioteca, ficha, editor, hojas | Sin empezar (sigue en crema) | pendiente |
-| Burbujas de la guía | Sin empezar | pendiente |
+| Avisos del Diario y burbujas de la guía (forma y filo de luz) | Hechas; la burbuja no se revisó en todas sus posiciones | commit «Estilo nuevo en Diario» |
 
 ## Dónde está todo
 
@@ -24,6 +24,7 @@ No se tocó `css/diario.css` ni `css/entreno.css`.
 Variables compartidas (en `:root`):
 - `--hielo`, `--hielo-borde`, `--hielo-luz`, `--hielo-sombra`, `--hielo-filtro`, `--r-hielo`: el vidrio.
 - `--grano`: ruido SVG para la textura. `--sol-cosecha`: el degradado ember → naranja → barro.
+- `--r-burbuja`, `--burbuja-luz`: forma y filo de luz de avisos y burbujas.
 - `--v-accent`, `--v-accent-ink`, `--v-green`, `--v-blue`, `--v-amber`, `--v-danger`: tintas un
   escalón más oscuras, solo para lo que va DENTRO del vidrio.
 
@@ -52,6 +53,9 @@ Cómo vestir una superficie nueva:
 - iPhone real (el desenfoque puede verse distinto o ir más lento).
 - `prefers-reduced-motion` activado de verdad (solo que la regla existe).
 - Teléfonos más bajos que 812px y ventana ancha de ordenador.
+
+## Notas
+- La tarjeta «Tu día» del Diario (`.dia-progreso`) conserva su degradado ember opaco, igual que antes; va dentro de la lámina.
 
 ## Decisiones pendientes de Roberto
 - Ninguna por ahora.

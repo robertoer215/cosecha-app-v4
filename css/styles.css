@@ -1091,3 +1091,8 @@ body:has(#vista-entrenar:not([hidden])) .tabbar{background:linear-gradient(to to
 /* La barra de macros se queda pegada arriba: vidrio casi opaco para que sus
    rótulos de 8px pasen AA también con una foto deslizándose por debajo. */
 .global-tracker{background:rgba(255,255,255,.88);border-bottom-color:var(--hielo-borde);-webkit-backdrop-filter:var(--hielo-filtro);backdrop-filter:var(--hielo-filtro)}
+
+/* Avisos (toasts) y burbujas de la guía: la misma esquina y el mismo filo de luz
+   que el vidrio. Siguen oscuros con texto claro: van ENCIMA del contenido. */
+:root{--r-burbuja:22px;--burbuja-luz:inset 0 1px 0 rgba(255,255,255,.28)}
+.guia,body .dia-toast{border-radius:var(--r-burbuja);box-shadow:var(--burbuja-luz),var(--hielo-sombra)}
