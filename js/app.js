@@ -112,6 +112,20 @@ window.goTab = async function(tab) {
   window.scrollTo(0, 0);
 };
 
+// «Registrar comida» de Hoy es una acción, no otra puerta a la pestaña: abre el
+// Diario de HOY ya en el buscador de la comida de esta hora. Se tocan los
+// botones del propio Diario (el «Hoy» de su fecha y el «+» de la comida), así
+// este shell no asume nada de cómo funciona por dentro.
+// shortcut: si el Diario quedó en otra vista (buscador, detalle, semana) o no
+// hay perfil, esos botones no existen y solo se abre el Diario como antes;
+// pasar a un método público del módulo si algún día debe forzar el buscador.
+window.registrarComida = async function() {
+  await window.goTab('diario');
+  const d = $('vista-diario');
+  d.querySelector('[data-accion="fecha-hoy"]')?.click();
+  d.querySelector(`.dia-mas[data-comida="${almacen.comidaPorHora()}"]`)?.click();
+};
+
 // El plato del resumen entra al diario en UN toque, con los mismos números que
 // muestra la pantalla (lineasLocales: el mismo motor que ve cocina).
 window.agregarPlatoAlDiario = function() {
@@ -226,9 +240,11 @@ function renderHoy() {
   $('hoy-frase').textContent = frase;
 
   // Subtítulos vivos de las acciones: dicen algo de TI, no del producto.
-  $('hoy-sub-diario').textContent = nAlimentos
-    ? `${nAlimentos} ${nAlimentos === 1 ? 'alimento registrado' : 'alimentos registrados'} hoy`
-    : 'Lo que comes en casa también cuenta';
+  // Con meta, «Registrar comida» abre el buscador (registrarComida) y el
+  // subtítulo dice a qué comida va; sin meta el Diario aún pide el perfil.
+  const aComida = { desayuno: 'tu desayuno', comida: 'tu comida', cena: 'tu cena', colaciones: 'tu colación' }[almacen.comidaPorHora()];
+  $('hoy-sub-diario').textContent = !m ? 'Lo que comes en casa también cuenta'
+    : `Agregar a ${aComida}` + (nAlimentos ? ` · llevas ${nAlimentos} hoy` : '');
   const activa = estadoLocal.entreno?.sesionActiva;
   const sesiones = estadoLocal.entreno?.sesiones || [];
   const sub = $('hoy-sub-entrenar');
