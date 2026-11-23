@@ -408,12 +408,7 @@ function restaurarPerfil() {
     // en modo fórmula se recalculaba con el formulario manual del dispositivo.
     window.setMode(p.modo === 'manual' ? 'manual' : 'calc');
     window.setSubMode(p.subModo === 'total' ? 'total' : 'comida');
-    if (p.terminos) {
-      $('terms-btn').classList.add('accepted');
-      $('terms-icon').textContent = '●';
-      $('terms-btn-txt').textContent = 'Aceptado';
-      $('btn-calcular').disabled = false;
-    }
+    if (p.terminos) marcarTerminos(true);
   } catch (e) { console.warn('perfil guardado:', e.message); }
 }
 
@@ -426,13 +421,15 @@ function foto(it, cls) {
   return `<img class="${cls}" src="${IMG_DIR}${it.img}" alt="${it.nombre}" loading="lazy" decoding="async" width="600" height="600"${pos}>`;
 }
 
-window.aceptarTerminos = function() {
+// El aviso es una casilla: marcada o no. «Continuar» nunca se apaga; si falta
+// la casilla, calcular() lo dice junto a ella en vez de quedarse mudo.
+function marcarTerminos(aceptado) {
   const btn = $('terms-btn');
-  const accepted = btn.classList.toggle('accepted');
-  $('terms-icon').textContent = accepted ? '●' : '○';
-  $('terms-btn-txt').textContent = accepted ? 'Aceptado' : 'Entendido, acepto continuar';
-  $('btn-calcular').disabled = !accepted;
-};
+  btn.classList.toggle('accepted', aceptado);
+  btn.setAttribute('aria-checked', String(aceptado));
+  if (aceptado) { btn.classList.remove('invalid'); $('terms-error').textContent = ''; }
+}
+window.aceptarTerminos = () => marcarTerminos(!$('terms-btn').classList.contains('accepted'));
 
 window.setMode = function(modo) {
   modoActual = modo;
@@ -443,13 +440,7 @@ window.setMode = function(modo) {
   $('mt-calc').setAttribute('aria-pressed', String(modo === 'calc'));
   $('mt-manual').setAttribute('aria-pressed', String(modo === 'manual'));
   limpiarErrores();
-  if (modo === 'manual') {
-    $('btn-calcular').disabled = false;
-    window.kcalManual();
-  } else {
-    const aceptado = $('terms-btn') && $('terms-btn').classList.contains('accepted');
-    $('btn-calcular').disabled = !aceptado;
-  }
+  if (modo === 'manual') window.kcalManual();
 };
 
 window.setSubMode = function(sub) {
@@ -508,8 +499,17 @@ function errorFormulario(idError, ids) {
 }
 function limpiarErrores() {
   document.querySelectorAll('input.invalid, select.invalid').forEach(el => { el.classList.remove('invalid'); el.removeAttribute('aria-invalid'); });
-  ['formula-error', 'manual-error'].forEach(idc => { const b = $(idc); if (b) b.textContent = ''; });
+  $('terms-btn').classList.remove('invalid');
+  ['formula-error', 'manual-error', 'terms-error'].forEach(idc => { const b = $(idc); if (b) b.textContent = ''; });
 }
+// Al corregir un dato de la fórmula su marca roja se va sola (los macros
+// manuales ya lo hacían en kcalManual), y el mensaje con la última marca.
+$('formula-form').addEventListener('input', e => {
+  const el = e.target;
+  if (!el.classList.contains('invalid') || (el.tagName === 'SELECT' ? !el.value : numCampo(el.id) === null)) return;
+  el.classList.remove('invalid'); el.removeAttribute('aria-invalid');
+  if (!document.querySelector('#formula-form :is(input, select).invalid')) $('formula-error').textContent = '';
+});
 
 window.selObj = el => { document.querySelectorAll('.obj-card').forEach(c=>{c.classList.remove('selected');c.setAttribute('aria-pressed','false');}); el.classList.add('selected'); el.setAttribute('aria-pressed','true'); };
 window.selAct = el => { document.querySelectorAll('.act-card').forEach(c=>{c.classList.remove('selected');c.setAttribute('aria-pressed','false');}); el.classList.add('selected'); el.setAttribute('aria-pressed','true'); };
@@ -542,7 +542,14 @@ window.calcular = function() {
   } else {
     // El perfil empieza vacío: sin sexo elegido no hay fórmula que calcular.
     const m = [...($('sexo').value ? [] : ['sexo']), ...malos(['edad', 'peso', 'altura'])];
+    // Todo lo que falta se dice de una vez: los datos arriba y la casilla abajo.
+    const sinAviso = !$('terms-btn').classList.contains('accepted');
+    if (sinAviso) {
+      $('terms-btn').classList.add('invalid');
+      $('terms-error').textContent = 'Marca la casilla «Entendido, acepto continuar» para seguir.';
+    }
     if (m.length) { errorFormulario('formula-error', m); return; }
+    if (sinAviso) { $('terms-btn').focus(); return; }
     const edad = numCampo('edad'), peso = numCampo('peso'), altura = numCampo('altura');
     meta = calcularMeta({
       sexo: $('sexo').value,
