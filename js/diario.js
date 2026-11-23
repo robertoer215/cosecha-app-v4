@@ -273,6 +273,17 @@ export function metaDelDia(meta, perfil) {
   return { kcal: meta.kcal * n, prot: meta.prot * n, carb: meta.carb * n, gras: meta.gras * n, n };
 }
 
+// Lo que falta o lo que sobra, dicho en palabras: «faltan 40 g», «en tu meta»
+// (el mismo ±4 g con el que Pedir pinta "En tu meta") o «+49 g». Pasarse no es
+// una alarma: va con «+», sin trama ni cambio de color (decisión de Roberto).
+export function estadoMacro(valor, meta, unidad) {
+  const dif = Math.round(valor) - Math.round(meta);
+  const umbral = unidad === 'g' ? UMBRAL_G : UMBRAL_G * 17; // ±4 g ↔ ±68 kcal (4·4+4·4+9·4)
+  if (dif > umbral) return `+${dif} ${unidad}`;
+  if (dif < -umbral) return `faltan ${-dif} ${unidad}`;
+  return 'en tu meta';
+}
+
 // Suma días a una fecha ISO en hora LOCAL: el Date local absorbe el cambio de
 // mes/año y hoyISO() la vuelve a formatear con la misma regla del almacén.
 function sumarDias(fechaISO, delta) {
@@ -764,33 +775,38 @@ function etiquetaFecha(f) {
   return txt.charAt(0).toUpperCase() + txt.slice(1);
 }
 
-// Una barra de macro con el patrón EXACTO del tracker de Pedir: riel .bar-bg,
-// relleno .bar-fill animado con transform:scaleX (nunca width) y los tres
-// canales --green/--blue/--amber. .bover marca el exceso con su trama.
+// Una barra de macro: rótulo, lo que llevas de tu meta y, a la derecha, lo que
+// falta o sobra. El riel y el relleno son los del tracker de Pedir (.bar-bg /
+// .bar-fill con transform:scaleX, nunca width) y los tres canales
+// --green/--blue/--amber; al pasarse la barra solo se queda llena.
 function htmlBarra(lbl, clase, valor, meta, unidad = 'g') {
   const frac = meta > 0 ? Math.min(1, valor / meta) : 0;
-  const umbral = unidad === 'g' ? UMBRAL_G : UMBRAL_G * 17; // ±4 g ↔ ±68 kcal (4·4+4·4+9·4)
-  const over = meta > 0 && valor > meta + umbral;
-  return `<div class="gt-bar-wrap">
-    <div class="gt-bar-top"><span class="gt-bar-lbl">${lbl}</span><span class="gt-bar-val">${Math.round(valor)}/${Math.round(meta)}${unidad}</span></div>
-    <div class="bar-bg"><div class="bar-fill ${clase}${over ? ' bover' : ''}" style="transform:scaleX(${frac})"></div></div>
+  return `<div class="dia-mac">
+    <div class="dia-mac-top"><span class="gt-bar-lbl">${lbl}</span><span class="dia-mac-ratio">${Math.round(valor)} / ${Math.round(meta)} ${unidad}</span><span class="dia-mac-est">${estadoMacro(valor, meta, unidad)}</span></div>
+    <div class="bar-bg"><div class="bar-fill ${clase}" style="transform:scaleX(${frac})"></div></div>
   </div>`;
 }
 
+// «Tu día» responde primero a "¿cuánto me queda?": la cifra grande es lo que
+// queda por comer (o lo que va de más, con «+»); lo consumido contra la meta
+// queda arriba a la derecha, en pequeño. Es el mismo número que el anillo de Hoy.
 function htmlProgreso(md, sumas) {
   const kcal = Math.round(sumas.kcal);
-  const restante = Math.round(md.kcal - sumas.kcal);
-  const linea = restante >= 0
-    ? `Te quedan ${restante} kcal ${fecha === almacen.hoyISO() ? 'hoy' : 'ese día'}.`
-    : `Llevas ${-restante} kcal por encima de tu meta.`;
+  const metaKcal = Math.round(md.kcal);
+  const restante = metaKcal - kcal;
+  const esHoy = fecha === almacen.hoyISO();
+  const cifra = restante >= 0 ? restante : `+${-restante}`;
+  const rotulo = restante < 0 ? 'kcal sobre tu meta' : esHoy ? 'kcal por comer' : 'kcal quedaron por comer';
   return `<section class="gap-wrap dia-progreso" aria-label="Progreso del día">
-    <div class="gap-hd dia-progreso-hd"><span>Tu día</span><span class="dia-kcal">${kcal} / ${Math.round(md.kcal)} kcal</span></div>
+    <div class="dia-pg-top">
+      <div class="dia-pg-hd"><span class="dia-pg-lbl">Tu día</span><span class="dia-pg-sub">${kcal} de ${metaKcal} kcal</span></div>
+      <p class="dia-pg-n"><span class="dia-pg-num">${cifra}</span> <span class="dia-pg-u">${rotulo}</span></p>
+    </div>
     <div class="dia-barras">
       ${htmlBarra('Proteína', 'bp', sumas.prot, md.prot)}
       ${htmlBarra('Carbos', 'bc', sumas.carb, md.carb)}
       ${htmlBarra('Grasas', 'bg2', sumas.gras, md.gras)}
     </div>
-    <p class="dia-restante">${linea}</p>
   </section>`;
 }
 
@@ -1133,7 +1149,7 @@ function htmlSemana() {
   const md = meta ? metaDelDia(meta, estado.perfil) : null;
   const barras = md && !md.pendiente
     ? `<div class="dia-barras dia-sem-barras">
-        ${htmlBarra('Kcal', 'dia-bk', prom.kcal, md.kcal, ' kcal')}
+        ${htmlBarra('Kcal', 'dia-bk', prom.kcal, md.kcal, 'kcal')}
         ${htmlBarra('Proteína', 'bp', prom.prot, md.prot)}
         ${htmlBarra('Carbos', 'bc', prom.carb, md.carb)}
         ${htmlBarra('Grasas', 'bg2', prom.gras, md.gras)}

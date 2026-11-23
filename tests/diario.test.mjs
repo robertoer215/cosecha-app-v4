@@ -225,6 +225,19 @@ test('metaDelDia: la kcal del día sigue cuadrando 4/4/9 si la meta por comida c
   assert.equal(md.kcal, kcalDerivada(md));
 });
 
+// ---------- estadoMacro («Tu día»: lo que falta o sobra en cada barra) ----------
+import { estadoMacro } from '../js/diario.js';
+
+test('estadoMacro: lo que falta, «en tu meta» (±4 g) y lo que sobra con «+»', () => {
+  assert.equal(estadoMacro(80, 120, 'g'), 'faltan 40 g');
+  assert.equal(estadoMacro(118, 120, 'g'), 'en tu meta');
+  assert.equal(estadoMacro(124, 120, 'g'), 'en tu meta');
+  assert.equal(estadoMacro(169, 120, 'g'), '+49 g');
+  assert.equal(estadoMacro(2854, 2637, 'kcal'), '+217 kcal');
+  assert.equal(estadoMacro(2600, 2637, 'kcal'), 'en tu meta');
+  assert.equal(estadoMacro(0, 0, 'g'), 'en tu meta');
+});
+
 // ---------- orden intuitivo: lo común primero, platillos aparte ----------
 const BASE_ORDEN = [
   { id: 'T1', nombre: 'Tortilla de harina de trigo integral', grupo: 'Cereales y tubérculos', estado: 'listo para comer' },
