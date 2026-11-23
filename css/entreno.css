@@ -325,7 +325,12 @@
 .en-rutina-nombre{flex:1;min-height:44px;background:transparent;border:none;border-bottom:1px solid var(--border-strong);color:var(--text);font-family:var(--sans);font-size:16px;outline:none;transition:border-color .2s}
 .en-rutina-nombre:focus{border-bottom-color:var(--accent)}
 .en-rutina-ok{font-size:12px;color:var(--green)}
-.en-guardar{margin-top:8px}
+/* «Guardar sesión» flota sobre la barra de pestañas mientras se repasa el
+   resumen: al final de la página no se veía y la sesión parecía ya guardada.
+   Pastilla de vidrio, igual que .plato-pie en Pedir (la barra ocupa 62px). */
+.en-guardar-pie{position:sticky;bottom:calc(70px + env(safe-area-inset-bottom));z-index:5;margin:8px 0 0;padding:8px;border-radius:var(--r-pill);background:var(--hielo);border:1px solid var(--hielo-borde);-webkit-backdrop-filter:var(--hielo-filtro);backdrop-filter:var(--hielo-filtro);box-shadow:var(--hielo-luz),var(--hielo-sombra)}
+/* Con Tab, lo enfocado (notas, «Guardar como rutina») no queda bajo ese pie. */
+html:has(.en-guardar-pie){scroll-padding-bottom:calc(140px + env(safe-area-inset-bottom))}
 
 /* ── Progreso por ejercicio ──────────────────────────────────────────────── */
 .en-prog-fila{display:grid;grid-template-columns:minmax(84px,auto) 1fr auto;gap:12px;align-items:baseline;min-height:34px;border-bottom:1px solid var(--border);padding:6px 0}

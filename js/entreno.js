@@ -3751,7 +3751,7 @@ function pintarResumen(raiz, ses, { editable }) {
         <button type="button" class="en-btn en-btn-ghost" data-acc="rutina-ok">Guardar</button>
       </div>
     </div>
-    <button type="button" class="en-btn en-btn-main en-guardar" data-acc="guardar">Guardar sesión</button>
+    <div class="en-guardar-pie"><button type="button" class="en-btn en-btn-main en-guardar" data-acc="guardar">Guardar sesión</button></div>
     <div class="en-vivo-acciones"><button type="button" class="en-peligro" data-acc="descartar-fin">Descartar esta sesión</button></div>`
     : `${ses.notas ? `<div class="en-sec-lbl">Notas</div><p class="en-notas-ro">${esc(ses.notas)}</p>` : ''}
        <div class="en-vivo-acciones"><button type="button" class="en-peligro" data-acc="borrar-sesion">Borrar del historial</button></div>`}
