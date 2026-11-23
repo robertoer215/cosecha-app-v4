@@ -35,7 +35,7 @@
   --muted-ink:#6B4A2F;    /* era #6F6C67 (gris frío, 5,00). Ahora 7,61:1 */
   --muted:#7B5B3E;        /* era #8A8680 = 3,46:1, REPROBABA AA. Ahora 5,91:1 (5,18 sobre --surface).
                              Solo sobrevive donde el barrido final no llega: los dígitos de .s-dot y
-                             .psn-dot, .mt-btn, .st-btn, .res-mac y .terms-btn-icon */
+                             .psn-dot, .mt-btn, .st-btn y .res-mac */
   --light:#826342;        /* era #B8B2AA = 2,01:1, el peor par de la app. Ahora 5,28:1 sobre --bg,
                              4,63 sobre --surface (el hover de .obj-card/.act-card) y 4,76 sobre
                              --accent-soft: pasaría AA en los tres fondos.
@@ -95,12 +95,14 @@
    role=button: por eso las dos llevan line-height en px más abajo. */
 body{font-family:var(--sans);font-size:16px;font-weight:400;line-height:1.4;background:var(--bg);color:var(--text);min-height:100vh}
 .app{max-width:720px;margin:0 auto;padding-bottom:64px}
-.header{padding:2.5rem var(--gutter) 24px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:flex-end}
+/* Cabecera en UNA línea (logotipo a la izquierda, lema a la derecha): medía 88 px en
+   las cuatro pestañas y ahora 49; esos 39 px son contenido que ya no hay que bajar a buscar. */
+.header{padding:12px var(--gutter);border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:12px}
 /* El logotipo es .brand de la landing tal cual (Inter 500 / 17px), no una versión
    espaciada de Georgia: es lo primero que ve quien entra desde el CTA de la web.
    El ::after es su .brand i: el punto de 7px en --ember-dot que la landing pega a
    COSECHA en el nav y en el pie. Va con display:flex + gap:4px como allí; medido, no
-   mueve la línea base (el .logo sigue en 23,8px de alto y el .header en 87,98). */
+   mueve la línea base (el .logo sigue en 23,8px de alto). */
 .logo{font-family:var(--sans);font-size:17px;font-weight:500;letter-spacing:-.2px;text-transform:uppercase;display:flex;align-items:center;gap:4px}
 .logo::after{content:'';width:7px;height:7px;border-radius:50%;background:var(--ember-dot);flex-shrink:0}
 /* La misma cadena que la landing pone en Inter 350 a 13px: sale del barrido de mono
@@ -171,13 +173,22 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 select option{font-family:sans-serif;background:var(--bg)}
 .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-bottom:24px}
 .fg{display:flex;flex-direction:column;gap:7px}
+/* Sexo: control de dos opciones a todo el ancho (el mismo .sub-toggle de «Por comida /
+   Total del día»). Edad·Peso y Altura·Comidas quedan en dos filas parejas. */
+.fg-ancho{grid-column:1/-1}
+.fg .sub-toggle{margin:0}
+.fg-ancho:has(input.invalid) .sub-toggle{border-color:var(--danger)}
 /* Rejillas: radio en el CONTENEDOR + overflow:hidden, porque las celdas son fondos
    planos que deben sangrar hasta el canto. minmax(0,1fr) y NO un font-size menor:
    'Sedentario' y 'Rendimiento' no tienen punto de corte y con minmax(auto,1fr)
    estiraban su pista, dejando la rejilla de 5 con celdas desiguales. Siguen siendo
    4 y 5 columnas en todos los anchos. */
-.obj-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:24px;border-radius:var(--r-sm);overflow:hidden}
-.obj-card{display:flex;flex-direction:column;justify-content:center;background:var(--bg);padding:16px 4px;text-align:center;cursor:pointer;transition:background .2s}
+.obj-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--border);border:1px solid var(--border);margin-bottom:24px;border-radius:var(--r-sm);overflow:hidden}
+.obj-card{display:flex;flex-direction:column;justify-content:center;min-height:64px;background:var(--bg);padding:12px 8px;text-align:center;cursor:pointer;transition:background .2s}
+/* En 2×2 y a tamaño de lectura (15/13, como el nivel de actividad): en cuatro columnas
+   a 12px «Rendimiento» se partía en dos a 320 px y cada casilla tenía hasta cuatro líneas. */
+.obj-card .on{font-size:15px}
+.obj-card .od{font-size:13px}
 /* Sin guiones a media palabra ("múscu-lo"): se corta entre palabras. break-word
    solo actúa si una palabra sola no cabe en la casilla (pantallas muy angostas). */
 .obj-card .on,.obj-card .od{hyphens:none;overflow-wrap:break-word}
@@ -205,8 +216,9 @@ select option{font-family:sans-serif;background:var(--bg)}
 .act-card.selected .ad{color:rgba(255,255,255,.92)}
 .an{font-size:10px;font-family:var(--sans);font-weight:500;color:var(--text);margin-bottom:1px}
 .ad{font-size:9px;color:var(--light);font-family:var(--sans)}
-.meta-panel{border:1px solid var(--border);padding:24px;margin-bottom:24px;border-radius:var(--r-md)}
-.meta-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem}
+/* Una fila sin caja: el contexto de la meta. Los gramos viven en la barra fija. */
+.meta-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+#sc1 .ssub{margin-bottom:16px}
 .meta-ey{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--light);font-family:var(--sans);margin-bottom:3px}
 .meta-ctx{font-size:12px;color:var(--muted);font-family:var(--sans)}
 /* Ni un padding tocado en los badges: a 9999px el radio se recorta a la mitad de
@@ -214,15 +226,6 @@ select option{font-family:sans-serif;background:var(--bg)}
    --accent-soft se queda como está: llevarlo a ember hundiría --accent-ink encima
    de él de 4,54 a 4,24:1. */
 .meta-tag{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-family:var(--sans);padding:5px 12px;background:var(--ember);border:1px solid var(--ember);border-radius:var(--r-pill);color:var(--text)}
-.meta-nums{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--border);padding-top:1.25rem}
-.mn{text-align:center;border-right:1px solid var(--border)}
-.mn:last-child{border-right:none}
-.mn-val{font-size:26px;font-weight:300;letter-spacing:-1px;line-height:1}
-.mn-unit{font-size:10px;color:var(--light);font-family:var(--sans)}
-.mn-lbl{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-family:var(--sans);margin-top:5px}
-/* .k en --accent-ink y no en --accent: es el rótulo 'ENERGÍA' a 12px, o sea texto con
-   umbral 4,5, y --accent se queda en 4,26. Sus tres hermanos ya pasaban (6,00/6,21/5,05). */
-.mn-lbl.p{color:var(--green)}.mn-lbl.c{color:var(--blue)}.mn-lbl.g{color:var(--amber)}.mn-lbl.k{color:var(--accent-ink)}
 .meta-warn{margin-top:1rem;padding:.75rem 1rem;border:1px solid var(--amber);border-radius:var(--r-sm);background:var(--accent-soft);font-family:var(--sans);font-size:11px;line-height:1.5;color:var(--text)}
 .cat-sec{margin-bottom:24px}
 .cat-hd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
@@ -361,18 +364,18 @@ select option{font-family:sans-serif;background:var(--bg)}
 .qr-hd{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
 .qr-hd-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;font-family:var(--sans);color:var(--muted)}
 .qr-hd-tag{font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:var(--sans);background:var(--ember);border:1px solid var(--ember);border-radius:var(--r-pill);color:var(--text);padding:4px 10px}
-.qr-body{display:grid;grid-template-columns:auto 1fr;gap:0}
-/* El ancho fijo va de la mano de la reserva de .qr-pedido: esta columna es 'auto' en
-   .qr-body y sin él el id del pedido la ensancha de 169 a 183px al llegar la
-   confirmación. 169px es lo que ya medía: 120 del canvas + 48 de padding + 1 de filete. */
-.qr-code-wrap{width:169px;padding:1.5rem;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:.75rem;background:var(--surface)}
+/* El código va APILADO y a todo el ancho: arriba el QR, grande y centrado (es lo
+   que se enseña en caja); debajo las porciones, que en una columna de ~130px
+   partían cada línea en cuatro. Al ir a todo el ancho ya no hay columna 'auto'
+   que el id del pedido pueda ensanchar. */
+.qr-code-wrap{padding:1.5rem;border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:.75rem;background:var(--surface)}
 .qr-code-wrap p{font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:var(--sans);color:var(--muted);text-align:center}
 /* mix-blend-mode:darken porque app.js:1057 cocina el QR con colorLight:'#F4F2EE'
    (el --surface VIEJO) y ese color vive en JS. darken hace mínimo por canal: los
    módulos claros colapsan contra el fondo cálido y los oscuros sobreviven, así que
    el código sigue escaneando. VERIFICAR con un móvil real antes de publicar; si
    darken fallara, la salida sin tocar JS es .qr-code-wrap{background:#F4F2EE}. */
-#qr-canvas{width:120px;height:120px;mix-blend-mode:darken}
+#qr-canvas{width:168px;height:168px;mix-blend-mode:darken}
 .qr-instructions{padding:1.5rem}
 .qr-inst-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;font-family:var(--sans);color:var(--muted);margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
 .qr-inst-item{display:flex;gap:12px;margin-bottom:.875rem;align-items:flex-start}
@@ -387,6 +390,15 @@ select option{font-family:sans-serif;background:var(--bg)}
    transiciones explícita en vez de 'all': 'all' interpolaba outline-color y
    outline-width (el aro de foco aparecía con un fundido de 250ms). */
 .btn{font-family:var(--sans);font-size:13px;font-weight:500;letter-spacing:-.3px;text-transform:none;padding:12px 24px;min-height:44px;border-radius:var(--r-pill);cursor:pointer;border:none;transition:background-color .25s,color .25s,border-color .25s,box-shadow .25s,transform .18s}
+/* «Siguiente» siempre a mano: el pie del paso 2 flota sobre la barra de pestañas
+   mientras se recorren las tarjetas y descansa en su sitio al llegar al final.
+   Es una pastilla de vidrio como la barra (que ocupa 62px desde abajo: quedan 8 de
+   aire). z-index por debajo de la barra de macros y de las pestañas (100). */
+.plato-pie{position:sticky;bottom:calc(70px + env(safe-area-inset-bottom));z-index:90;margin:24px 0 0;padding:8px;border-radius:var(--r-pill);background:var(--hielo);border:1px solid var(--hielo-borde);-webkit-backdrop-filter:var(--hielo-filtro);backdrop-filter:var(--hielo-filtro);box-shadow:var(--hielo-luz),var(--hielo-sombra)}
+.plato-pie .btn-row{margin-top:0;padding-top:0;border-top:0}
+.plato-pie .form-error{margin:4px 14px 8px}
+/* El foco de teclado no aterriza debajo del pie (mismo patrón que .en-descanso). */
+html:has(#vista-pedir:not([hidden]) #sc1.active){scroll-padding-bottom:calc(140px + env(safe-area-inset-bottom))}
 /* Regla del sistema: --border es filete ESTRUCTURAL entre celdas (1,29:1, no
    necesita más) y --border-strong es contorno de CONTROL (4,12:1, umbral 3:1). */
 .btn-ghost{background:transparent;color:var(--muted-ink);border:1px solid var(--border-strong)}
@@ -399,7 +411,7 @@ select option{font-family:sans-serif;background:var(--bg)}
 .btn-main{background:var(--accent-ink);color:#fff;box-shadow:var(--lift-cta)}
 .btn-main:hover{background:var(--accent-deep);transform:translateY(-2px);box-shadow:var(--lift-cta-hover)}
 .btn-main:active{transform:translateY(0) scale(.985)}
-.plato-subnav{display:flex;flex-direction:column;align-items:center;gap:.75rem;padding:24px 0;margin-bottom:8px}
+.plato-subnav{display:flex;flex-direction:column;align-items:center;gap:.75rem;padding:16px 0;margin-bottom:8px}
 .psn-steps{display:flex;align-items:center}
 .psn-dot{width:22px;height:22px;border-radius:50%;border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--sans);color:var(--muted);background:var(--bg);flex-shrink:0;transition:background-color .25s,border-color .25s,color .25s}
 .psn-dot.psn-active{border-color:var(--accent);color:var(--accent-ink)}
@@ -438,18 +450,23 @@ input.invalid,select.invalid{border-bottom-color:var(--danger)}
    El line-height en px es OBLIGATORIO: 12px x el 1.4 heredado del body dan 16,8px
    y la reserva de 16px reventaría. */
 .manual-kcal{font-family:var(--sans);font-size:12px;line-height:16px;color:var(--muted-ink);margin:-1rem 0 1.5rem;min-height:16px}
-.terms-wrap{margin-top:24px;padding:24px;border:1px solid var(--border);background:var(--surface);border-radius:var(--r-md)}
+.terms-wrap{margin-top:24px;padding:20px;border:1px solid var(--border);background:var(--surface);border-radius:var(--r-md)}
 .terms-title{font-size:9px;letter-spacing:2px;text-transform:uppercase;font-family:var(--sans);color:var(--muted);margin-bottom:.75rem}
-.terms-text{font-size:12px;color:var(--muted);font-family:var(--sans);line-height:1.7;margin-bottom:1.25rem}
-.terms-accept-btn{width:100%;display:flex;align-items:center;gap:12px;padding:14px;background:var(--bg);border:1px solid var(--border-strong);border-radius:var(--r-sm);cursor:pointer;transition:background-color .2s,border-color .2s,transform .18s;font-family:var(--sans);text-align:left}
+/* Es un párrafo que hay que leer para aceptar: va a tamaño de lectura, no de nota. */
+.terms-text{font-size:14px;color:var(--muted);font-family:var(--sans);line-height:1.55;margin-bottom:16px}
+/* La aceptación es una CASILLA (cuadro + palomita, role=checkbox) y su texto va en
+   frase, como el resto de la app: en mono y mayúsculas parecía un campo de texto. */
+.terms-accept-btn{width:100%;display:flex;align-items:center;gap:12px;min-height:52px;padding:12px 14px;background:var(--bg);border:1px solid var(--border-strong);border-radius:var(--r-sm);cursor:pointer;transition:background-color .2s,border-color .2s,transform .18s;font-family:var(--sans);font-size:15px;letter-spacing:-.2px;line-height:1.3;color:var(--text);text-align:left}
 .terms-accept-btn:hover{border-color:var(--accent);background:#fff}
 .terms-accept-btn.accepted{background:var(--accent-soft);border-color:var(--accent)}
-.terms-btn-icon{font-size:16px;color:var(--muted);line-height:1;transition:color .2s;flex-shrink:0}
-/* El glifo va dentro de un <span>: el navegador lo trata como TEXTO y le aplica 4,5,
-   no el 3:1 de un icono. Con --accent sobre el fondo .accepted se quedaba en 3,84. */
-.terms-accept-btn.accepted .terms-btn-icon{color:var(--accent-ink)}
-.terms-accept-btn span:last-child{font-size:10px;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted);transition:color .2s}
-.terms-accept-btn.accepted span:last-child{color:var(--accent);font-weight:500}
+.terms-accept-btn.invalid{border-color:var(--danger)}
+.terms-box{flex:none;width:22px;height:22px;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--border-strong);border-radius:6px;background:var(--bg);color:transparent;transition:background-color .2s,border-color .2s}
+.terms-box svg{width:16px;height:16px}
+.terms-accept-btn.accepted .terms-box{background:var(--accent-ink);border-color:var(--accent-ink);color:#fff}
+.terms-wrap .form-error{margin:10px 0 0;font-size:13px}
+/* El botón principal del perfil va a lo ancho, como «Crear mi perfil» en Hoy y los
+   de Entrenar: se alcanza con cualquier pulgar. */
+#btn-calcular{flex:1}
 /* En móvil dos columnas dejan la foto en ~145px: se pierde el detalle del plato,
    que es justo lo que la foto tiene que comunicar. Una sola columna y más ancha. */
 @media (max-width:560px){
@@ -458,7 +475,6 @@ input.invalid,select.invalid{border-bottom-color:var(--danger)}
      13,6% extra es lo que hace que los 12px de cuerpo quepan sin partir líneas.
      NO publicar ninguna subida de tamaño sin esto. */
   :root{--gutter:20px}
-  .header{padding:24px var(--gutter) 20px}
   .stepper{padding:20px var(--gutter) 0}
   .global-tracker{padding:12px var(--gutter)}
   .screen{padding:24px var(--gutter) 32px}
@@ -548,18 +564,16 @@ input.invalid,select.invalid{border-bottom-color:var(--danger)}
 @media (max-width:340px){.cocina-body{min-height:320px}.cocina-skel span{margin-bottom:23px}}
 /* "Total a pagar · según cocina" es más largo: que se parta la etiqueta, no la cifra. */
 .res-total-val{white-space:nowrap;flex-shrink:0;margin-left:12px}
-/* 49px = TRES líneas de mono a 12px x 1.35 (48,6px), medidas, no calculadas: el id
-   real que devuelve n8n ('Pedido PED-20260920170527-P01C01V01G01', 38 caracteres) no
-   cabe en dos en una columna de 169px — el mono de 12px mete ~16 caracteres por línea.
-   Con la reserva de 34px la caja saltaba 14,56px en el momento exacto en que llega la
-   confirmación de cocina, que es lo único que este invariante existe para impedir.
-   El width:100% es la otra mitad del arreglo, junto con el ancho fijo de .qr-code-wrap:
-   sin ellos la contribución max-content del id ensancha la columna 'auto' de .qr-body
-   de 169 a 183px y la sección entera crece 69,59px.
+/* 33px = DOS líneas de mono a 12px x 1.35 (32,4px). Con el código a todo el ancho,
+   el id real que devuelve n8n ('Pedido PED-20260920170527-P01C01V01G01', 38
+   caracteres) cabe en dos líneas a 375 y a 320px. La reserva existe para que la caja
+   NO crezca en el momento en que llega la confirmación de cocina; ahora importa más,
+   porque el código va por encima de «Diferencia» y de «Cocina» y un salto aquí los
+   empujaría.
    Aquí NO se declaran font-size ni font-family a propósito: el barrido de micro-rótulos
    del final los pisa a 12px IBM Plex Mono con la misma especificidad, así que cualquier
    valor escrito aquí sería letra muerta (lo era: decía 9px Inter y renderizaba 12 mono). */
-.qr-pedido{min-height:49px;width:100%;color:var(--muted-ink);text-align:center;word-break:break-all;line-height:1.35}
+.qr-pedido{min-height:33px;width:100%;color:var(--muted-ink);text-align:center;word-break:break-all;line-height:1.35}
 
 /* A3 · La tarjeta responde a otra pregunta. Ya no "¿cuánto?" sino "¿qué tan
    cerca me deja?". El pie tiene ALTURA FIJA y el mismo alto esté o no elegida
@@ -694,8 +708,7 @@ input.invalid,select.invalid{border-bottom-color:var(--danger)}
    de rejilla donde 'Proteína' es una palabra que no se puede partir. */
 .eyebrow,.sec-lbl,.s-lbl,label,.gt-lbl,.gt-bar-lbl,.meta-ey,.mn-lbl,.cat-nm,.sugg-badge,
 .sugg-macro-tag,.meta-tag,.res-total-lbl,.res-extra-tag,.gap-hd,.gap-lbl,.qr-hd-lbl,
-.qr-hd-tag,.qr-inst-title,.qr-code-wrap p,.qr-pedido,.terms-title,.cocina-disc-hd,
-.terms-accept-btn span:last-child{font-family:var(--mono);font-size:12px;font-weight:400;letter-spacing:.04em;line-height:1.35}
+.qr-hd-tag,.qr-inst-title,.qr-code-wrap p,.qr-pedido,.terms-title,.cocina-disc-hd{font-family:var(--mono);font-size:12px;font-weight:400;letter-spacing:.04em;line-height:1.35}
 /* el color: a 12px aplica 4,5:1 sin excepción.
    .cat-nm NO entra: es el TÍTULO de la sección de ingredientes y su --text ya daba
    10,78:1, o sea que no había nada que corregir. Al barrerlo quedaba del mismo color
@@ -704,8 +717,8 @@ input.invalid,select.invalid{border-bottom-color:var(--danger)}
    de IBM Plex Mono; lo que recupera es el escalón de color. */
 .eyebrow,.sec-lbl,.s-lbl,label,.gt-lbl,.gt-bar-lbl,.meta-ey,.gap-hd,.gap-lbl,.qr-hd-lbl,
 .qr-inst-title,.res-total-lbl,.terms-title,.qr-code-wrap p,.qr-pedido,
-.terms-accept-btn span:last-child,.tagline{color:var(--muted-ink)}
-.sugg-macro-tag,.cocina-disc-hd,.s-lbl.active,.terms-accept-btn.accepted span:last-child{color:var(--accent-ink)}
+.tagline{color:var(--muted-ink)}
+.sugg-macro-tag,.cocina-disc-hd,.s-lbl.active{color:var(--accent-ink)}
 /* los dos que necesitan aire para no forzar su celda */
 .gt-bar-lbl,.gap-lbl,.mn-lbl{letter-spacing:.02em}
 
@@ -726,7 +739,6 @@ input.invalid,select.invalid{border-bottom-color:var(--danger)}
    extra lo absorbe el ellipsis de .i-size-val, que ya va con nowrap y min-width:0. */
 .i-size-val,.ss-pill{font-family:var(--sans);font-size:12px;letter-spacing:.5px}
 .gt-bar-val{font-weight:600}
-.mn-unit{font-size:12px!important}   /* app.js:333 lo pinta con style="font-size:9px" en línea */
 .sugg-ok-lbl[style]{font-size:12px!important;color:var(--muted-ink)!important}  /* inline de app.js:731 */
 .qr-inst-text span[style]{font-size:12px!important}  /* el '(extra)' inline de app.js:1096 */
 .qr-inst-text{--accent:var(--accent-ink)}  /* alcanza el color de ese inline sin !important */
@@ -835,7 +847,7 @@ main[hidden]{display:none}
    display pisando el [hidden] del navegador. Se corta la clase entera. */
 [hidden]{display:none!important}
 /* Hoy era la única vista sin gutter: su contenido pegaba al borde físico. */
-#vista-hoy{padding:2.5rem var(--gutter) 1.5rem}
+#vista-hoy{padding:24px var(--gutter) 1.5rem}   /* mismo arranque que Diario y Entrenar (eran 40 px solo aquí) */
 /* En modo demo no llega respuesta de cocina: la reserva de 268px dejaba un
    hueco vacío permanente bajo dos líneas de texto. */
 .cocina[data-estado="demo"] .cocina-body{min-height:0}
@@ -945,7 +957,7 @@ html:has(.en-descanso:not([hidden])){scroll-padding-bottom:calc(180px + env(safe
 .hoy-plato-pr{margin-left:auto;color:var(--text);font-weight:500}
 /* Bienvenida (primera visita) */
 .hoy-bienvenida{margin-top:4px;border:1px solid var(--border);border-radius:var(--r-md);background:var(--accent-soft);overflow:hidden;box-shadow:var(--lift-sticky)}
-.hoy-bv-foto{width:100%;aspect-ratio:16/9;height:auto;object-fit:cover;display:block;background:var(--surface)}
+.hoy-bv-foto{width:100%;aspect-ratio:5/2;height:auto;object-fit:cover;display:block;background:var(--surface)}
 .hoy-bv-cuerpo{padding:18px}
 .hoy-bv-t{margin:0 0 12px;font-size:20px;font-weight:400;letter-spacing:-.4px;line-height:1.25;color:var(--text)}
 .hoy-bv-pasos{margin:0 0 16px;padding-left:20px;font-size:14px;line-height:1.6;color:var(--muted-ink)}

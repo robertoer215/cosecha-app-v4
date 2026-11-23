@@ -389,6 +389,17 @@ export function etiquetaDescanso(s) {
   return r ? `${m} min ${r} s` : `${m} min`;
 }
 
+// El descanso con el que se hizo esta rutina la última vez: los segundos si fue
+// el mismo en todos los ejercicios, 'rutina' si variaba (lo que sugiere la
+// rutina) y null si nunca se ha hecho. Sale del historial: no se guarda aparte.
+export function descansoAnterior(sesiones, rutinaId) {
+  const ult = (sesiones || []).filter(s => s.rutinaId === rutinaId && s.ejercicios?.length)
+    .reduce((a, s) => (!a || s.inicioMs > a.inicioMs ? s : a), null);
+  if (!ult) return null;
+  const vals = new Set(ult.ejercicios.map(e => e.descansoS));
+  return vals.size === 1 ? [...vals][0] : 'rutina';
+}
+
 // Rango de descansos que trae un día de rutina: si varía por ejercicio (las
 // rutinas COSECHA dan más a los básicos), se ofrece "lo que sugiere la rutina".
 export function rangoDescanso(dia) {
@@ -1486,8 +1497,13 @@ function pintarElegirDescanso(raiz) {
   // "Lo que sugiere la rutina" solo aporta si no coincide con una opción fija.
   const sugerida = rango && (rango.min !== rango.max || !OPCIONES_DESCANSO.includes(rango.min));
   const pistas = { 60: 'Ritmo ágil', 90: 'Equilibrado', 120: 'Más recuperación', 180: 'Cargas pesadas' };
+  // Una sola opción destacada, para no decidir a ciegas: la de la última vez
+  // que se hizo esta rutina o, si es la primera, la que trae la propia rutina.
+  const previo = descansoAnterior(estado.entreno.sesiones, rutina.id);
+  const destacada = OPCIONES_DESCANSO.includes(previo) ? previo : sugerida ? 'rutina' : null;
   const opcion = (valor, titulo, pista) => `
-    <button type="button" class="en-card en-card-btn en-desc-op" data-acc="descanso" data-v="${valor}">
+    <button type="button" class="en-card en-card-btn en-desc-op${valor === destacada ? ' en-desc-op-on' : ''}" data-acc="descanso" data-v="${valor}">
+      ${valor === destacada ? `<span class="en-desc-tag">${previo == null ? 'Recomendado' : 'Última vez'}</span>` : ''}
       <span class="en-card-nombre">${esc(titulo)}</span>
       <span class="en-card-sub">${esc(pista)}</span>
     </button>`;
@@ -1497,11 +1513,11 @@ function pintarElegirDescanso(raiz) {
     <button type="button" class="en-volver" data-acc="desc-volver">${SVG_VOLVER}<span>Rutinas</span></button>
     <div class="en-ey">${esc(rutina.nombre + nombreDia)}</div>
     <h2 class="en-titulo">Descanso entre series</h2>
-    <p class="en-sub">Elige cuánto descansas entre cada serie. El descanso arranca solo al terminar una serie, y en la sesión lo puedes ajustar por ejercicio.</p>
+    <p class="en-sub">Arranca solo al terminar cada serie. Mientras corre puedes darle o quitarle 15 segundos.</p>
     <div class="en-desc-ops" role="group" aria-label="Descanso entre series">
-      ${OPCIONES_DESCANSO.map(s => opcion(s, etiquetaDescanso(s), pistas[s])).join('')}
       ${sugerida ? opcion('rutina', 'Lo que sugiere la rutina',
         rango.min === rango.max ? etiquetaDescanso(rango.min) : `De ${etiquetaDescanso(rango.min)} a ${etiquetaDescanso(rango.max)}, según el ejercicio`) : ''}
+      ${OPCIONES_DESCANSO.map(s => opcion(s, etiquetaDescanso(s), pistas[s])).join('')}
     </div>
     <p class="en-sub en-desc-espera" role="status" aria-live="polite"></p>
   </div>`;
@@ -3801,7 +3817,7 @@ function pintarResumen(raiz, ses, { editable }) {
         <button type="button" class="en-btn en-btn-ghost" data-acc="rutina-ok">Guardar</button>
       </div>
     </div>
-    <button type="button" class="en-btn en-btn-main en-guardar" data-acc="guardar">Guardar sesión</button>
+    <div class="en-guardar-pie"><button type="button" class="en-btn en-btn-main en-guardar" data-acc="guardar">Guardar sesión</button></div>
     <div class="en-vivo-acciones"><button type="button" class="en-peligro" data-acc="descartar-fin">Descartar esta sesión</button></div>`
     : `${ses.notas ? `<div class="en-sec-lbl">Notas</div><p class="en-notas-ro">${esc(ses.notas)}</p>` : ''}
        <div class="en-vivo-acciones"><button type="button" class="en-peligro" data-acc="borrar-sesion">Borrar del historial</button></div>`}

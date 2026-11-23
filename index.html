@@ -18,10 +18,8 @@
 <div class="app">
 
   <div class="header">
-    <div>
-      <div class="logo">Cosecha</div>
-      <div class="tagline" style="margin-top:3px">Alimentación inteligente</div>
-    </div>
+    <div class="logo">Cosecha</div>
+    <div class="tagline">Alimentación inteligente</div>
   </div>
 
   <!-- Las áreas de la app viven en <main> hermanos; la tabbar de abajo cambia
@@ -44,8 +42,8 @@
       <div class="hoy-bv-cuerpo">
         <h2 class="hoy-bv-t" id="hoy-bv-t">Tu comida, tu entreno y tu meta, en un solo lugar</h2>
         <ol class="hoy-bv-pasos">
-          <li><b>Crea tu perfil</b> en un minuto: calculamos tu meta.</li>
-          <li><b>Pide o registra</b> lo que comes; ves cuánto te falta.</li>
+          <li><b>Crea tu perfil</b> en un minuto.</li>
+          <li><b>Pide o registra</b> y ve cuánto te falta.</li>
           <li><b>Entrena</b> con descansos que corren solos.</li>
         </ol>
         <button class="btn btn-main hoy-bv-cta" onclick="crearPerfil('hoy')">Crear mi perfil</button>
@@ -80,7 +78,7 @@
         <span class="hoy-card-txt"><span class="hc-t">Pedir a COSECHA</span><span class="hc-s">Un plato a la medida de tu meta</span></span>
         <svg class="hoy-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg>
       </button>
-      <button class="hoy-card" onclick="goTab('diario')">
+      <button class="hoy-card" onclick="registrarComida()">
         <span class="hoy-ico hoy-ico-diario"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 5a2 2 0 0 1 2-2h12v18H7a2 2 0 0 1-2-2z"/><path d="M9 3v18"/></svg></span>
         <span class="hoy-card-txt"><span class="hc-t">Registrar comida</span><span class="hc-s" id="hoy-sub-diario">Lo que comes en casa también cuenta</span></span>
         <svg class="hoy-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9.5 5.5L16 12l-6.5 6.5"/></svg>
@@ -147,15 +145,22 @@
     </div>
 
     <div id="formula-form">
+      <div class="sec-lbl">Tus datos</div>
       <div class="form-grid">
-        <div class="fg"><label for="sexo">Sexo biológico</label><select id="sexo"><option value="" selected disabled>Elige una opción</option><option value="masculino">Masculino</option><option value="femenino">Femenino</option></select></div>
+        <!-- Dos opciones a la vista en vez de un menú: se elige con un toque. El valor vive en el campo oculto #sexo. -->
+        <div class="fg fg-ancho"><label for="sexo" id="sexo-lbl">Sexo biológico</label>
+          <input type="hidden" id="sexo" value="">
+          <div class="sub-toggle" role="group" aria-labelledby="sexo-lbl">
+            <button type="button" class="st-btn" data-v="masculino" aria-pressed="false" onclick="setSexo('masculino')">Masculino</button>
+            <button type="button" class="st-btn" data-v="femenino" aria-pressed="false" onclick="setSexo('femenino')">Femenino</button>
+          </div>
+        </div>
         <div class="fg"><label for="edad">Edad</label><input type="number" inputmode="numeric" id="edad" placeholder="Ej. 30" min="15" max="80"></div>
         <div class="fg"><label for="peso">Peso — kg</label><input type="number" inputmode="decimal" id="peso" placeholder="Ej. 70" min="40" max="200"></div>
         <div class="fg"><label for="altura">Altura — cm</label><input type="number" inputmode="numeric" id="altura" placeholder="Ej. 165" min="140" max="220"></div>
         <div class="fg"><label for="comidas">Comidas por día</label><select id="comidas"><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select></div>
       </div>
       <div class="form-error" id="formula-error" role="alert"></div>
-      <div class="divider"></div>
       <div class="sec-lbl">Objetivo</div>
       <div class="obj-grid">
         <div class="obj-card selected" data-o="perder_grasa" onclick="selObj(this)"><div class="on">Perder grasa</div><div class="od">Déficit −15%</div></div>
@@ -176,10 +181,12 @@
       <div class="terms-wrap">
         <div class="terms-title">Antes de continuar</div>
         <p class="terms-text">Esta herramienta usa la fórmula Mifflin-St Jeor, pensada para personas sanas en general. Si tienes alguna condición de salud, estás bajo tratamiento médico o trabajas con un especialista, te recomendamos usar sus indicaciones directamente.</p>
-        <button class="terms-accept-btn" id="terms-btn" onclick="aceptarTerminos()">
-          <span class="terms-btn-icon" id="terms-icon">○</span>
+        <!-- Casilla de verdad: el texto no cambia al marcarla; el estado lo dice la palomita. -->
+        <button type="button" role="checkbox" aria-checked="false" class="terms-accept-btn" id="terms-btn" onclick="aceptarTerminos()">
+          <span class="terms-box" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
           <span id="terms-btn-txt">Entendido, acepto continuar</span>
         </button>
+        <div class="form-error" id="terms-error" role="alert"></div>
       </div>
     </div>
 
@@ -216,18 +223,22 @@
       <div class="form-error" id="manual-error" role="alert"></div>
     </div>
 
-    <div class="btn-row"><div></div><button class="btn btn-main" id="btn-calcular" onclick="calcular()" disabled>Continuar</button></div>
+    <div class="btn-row"><button class="btn btn-main" id="btn-calcular" onclick="calcular()">Continuar</button></div>
   </div>
 
   <div class="screen" id="sc1">
     <div class="eyebrow">Paso 02</div>
     <div class="stitle">Arma tu plato</div>
-    <div class="ssub">Elige qué quieres en cada categoría. El tamaño de cada módulo lo calcula la app y lo reajusta cada vez que añades algo, para acercarte lo más posible a tu meta.</div>
+    <div class="ssub">Tú eliges qué comer; la app calcula cuánto para acercarte a tu meta.</div>
     <div id="meta-panel"></div>
     <div id="base-mods"></div>
     <div id="sugg-wrap"></div>
-    <div class="form-error" id="plato-aviso" role="alert" aria-live="polite"></div>
-    <div id="plato-btn-row" class="btn-row"></div>
+    <!-- Pie fijo: Anterior/Siguiente siempre a la vista, y el aviso justo encima
+         de donde se tocó (no al final de una página que no se está viendo). -->
+    <div class="plato-pie">
+      <div class="form-error" id="plato-aviso" role="alert" aria-live="polite"></div>
+      <div id="plato-btn-row" class="btn-row"></div>
+    </div>
   </div>
 
   <div class="screen" id="sc2">

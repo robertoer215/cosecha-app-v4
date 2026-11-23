@@ -31,11 +31,24 @@
   border-radius:var(--r-pill);color:var(--accent-ink);font-family:var(--sans);font-size:12px;font-weight:500;cursor:pointer;flex-shrink:0}
 .dia-hoy-btn:hover{background:var(--surface)}
 
-/* ── Progreso del día (reusa .gap-wrap/.gap-hd y las barras del tracker) ── */
+/* ── Progreso del día (reusa .gap-wrap y las barras del tracker) ──────────
+   Primero lo que queda por comer, en grande; debajo, cada macro con lo que
+   falta o lo que sobra («+»), sin trama ni color de aviso. */
 .dia-progreso-hd{display:flex;justify-content:space-between;align-items:center;gap:10px}
-.dia-kcal{font-variant-numeric:tabular-nums;white-space:nowrap}
-.dia-barras{padding:14px 20px 4px;display:grid;gap:12px}
-.dia-restante{padding:10px 20px 16px;margin:0;font-size:12px;letter-spacing:-.2px;color:var(--muted-ink);font-variant-numeric:tabular-nums}
+.dia-pg-top{padding:16px 20px 2px}
+.dia-pg-hd{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.dia-pg-lbl{font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-ink)}
+.dia-pg-n{margin:8px 0 0;display:flex;align-items:baseline;flex-wrap:wrap;gap:0 8px}
+.dia-pg-num{font-size:34px;font-weight:500;letter-spacing:-1px;line-height:1.1;color:var(--text);font-variant-numeric:tabular-nums}
+.dia-pg-u{font-size:15px;letter-spacing:-.2px;color:var(--text)}
+.dia-pg-sub{font-size:13px;letter-spacing:-.2px;color:var(--muted-ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dia-barras{padding:14px 20px 18px;display:grid;gap:12px}
+/* Si rótulo, cifras y estado no caben en un renglón (pantalla de 320 con cifras de
+   cuatro dígitos), el estado baja al siguiente, siempre pegado a la derecha. */
+.dia-mac-top{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 8px;margin-bottom:6px}
+.dia-mac-ratio{font-size:12px;letter-spacing:-.2px;color:var(--muted-ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dia-mac-est{margin-left:auto;font-size:13px;font-weight:600;letter-spacing:-.2px;color:var(--text);font-variant-numeric:tabular-nums;white-space:nowrap}
+.dia-restante{padding:0 20px 16px;margin:0;font-size:12px;letter-spacing:-.2px;color:var(--muted-ink);font-variant-numeric:tabular-nums}
 /* El canal de kcal en la vista semanal: el mismo naranja de tinta que rotula
    ENERGÍA en el panel de meta de Pedir (.mn-lbl.k). */
 .dia-bk{background:var(--accent-ink)}
@@ -74,7 +87,6 @@
 .dia-e-sub{font-size:12px;letter-spacing:-.2px;color:var(--muted-ink);font-variant-numeric:tabular-nums}
 .dia-e-kcal{flex-shrink:0;font-size:12px;color:var(--text);font-variant-numeric:tabular-nums}
 .dia-vacia{margin:0;padding:14px 16px;font-size:12px;letter-spacing:-.2px;color:var(--muted-ink)}
-.dia-vacia-zona{padding:0 16px 14px}
 
 /* ── Chips (recientes/frecuentes y "repetir lo de ayer") ────────────────── */
 .dia-chips-zona{margin:20px 0 8px}
@@ -99,15 +111,30 @@
 
 /* ── Detalle: cantidad y macros en vivo ─────────────────────────────────── */
 .dia-campo{margin-bottom:20px}
-.dia-cant-fila{display:flex;align-items:baseline;gap:10px;margin-bottom:12px}
-.dia-cant-fila input{max-width:120px;font-variant-numeric:tabular-nums}
-.dia-cant-unidad{font-size:12px;letter-spacing:-.2px;color:var(--muted-ink)}
+/* Cantidad con − / +: dos botones de 48px a los lados del número. El número
+   sigue siendo un campo (se puede escribir), centrado y más grande. */
+.dia-cant-fila{display:flex;align-items:center;gap:10px}
+/* «Medida» no rotula un campo, sino el grupo de píldoras: mismo aspecto que un <label>. */
+.dia-lbl-txt{margin-bottom:8px;font-family:var(--mono);font-size:12px;font-weight:400;letter-spacing:.04em;line-height:1.35;text-transform:uppercase;color:var(--muted-ink)}
+.dia-cant-fila input{width:84px;flex-shrink:0;padding:6px 0;text-align:center;font-size:24px;font-weight:500;letter-spacing:-.5px;font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.dia-cant-fila input::-webkit-outer-spin-button,.dia-cant-fila input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.dia-paso{width:48px;height:48px;flex-shrink:0;display:flex;align-items:center;justify-content:center;
+  background:var(--bg);border:1px solid var(--border-strong);border-radius:var(--r-pill);color:var(--text);cursor:pointer;
+  touch-action:manipulation} /* dos toques seguidos suman dos veces: no deben hacer zoom */
+.dia-paso svg{width:20px;height:20px}
+.dia-paso:hover{background:var(--surface)}
+.dia-paso:active{background:var(--border)}
+.dia-paso:disabled{opacity:.35;cursor:default}
+.dia-paso:disabled:hover{background:var(--bg)}
+.dia-paso:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.dia-cant-unidad{flex:1;min-width:0;margin-left:4px;font-size:14px;letter-spacing:-.2px;line-height:1.3;color:var(--text)}
 /* La reserva de dos líneas evita el salto cuando aparece la línea de los
    gramos totales o la de "la etiqueta difiere". */
 .dia-vivo{min-height:58px;margin-bottom:20px;padding:14px 16px;background:var(--surface);
   border:1px solid var(--border);border-radius:var(--r-md)}
-.dia-vivo-macros{font-size:13px;letter-spacing:-.2px;color:var(--text);font-variant-numeric:tabular-nums}
-.dia-vivo-kcal{margin-top:2px;font-size:16px;font-weight:500;letter-spacing:-.4px;color:var(--accent-deep);font-variant-numeric:tabular-nums}
+/* Las calorías van primero y en grande: es la cifra que cambia al mover la cantidad. */
+.dia-vivo-macros{margin-top:2px;font-size:13px;letter-spacing:-.2px;color:var(--text);font-variant-numeric:tabular-nums}
+.dia-vivo-kcal{font-size:22px;font-weight:500;letter-spacing:-.5px;line-height:1.2;color:var(--accent-deep);font-variant-numeric:tabular-nums}
 .dia-vivo-g{margin-top:2px;font-size:12px;color:var(--muted-ink);font-variant-numeric:tabular-nums}
 .dia-vivo-etq{margin-top:6px;font-size:12px;line-height:1.5;color:var(--accent-deep)}
 .dia-cta{width:100%;margin-top:4px}
@@ -118,7 +145,7 @@
 
 /* ── Botón de semana y estado vacío ─────────────────────────────────────── */
 .dia-semana-btn{width:100%;margin:6px 0 24px}
-.dia-sem-barras{padding-bottom:8px}
+.dia-sem-barras{padding-bottom:12px}
 .dia-vacio{display:flex;flex-direction:column;align-items:flex-start;gap:10px;
   padding:24px 20px;margin-bottom:24px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-md)}
 .dia-vacio svg{width:28px;height:28px;color:var(--accent-ink)}
@@ -190,10 +217,23 @@
 .dia-ico-comida{color:var(--accent-ink)}
 .dia-ico-cena{color:var(--blue)}
 .dia-ico-colaciones{color:var(--green)}
-/* Comida vacía: invita a actuar (mismo destino que el +). */
-.dia-vacia-btn{display:block;width:calc(100% - 24px);min-height:48px;margin:12px;padding:0 14px;border:1px dashed var(--border-strong);border-radius:var(--r-sm);background:none;color:var(--accent-deep);font-family:var(--sans);font-size:14px;text-align:left;cursor:pointer;transition:background-color .2s}
-.dia-vacia-btn:hover{background:var(--accent-soft)}
-.dia-vacia-btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* Comida vacía: una sola fila. «Agregar» va donde las demás comidas llevan
+   el +, con su palabra al lado porque aquí sí hay sitio (no hay subtotal). */
+.dia-comida-sola .dia-comida-hd{border-bottom:none}
+.dia-mas.dia-vacia-btn{width:auto;gap:4px;padding:0 16px 0 12px;background:var(--bg);border:1px solid var(--accent);
+  color:var(--accent-deep);font-family:var(--sans);font-size:14px;font-weight:500;letter-spacing:-.2px}
+.dia-mas.dia-vacia-btn svg{width:18px;height:18px}
+.dia-mas.dia-vacia-btn:hover{background:var(--accent-soft)}
+/* «Repetir lo de ayer»: una fila como las del diario, con lo que trae y sus kcal. */
+.dia-repetir{width:100%;min-height:56px;display:flex;align-items:center;gap:12px;padding:10px 16px;
+  background:none;border:0;text-align:left;font-family:var(--sans);cursor:pointer}
+.dia-repetir:hover{background:var(--surface)}
+.dia-repetir:focus-visible{outline:2px solid var(--accent);outline-offset:-3px}
+.dia-repetir-ico{display:flex;flex-shrink:0;color:var(--accent-ink)}
+.dia-repetir-ico svg{width:20px;height:20px}
+.dia-repetir .dia-e-main{flex:1}
+.dia-repetir .dia-e-nm{color:var(--accent-deep)}
+.dia-repetir-que{overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
 /* Buscador con lupa, mismo patrón que la biblioteca de Entrenar. */
 .dia-buscar-caja{display:flex;align-items:center;gap:10px;min-height:52px;padding:0 16px;margin-top:6px;border:1px solid var(--border-strong);border-radius:var(--r-pill);background:var(--bg)}
 .dia-buscar-caja:focus-within{outline:2px solid var(--accent-ink);outline-offset:2px}

@@ -141,6 +141,21 @@ test('macrosDeCantidad: cantidad inválida (NaN, negativa, 0) degrada a 0, nunca
   }
 });
 
+// ---------- cantidadVecina (el − / + del detalle) ----------
+import { cantidadVecina } from '../js/diario.js';
+
+test('cantidadVecina: − / + saltan al múltiplo vecino del paso y no bajan del primero', () => {
+  assert.equal(cantidadVecina(1, 0.5, true), 1.5);
+  assert.equal(cantidadVecina(1, 0.5, false), 0.5);
+  assert.equal(cantidadVecina(0.5, 0.5, false), 0.5);
+  assert.equal(cantidadVecina(1.25, 0.5, true), 1.5);
+  assert.equal(cantidadVecina(78, 10, true), 80);
+  assert.equal(cantidadVecina(78, 10, false), 70);
+  assert.equal(cantidadVecina(80, 10, false), 70);
+  assert.equal(cantidadVecina(NaN, 10, true), 10);
+  assert.equal(cantidadVecina(NaN, 0.5, false), 0.5);
+});
+
 // ---------- kcalDerivada ----------
 
 test('kcalDerivada: 4P + 4C + 9G exacto', () => {
@@ -223,6 +238,19 @@ test('metaDelDia: meta.comidas nulo o inválido (metaCache migrada) degrada a ×
 test('metaDelDia: la kcal del día sigue cuadrando 4/4/9 si la meta por comida cuadraba', () => {
   const md = metaDelDia(META('formula', 3), null);
   assert.equal(md.kcal, kcalDerivada(md));
+});
+
+// ---------- estadoMacro («Tu día»: lo que falta o sobra en cada barra) ----------
+import { estadoMacro } from '../js/diario.js';
+
+test('estadoMacro: lo que falta, «en tu meta» (±4 g) y lo que sobra con «+»', () => {
+  assert.equal(estadoMacro(80, 120, 'g'), 'faltan 40 g');
+  assert.equal(estadoMacro(118, 120, 'g'), 'en tu meta');
+  assert.equal(estadoMacro(124, 120, 'g'), 'en tu meta');
+  assert.equal(estadoMacro(169, 120, 'g'), '+49 g');
+  assert.equal(estadoMacro(2854, 2637, 'kcal'), '+217 kcal');
+  assert.equal(estadoMacro(2600, 2637, 'kcal'), 'en tu meta');
+  assert.equal(estadoMacro(0, 0, 'g'), 'en tu meta');
 });
 
 // ---------- orden intuitivo: lo común primero, platillos aparte ----------

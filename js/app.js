@@ -112,6 +112,20 @@ window.goTab = async function(tab) {
   window.scrollTo(0, 0);
 };
 
+// «Registrar comida» de Hoy es una acción, no otra puerta a la pestaña: abre el
+// Diario de HOY ya en el buscador de la comida de esta hora. Se tocan los
+// botones del propio Diario (el «Hoy» de su fecha y el «+» de la comida), así
+// este shell no asume nada de cómo funciona por dentro.
+// shortcut: si el Diario quedó en otra vista (buscador, detalle, semana) o no
+// hay perfil, esos botones no existen y solo se abre el Diario como antes;
+// pasar a un método público del módulo si algún día debe forzar el buscador.
+window.registrarComida = async function() {
+  await window.goTab('diario');
+  const d = $('vista-diario');
+  d.querySelector('[data-accion="fecha-hoy"]')?.click();
+  d.querySelector(`.dia-mas[data-comida="${almacen.comidaPorHora()}"]`)?.click();
+};
+
 // El plato del resumen entra al diario en UN toque, con los mismos números que
 // muestra la pantalla (lineasLocales: el mismo motor que ve cocina).
 window.agregarPlatoAlDiario = function() {
@@ -226,9 +240,11 @@ function renderHoy() {
   $('hoy-frase').textContent = frase;
 
   // Subtítulos vivos de las acciones: dicen algo de TI, no del producto.
-  $('hoy-sub-diario').textContent = nAlimentos
-    ? `${nAlimentos} ${nAlimentos === 1 ? 'alimento registrado' : 'alimentos registrados'} hoy`
-    : 'Lo que comes en casa también cuenta';
+  // Con meta, «Registrar comida» abre el buscador (registrarComida) y el
+  // subtítulo dice a qué comida va; sin meta el Diario aún pide el perfil.
+  const aComida = { desayuno: 'tu desayuno', comida: 'tu comida', cena: 'tu cena', colaciones: 'tu colación' }[almacen.comidaPorHora()];
+  $('hoy-sub-diario').textContent = !m ? 'Lo que comes en casa también cuenta'
+    : `Agregar a ${aComida}` + (nAlimentos ? ` · llevas ${nAlimentos} hoy` : '');
   const activa = estadoLocal.entreno?.sesionActiva;
   const sesiones = estadoLocal.entreno?.sesiones || [];
   const sub = $('hoy-sub-entrenar');
@@ -385,7 +401,7 @@ function restaurarPerfil() {
   const p = estadoLocal.perfil;
   if (!p) return;
   try {
-    if (p.sexo) $('sexo').value = p.sexo;
+    if (p.sexo) window.setSexo(p.sexo);
     if (p.edad) $('edad').value = p.edad;
     if (p.peso) $('peso').value = p.peso;
     if (p.altura) $('altura').value = p.altura;
@@ -408,12 +424,7 @@ function restaurarPerfil() {
     // en modo fórmula se recalculaba con el formulario manual del dispositivo.
     window.setMode(p.modo === 'manual' ? 'manual' : 'calc');
     window.setSubMode(p.subModo === 'total' ? 'total' : 'comida');
-    if (p.terminos) {
-      $('terms-btn').classList.add('accepted');
-      $('terms-icon').textContent = '●';
-      $('terms-btn-txt').textContent = 'Aceptado';
-      $('btn-calcular').disabled = false;
-    }
+    if (p.terminos) marcarTerminos(true);
   } catch (e) { console.warn('perfil guardado:', e.message); }
 }
 
@@ -426,13 +437,15 @@ function foto(it, cls) {
   return `<img class="${cls}" src="${IMG_DIR}${it.img}" alt="${it.nombre}" loading="lazy" decoding="async" width="600" height="600"${pos}>`;
 }
 
-window.aceptarTerminos = function() {
+// El aviso es una casilla: marcada o no. «Continuar» nunca se apaga; si falta
+// la casilla, calcular() lo dice junto a ella en vez de quedarse mudo.
+function marcarTerminos(aceptado) {
   const btn = $('terms-btn');
-  const accepted = btn.classList.toggle('accepted');
-  $('terms-icon').textContent = accepted ? '●' : '○';
-  $('terms-btn-txt').textContent = accepted ? 'Aceptado' : 'Entendido, acepto continuar';
-  $('btn-calcular').disabled = !accepted;
-};
+  btn.classList.toggle('accepted', aceptado);
+  btn.setAttribute('aria-checked', String(aceptado));
+  if (aceptado) { btn.classList.remove('invalid'); $('terms-error').textContent = ''; }
+}
+window.aceptarTerminos = () => marcarTerminos(!$('terms-btn').classList.contains('accepted'));
 
 window.setMode = function(modo) {
   modoActual = modo;
@@ -443,13 +456,20 @@ window.setMode = function(modo) {
   $('mt-calc').setAttribute('aria-pressed', String(modo === 'calc'));
   $('mt-manual').setAttribute('aria-pressed', String(modo === 'manual'));
   limpiarErrores();
-  if (modo === 'manual') {
-    $('btn-calcular').disabled = false;
-    window.kcalManual();
-  } else {
-    const aceptado = $('terms-btn') && $('terms-btn').classList.contains('accepted');
-    $('btn-calcular').disabled = !aceptado;
-  }
+  if (modo === 'manual') window.kcalManual();
+};
+
+// Sexo: dos botones a la vista. El valor se guarda en el campo oculto #sexo,
+// así que todo lo que lee $('sexo').value sigue igual.
+window.setSexo = function(v) {
+  const campo = $('sexo');
+  campo.value = v;
+  campo.classList.remove('invalid');
+  campo.parentElement.querySelectorAll('.st-btn').forEach(b => {
+    const on = b.dataset.v === v;
+    b.classList.toggle('st-active', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
 };
 
 window.setSubMode = function(sub) {
@@ -504,12 +524,22 @@ function errorFormulario(idError, ids) {
   const hayNumeros = ids.some(idc => $(idc)?.min);
   if (box) box.textContent = `Revisa: ${partes.join(', ')}.${hayNumeros ? ` Solo números dentro del rango${cero}.` : ''}`;
   const primero = $(ids[0]);
-  if (primero) primero.focus();
+  // El sexo es un grupo de botones (su valor vive en un campo oculto): el foco va al primero.
+  if (primero) (primero.type === 'hidden' ? primero.parentElement.querySelector('button') : primero).focus();
 }
 function limpiarErrores() {
   document.querySelectorAll('input.invalid, select.invalid').forEach(el => { el.classList.remove('invalid'); el.removeAttribute('aria-invalid'); });
-  ['formula-error', 'manual-error'].forEach(idc => { const b = $(idc); if (b) b.textContent = ''; });
+  $('terms-btn').classList.remove('invalid');
+  ['formula-error', 'manual-error', 'terms-error'].forEach(idc => { const b = $(idc); if (b) b.textContent = ''; });
 }
+// Al corregir un dato de la fórmula su marca roja se va sola (los macros
+// manuales ya lo hacían en kcalManual), y el mensaje con la última marca.
+$('formula-form').addEventListener('input', e => {
+  const el = e.target;
+  if (!el.classList.contains('invalid') || (el.tagName === 'SELECT' ? !el.value : numCampo(el.id) === null)) return;
+  el.classList.remove('invalid'); el.removeAttribute('aria-invalid');
+  if (!document.querySelector('#formula-form :is(input, select).invalid')) $('formula-error').textContent = '';
+});
 
 window.selObj = el => { document.querySelectorAll('.obj-card').forEach(c=>{c.classList.remove('selected');c.setAttribute('aria-pressed','false');}); el.classList.add('selected'); el.setAttribute('aria-pressed','true'); };
 window.selAct = el => { document.querySelectorAll('.act-card').forEach(c=>{c.classList.remove('selected');c.setAttribute('aria-pressed','false');}); el.classList.add('selected'); el.setAttribute('aria-pressed','true'); };
@@ -542,7 +572,14 @@ window.calcular = function() {
   } else {
     // El perfil empieza vacío: sin sexo elegido no hay fórmula que calcular.
     const m = [...($('sexo').value ? [] : ['sexo']), ...malos(['edad', 'peso', 'altura'])];
+    // Todo lo que falta se dice de una vez: los datos arriba y la casilla abajo.
+    const sinAviso = !$('terms-btn').classList.contains('accepted');
+    if (sinAviso) {
+      $('terms-btn').classList.add('invalid');
+      $('terms-error').textContent = 'Marca la casilla «Entendido, acepto continuar» para seguir.';
+    }
     if (m.length) { errorFormulario('formula-error', m); return; }
+    if (sinAviso) { $('terms-btn').focus(); return; }
     const edad = numCampo('edad'), peso = numCampo('peso'), altura = numCampo('altura');
     meta = calcularMeta({
       sexo: $('sexo').value,
@@ -721,18 +758,15 @@ function updateGlobalTracker() {
   renderPorque();
 }
 
+// Solo el contexto de la meta (por comida, cuántas, objetivo): los gramos ya
+// están en la barra fija de arriba y repetirlos empujaba la comida fuera de la
+// primera pantalla.
 function renderMeta() {
   $('meta-panel').innerHTML=`
   <div class="meta-panel">
     <div class="meta-top">
       <div><div class="meta-ey">Meta por comida</div><div class="meta-ctx">${meta.objetivo === 'manual' ? (meta.comidas === 1 ? 'Macros personalizados por comida' : `${meta.comidas} comidas · Macros personalizados`) : `${meta.comidas} comidas · ${OBJ_LABEL[meta.objetivo]}`}</div></div>
       <div class="meta-tag">${meta.kcal} kcal</div>
-    </div>
-    <div class="meta-nums">
-      <div class="mn"><div class="mn-val">${meta.prot}<span class="mn-unit">g</span></div><div class="mn-lbl p">Proteína</div></div>
-      <div class="mn"><div class="mn-val">${meta.carb}<span class="mn-unit">g</span></div><div class="mn-lbl c">Carbos</div></div>
-      <div class="mn"><div class="mn-val">${meta.gras}<span class="mn-unit">g</span></div><div class="mn-lbl g">Grasas</div></div>
-      <div class="mn"><div class="mn-val">${meta.kcal}<span class="mn-unit" style="font-size:9px">cal</span></div><div class="mn-lbl k">Energía</div></div>
     </div>
     ${meta.ajusteCarb ? `<div class="meta-warn">Con tu perfil, la proteína y grasa objetivo cubren prácticamente todas tus calorías del día, así que tu meta de carbohidratos por comida quedó en 0 g. Te recomendamos validar tu plan con un especialista.</div>` : ''}
   </div>`;
@@ -1069,17 +1103,26 @@ function renderPlatoButtons() {
 // de ocurrir. Se limpian al navegar.
 function olvidarPorque(){ porque = null; idsRecalc = []; }
 
+// Al cambiar de categoría la pantalla se queda EN la categoría, justo bajo la
+// barra fija: volver al principio obligaba a bajar otra vez en cada paso.
+function verCategoria() {
+  const nav = document.querySelector('.plato-subnav');
+  if (!nav) return;
+  nav.style.scrollMarginTop = $('global-tracker').offsetHeight + 'px';
+  nav.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+}
+
 window.nextCat = function() {
   platoCatIdx = Math.min(platoCatIdx + 1, 4);
   olvidarPorque();
   renderBase();
-  window.scrollTo({top:0,behavior:'smooth'});
+  verCategoria();
 };
 window.prevCat = function() {
   platoCatIdx = Math.max(platoCatIdx - 1, 0);
   olvidarPorque();
   renderBase();
-  window.scrollTo({top:0,behavior:'smooth'});
+  verCategoria();
 };
 
 window.selBI = function(id,cat) {
@@ -1315,7 +1358,9 @@ function propuestaHTML({ it, descripcion, extra }, reservado) {
 // queda por encima de lo visible, el scroll se compensa con lo que creció o
 // encogió (lo que hace el anclaje de scroll del navegador, pero en todos).
 function sinSalto(idRegion, fn) {
-  const ancla = document.querySelector('.qr-section');
+  // El ancla es lo que queda DEBAJO de cocina y su propuesta: antes era el código,
+  // que ahora va arriba, junto al total; hoy es la fila de botones del resumen.
+  const ancla = document.querySelector('#sc2 > .btn-row');
   const region = document.getElementById(idRegion);
   const bAntes = region ? region.getBoundingClientRect().bottom : 1;
   const tAntes = ancla ? ancla.getBoundingClientRect().top : null;
@@ -1487,7 +1532,7 @@ function dibujarQR() {
   const el = $('qr-canvas');
   if (!el || !window.QRCode) return;
   el.innerHTML = '';
-  try { new QRCode(el, { text: buildQRText(), width: 120, height: 120, colorDark: '#1a1a18', colorLight: '#F4F2EE', correctLevel: QRCode.CorrectLevel.M }); }
+  try { new QRCode(el, { text: buildQRText(), width: 168, height: 168, colorDark: '#1a1a18', colorLight: '#F4F2EE', correctLevel: QRCode.CorrectLevel.M }); }
   catch (e) { el.innerHTML = '<div class="qr-fallo">QR no disponible</div>'; console.warn('QR:', e.message); }
 }
 
@@ -1545,6 +1590,9 @@ function pintarResumen() {
   const prediccion = predecirPropuesta();
   $('res-content').innerHTML=`
     <div class="res-wrap">${rows}<div class="res-total"><div class="res-total-lbl" id="res-total-lbl">Total a pagar</div><div class="res-total-val" id="res-total-val">$${total} MXN</div></div></div>
+    <div class="qr-section"><div class="qr-hd"><div class="qr-hd-lbl">Código para cocina</div><div class="qr-hd-tag">Escanear en caja</div></div>
+      <div class="qr-body"><div class="qr-code-wrap"><div id="qr-canvas"></div><p>Escanea para ver orden</p><div class="qr-pedido" id="qr-pedido"></div></div>
+      <div class="qr-instructions"><div class="qr-inst-title">Porciones exactas</div>${instHTML}</div></div></div>
     <div class="gap-wrap"><div class="gap-hd">Diferencia vs tu meta</div><div class="gap-grid">
       <div class="gap-blk"><div class="gap-num ${clsKcal(dK)}">${fmtKcal(dK)}</div><div class="gap-lbl">kcal</div></div>
       <div class="gap-blk"><div class="gap-num ${clsMacro(dP)}">${fmtMacro(dP,'g')}</div><div class="gap-lbl">proteína</div></div>
@@ -1555,10 +1603,7 @@ function pintarResumen() {
       <div class="gap-hd"><span>Cocina</span><span class="cocina-estado" id="cocina-estado">${ESTADO_LBL.confirmando}</span></div>
       <div class="cocina-body" id="cocina-body">${SKEL(8)}</div>
     </div>
-    <div id="cocina-propuesta" aria-live="polite">${prediccion ? propuestaHTML(prediccion, true) : ''}</div>
-    <div class="qr-section"><div class="qr-hd"><div class="qr-hd-lbl">Código para cocina</div><div class="qr-hd-tag">Escanear en caja</div></div>
-      <div class="qr-body"><div class="qr-code-wrap"><div id="qr-canvas"></div><p>Escanea para<br>ver orden</p><div class="qr-pedido" id="qr-pedido"></div></div>
-      <div class="qr-instructions"><div class="qr-inst-title">Porciones exactas</div>${instHTML}</div></div></div>`;
+    <div id="cocina-propuesta" aria-live="polite">${prediccion ? propuestaHTML(prediccion, true) : ''}</div>`;
   // Un plato nuevo en el resumen rearma el botón del diario (vive fuera de
   // res-content a propósito: así no se repinta con cada respuesta de cocina).
   const bd = $('btn-diario-plato');

@@ -222,6 +222,15 @@ export function macrosDeCantidad(alimento, cantidad, porcion = null) {
   };
 }
 
+// El − / + de la cantidad salta al múltiplo vecino del paso (de 78 g baja a 70
+// y sube a 80) y nunca baja del primer paso: para menos que eso se escribe el
+// número. Un campo vacío cuenta como 0.
+export function cantidadVecina(cantidad, paso, sube) {
+  const c = Number.isFinite(cantidad) && cantidad > 0 ? cantidad : 0;
+  const n = sube ? Math.floor(c / paso + 1e-9) * paso + paso : Math.ceil(c / paso - 1e-9) * paso - paso;
+  return Math.max(paso, Math.round(n * 100) / 100);
+}
+
 // LA regla de las kcal mostradas: 4P + 4C + 9G, la misma con la que la meta
 // se deriva de sus macros. Ningún otro sitio del módulo multiplica 4/4/9.
 // Devuelve el número crudo; quien pinta redondea.
@@ -271,6 +280,17 @@ export function metaDelDia(meta, perfil) {
     n = Number.isFinite(meta.comidas) && meta.comidas > 0 ? meta.comidas : 1;
   }
   return { kcal: meta.kcal * n, prot: meta.prot * n, carb: meta.carb * n, gras: meta.gras * n, n };
+}
+
+// Lo que falta o lo que sobra, dicho en palabras: «faltan 40 g», «en tu meta»
+// (el mismo ±4 g con el que Pedir pinta "En tu meta") o «+49 g». Pasarse no es
+// una alarma: va con «+», sin trama ni cambio de color (decisión de Roberto).
+export function estadoMacro(valor, meta, unidad) {
+  const dif = Math.round(valor) - Math.round(meta);
+  const umbral = unidad === 'g' ? UMBRAL_G : UMBRAL_G * 17; // ±4 g ↔ ±68 kcal (4·4+4·4+9·4)
+  if (dif > umbral) return `+${dif} ${unidad}`;
+  if (dif < -umbral) return `faltan ${-dif} ${unidad}`;
+  return 'en tu meta';
 }
 
 // Suma días a una fecha ISO en hora LOCAL: el Date local absorbe el cambio de
@@ -764,33 +784,38 @@ function etiquetaFecha(f) {
   return txt.charAt(0).toUpperCase() + txt.slice(1);
 }
 
-// Una barra de macro con el patrón EXACTO del tracker de Pedir: riel .bar-bg,
-// relleno .bar-fill animado con transform:scaleX (nunca width) y los tres
-// canales --green/--blue/--amber. .bover marca el exceso con su trama.
+// Una barra de macro: rótulo, lo que llevas de tu meta y, a la derecha, lo que
+// falta o sobra. El riel y el relleno son los del tracker de Pedir (.bar-bg /
+// .bar-fill con transform:scaleX, nunca width) y los tres canales
+// --green/--blue/--amber; al pasarse la barra solo se queda llena.
 function htmlBarra(lbl, clase, valor, meta, unidad = 'g') {
   const frac = meta > 0 ? Math.min(1, valor / meta) : 0;
-  const umbral = unidad === 'g' ? UMBRAL_G : UMBRAL_G * 17; // ±4 g ↔ ±68 kcal (4·4+4·4+9·4)
-  const over = meta > 0 && valor > meta + umbral;
-  return `<div class="gt-bar-wrap">
-    <div class="gt-bar-top"><span class="gt-bar-lbl">${lbl}</span><span class="gt-bar-val">${Math.round(valor)}/${Math.round(meta)}${unidad}</span></div>
-    <div class="bar-bg"><div class="bar-fill ${clase}${over ? ' bover' : ''}" style="transform:scaleX(${frac})"></div></div>
+  return `<div class="dia-mac">
+    <div class="dia-mac-top"><span class="gt-bar-lbl">${lbl}</span><span class="dia-mac-ratio">${Math.round(valor)} / ${Math.round(meta)} ${unidad}</span><span class="dia-mac-est">${estadoMacro(valor, meta, unidad)}</span></div>
+    <div class="bar-bg"><div class="bar-fill ${clase}" style="transform:scaleX(${frac})"></div></div>
   </div>`;
 }
 
+// «Tu día» responde primero a "¿cuánto me queda?": la cifra grande es lo que
+// queda por comer (o lo que va de más, con «+»); lo consumido contra la meta
+// queda arriba a la derecha, en pequeño. Es el mismo número que el anillo de Hoy.
 function htmlProgreso(md, sumas) {
   const kcal = Math.round(sumas.kcal);
-  const restante = Math.round(md.kcal - sumas.kcal);
-  const linea = restante >= 0
-    ? `Te quedan ${restante} kcal ${fecha === almacen.hoyISO() ? 'hoy' : 'ese día'}.`
-    : `Llevas ${-restante} kcal por encima de tu meta.`;
+  const metaKcal = Math.round(md.kcal);
+  const restante = metaKcal - kcal;
+  const esHoy = fecha === almacen.hoyISO();
+  const cifra = restante >= 0 ? restante : `+${-restante}`;
+  const rotulo = restante < 0 ? 'kcal sobre tu meta' : esHoy ? 'kcal por comer' : 'kcal quedaron por comer';
   return `<section class="gap-wrap dia-progreso" aria-label="Progreso del día">
-    <div class="gap-hd dia-progreso-hd"><span>Tu día</span><span class="dia-kcal">${kcal} / ${Math.round(md.kcal)} kcal</span></div>
+    <div class="dia-pg-top">
+      <div class="dia-pg-hd"><span class="dia-pg-lbl">Tu día</span><span class="dia-pg-sub">${kcal} de ${metaKcal} kcal</span></div>
+      <p class="dia-pg-n"><span class="dia-pg-num">${cifra}</span> <span class="dia-pg-u">${rotulo}</span></p>
+    </div>
     <div class="dia-barras">
       ${htmlBarra('Proteína', 'bp', sumas.prot, md.prot)}
       ${htmlBarra('Carbos', 'bc', sumas.carb, md.carb)}
       ${htmlBarra('Grasas', 'bg2', sumas.gras, md.gras)}
     </div>
-    <p class="dia-restante">${linea}</p>
   </section>`;
 }
 
@@ -822,29 +847,49 @@ function htmlEntrada(e, comida, i) {
   </button></li>`;
 }
 
+const REPETIR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
+
 function htmlComidas(sumas) {
   const dia = estado.diario[fecha] || {};
-  const ayer = estado.diario[sumarDias(fecha, -1)] || {};
+  const fAyer = sumarDias(fecha, -1);
+  const ayer = estado.diario[fAyer] || {};
+  const sumasAyer = sumarDia(estado.diario[fAyer]);
+  const esHoy = fecha === almacen.hoyISO();
   return COMIDAS.map(c => {
     const lista = dia[c] || [];
     const sub = sumas.comidas[c];
+    const lbl = COMIDA_LBL[c].toLowerCase();
     // Sin entradas el subtotal se queda vacío: un "—" junto al botón de +
     // se leía como un botón de menos (visto en el humo con Chrome).
     const kcal = lista.length ? `${Math.round(sub.kcal)} kcal` : '';
-    const repetir = !lista.length && (ayer[c] || []).length
-      ? `<div class="dia-vacia-zona"><button type="button" class="dia-chip" data-accion="repetir-ayer" data-comida="${c}">
-           <span class="dia-chip-nm">Repetir lo de ayer</span><span class="dia-chip-sub">${(ayer[c]).length === 1 ? '1 alimento' : (ayer[c]).length + ' alimentos'}</span>
-         </button></div>`
+    // Una comida vacía ocupa UNA fila: su nombre y «Agregar» en el mismo sitio
+    // donde las demás llevan el +. Así el día en blanco cabe en una pantalla y
+    // cada comida tiene un solo botón para agregar, no dos.
+    const mas = lista.length
+      ? `<button type="button" class="dia-mas" data-accion="abrir-buscar" data-comida="${c}" aria-label="Agregar a ${lbl}">${MAS}</button>`
+      : `<button type="button" class="dia-mas dia-vacia-btn" data-accion="abrir-buscar" data-comida="${c}" aria-label="Agregar a ${lbl}">${MAS}<span>Agregar</span></button>`;
+    // «Repetir lo de ayer» dice QUÉ se va a repetir y cuánto suma, no solo
+    // cuántos alimentos: se decide de un vistazo, sin ir a ver el día anterior.
+    const deAyer = ayer[c] || [];
+    const repetir = !lista.length && deAyer.length
+      ? `<button type="button" class="dia-repetir" data-accion="repetir-ayer" data-comida="${c}">
+           <span class="dia-repetir-ico">${REPETIR}</span>
+           <span class="dia-e-main">
+             <span class="dia-e-nm">${esHoy ? 'Repetir lo de ayer' : 'Repetir lo del día anterior'}</span>
+             <span class="dia-e-sub dia-repetir-que">${esc(deAyer.map(e => e.nombre).join(', '))}</span>
+           </span>
+           <span class="dia-e-kcal">${Math.round(sumasAyer.comidas[c].kcal)} kcal</span>
+         </button>`
       : '';
     const cuerpo = lista.length
       ? `<ul class="dia-lista">${lista.map((e, i) => htmlEntrada(e, c, i)).join('')}</ul>`
-      : `<button type="button" class="dia-vacia-btn" data-accion="abrir-buscar" data-comida="${c}">Agrega tu ${COMIDA_LBL[c].toLowerCase()}</button>${repetir}`;
-    return `<section class="dia-comida" aria-label="${COMIDA_LBL[c]}">
+      : repetir;
+    return `<section class="dia-comida${cuerpo ? '' : ' dia-comida-sola'}" aria-label="${COMIDA_LBL[c]}">
       <header class="dia-comida-hd">
         <svg class="dia-comida-ico dia-ico-${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${COMIDA_ICO[c]}</svg>
         <span class="dia-comida-nm">${COMIDA_LBL[c]}</span>
         <span class="dia-comida-kcal">${kcal}</span>
-        <button type="button" class="dia-mas" data-accion="abrir-buscar" data-comida="${c}" aria-label="Agregar a ${COMIDA_LBL[c].toLowerCase()}">${MAS}</button>
+        ${mas}
       </header>
       ${cuerpo}
     </section>`;
@@ -1047,8 +1092,8 @@ function htmlBuscar() {
 function htmlVivo() {
   if (!det.editable) {
     const m = det.entrada.macros;
-    return `<div class="dia-vivo-macros">P ${fmt1(m.prot)} g · C ${fmt1(m.carb)} g · G ${fmt1(m.gras)} g</div>
-      <div class="dia-vivo-kcal">${Math.round(kcalDerivada(m))} kcal</div>`;
+    return `<div class="dia-vivo-kcal">${Math.round(kcalDerivada(m))} kcal</div>
+      <div class="dia-vivo-macros">P ${fmt1(m.prot)} g · C ${fmt1(m.carb)} g · G ${fmt1(m.gras)} g</div>`;
   }
   const { gramos, macros } = macrosDeCantidad(det.alimento, det.cantidad, det.porcion);
   const kcal = Math.round(kcalDerivada(macros));
@@ -1056,28 +1101,48 @@ function htmlVivo() {
   // La etiqueta solo asoma cuando contradice de verdad a los macros (>15 %):
   // los ±9 kcal de redondeo conocidos de la base no son noticia.
   const difiere = kcal > 0 && Math.abs(etiqueta - kcal) / kcal > 0.15;
-  return `<div class="dia-vivo-macros">P ${fmt1(macros.prot)} g · C ${fmt1(macros.carb)} g · G ${fmt1(macros.gras)} g</div>
-    <div class="dia-vivo-kcal">${kcal} kcal</div>
+  return `<div class="dia-vivo-kcal">${kcal} kcal</div>
+    <div class="dia-vivo-macros">P ${fmt1(macros.prot)} g · C ${fmt1(macros.carb)} g · G ${fmt1(macros.gras)} g</div>
     ${det.porcion ? `<div class="dia-vivo-g">${fmt1(gramos)} g en total</div>` : ''}
     ${difiere ? `<div class="dia-vivo-etq">La etiqueta dice ${etiqueta} kcal: difiere de sus propios macros.</div>` : ''}`;
+}
+
+const MENOS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>';
+// Paso del − / +: media porción casera, o 10 g (o ml) cuando se mide en gramos.
+function pasoCantidad() {
+  return det.porcion ? 0.5 : 10;
 }
 
 function htmlDetalle() {
   const porciones = det.editable && det.alimento && Array.isArray(det.alimento.porciones)
     ? det.alimento.porciones.filter(p => p && Number.isFinite(p.g) && p.g > 0)
     : [];
-  const pills = det.editable ? `<div class="dia-pills">
+  const pills = det.editable ? `<div class="dia-pills" role="group" aria-labelledby="dia-medida-lbl">
       <button type="button" class="dia-pill${det.porcion ? '' : ' dia-pill-on'}" data-accion="porcion" data-idx="-1" aria-pressed="${!det.porcion}">Gramos</button>
       ${porciones.map((p, i) => `<button type="button" class="dia-pill${det.porcion && det.porcion.nombre === p.nombre && det.porcion.g === p.g ? ' dia-pill-on' : ''}" data-accion="porcion" data-idx="${i}" aria-pressed="${!!(det.porcion && det.porcion.g === p.g && det.porcion.nombre === p.nombre)}">${esc(p.nombre)}</button>`).join('')}
     </div>` : '';
-  const campo = det.editable ? `<div class="dia-campo">
+  // Primero la medida (pieza, taza, gramos) y debajo cuántas: se lee en el
+  // orden en que se piensa y el − / + queda pegado a las calorías que cambia.
+  // La cantidad se mueve con − / + (media porción, o 10 g) sin abrir el
+  // teclado; el número del centro sigue siendo un campo para escribir otro
+  // valor. Al lado va el nombre real de la medida, no «porciones».
+  const unidad = det.editable ? (det.porcion ? `× ${esc(det.porcion.nombre)}` : unidadDe(det.alimento) === 'ml' ? 'mililitros' : 'gramos') : '';
+  // Sin porciones caseras solo existe «Gramos»: no hay nada que elegir y la
+  // medida ya va escrita junto al número.
+  const medida = porciones.length ? `<div class="dia-campo">
+      <div class="dia-lbl dia-lbl-txt" id="dia-medida-lbl">Medida</div>
+      ${pills}
+    </div>` : '';
+  const campo = det.editable ? `${medida}
+    <div class="dia-campo">
       <label class="dia-lbl" for="dia-cantidad">Cantidad</label>
       <div class="dia-cant-fila">
+        <button type="button" class="dia-paso" data-accion="cant-menos" aria-label="Disminuir cantidad"${det.cantidad > pasoCantidad() ? '' : ' disabled'}>${MENOS}</button>
         <input type="number" id="dia-cantidad" data-rol="detalle-cantidad" inputmode="decimal"
           min="0" step="${det.porcion ? '0.5' : '1'}" value="${det.cantidad}">
-        <span class="dia-cant-unidad">${det.porcion ? 'porciones' : unidadDe(det.alimento)}</span>
+        <button type="button" class="dia-paso" data-accion="cant-mas" aria-label="Aumentar cantidad">${MAS}</button>
+        <span class="dia-cant-unidad">${unidad}</span>
       </div>
-      ${pills}
     </div>` : '<p class="dia-vacio-s">Esta entrada no trae gramos: puedes moverla de comida o quitarla.</p>';
   const cta = det.modo === 'nuevo' ? `Agregar a ${COMIDA_LBL[det.comida].toLowerCase()}` : 'Guardar cambios';
   return `<div class="dia-sub-hd">
@@ -1133,7 +1198,7 @@ function htmlSemana() {
   const md = meta ? metaDelDia(meta, estado.perfil) : null;
   const barras = md && !md.pendiente
     ? `<div class="dia-barras dia-sem-barras">
-        ${htmlBarra('Kcal', 'dia-bk', prom.kcal, md.kcal, ' kcal')}
+        ${htmlBarra('Kcal', 'dia-bk', prom.kcal, md.kcal, 'kcal')}
         ${htmlBarra('Proteína', 'bp', prom.prot, md.prot)}
         ${htmlBarra('Carbos', 'bc', prom.carb, md.carb)}
         ${htmlBarra('Grasas', 'bg2', prom.gras, md.gras)}
@@ -1257,6 +1322,11 @@ function alClick(ev) {
       render();
       break;
     }
+    case 'cant-menos':
+    case 'cant-mas':
+      det.cantidad = cantidadVecina(det.cantidad, pasoCantidad(), a === 'cant-mas');
+      render();
+      break;
     case 'comida-pill':
       det.comida = btn.dataset.comida;
       render();
@@ -1337,6 +1407,7 @@ function alInput(ev) {
     const c = raiz.querySelector('#dia-cantidad');
     if (c && c.getAttribute('aria-invalid') === 'true') { c.removeAttribute('aria-invalid'); raiz.querySelector('#dia-cant-error')?.remove(); }
     det.cantidad = parseFloat(ev.target.value);
+    raiz.querySelector('[data-accion="cant-menos"]')?.toggleAttribute('disabled', !(det.cantidad > pasoCantidad()));
     const zona = raiz.querySelector('[data-zona="detalle-macros"]');
     if (zona) zona.innerHTML = htmlVivo();
   }
