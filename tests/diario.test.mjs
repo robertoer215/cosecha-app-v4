@@ -141,6 +141,21 @@ test('macrosDeCantidad: cantidad inválida (NaN, negativa, 0) degrada a 0, nunca
   }
 });
 
+// ---------- cantidadVecina (el − / + del detalle) ----------
+import { cantidadVecina } from '../js/diario.js';
+
+test('cantidadVecina: − / + saltan al múltiplo vecino del paso y no bajan del primero', () => {
+  assert.equal(cantidadVecina(1, 0.5, true), 1.5);
+  assert.equal(cantidadVecina(1, 0.5, false), 0.5);
+  assert.equal(cantidadVecina(0.5, 0.5, false), 0.5);
+  assert.equal(cantidadVecina(1.25, 0.5, true), 1.5);
+  assert.equal(cantidadVecina(78, 10, true), 80);
+  assert.equal(cantidadVecina(78, 10, false), 70);
+  assert.equal(cantidadVecina(80, 10, false), 70);
+  assert.equal(cantidadVecina(NaN, 10, true), 10);
+  assert.equal(cantidadVecina(NaN, 0.5, false), 0.5);
+});
+
 // ---------- kcalDerivada ----------
 
 test('kcalDerivada: 4P + 4C + 9G exacto', () => {

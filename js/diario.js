@@ -222,6 +222,15 @@ export function macrosDeCantidad(alimento, cantidad, porcion = null) {
   };
 }
 
+// El − / + de la cantidad salta al múltiplo vecino del paso (de 78 g baja a 70
+// y sube a 80) y nunca baja del primer paso: para menos que eso se escribe el
+// número. Un campo vacío cuenta como 0.
+export function cantidadVecina(cantidad, paso, sube) {
+  const c = Number.isFinite(cantidad) && cantidad > 0 ? cantidad : 0;
+  const n = sube ? Math.floor(c / paso + 1e-9) * paso + paso : Math.ceil(c / paso - 1e-9) * paso - paso;
+  return Math.max(paso, Math.round(n * 100) / 100);
+}
+
 // LA regla de las kcal mostradas: 4P + 4C + 9G, la misma con la que la meta
 // se deriva de sus macros. Ningún otro sitio del módulo multiplica 4/4/9.
 // Devuelve el número crudo; quien pinta redondea.
@@ -1063,8 +1072,8 @@ function htmlBuscar() {
 function htmlVivo() {
   if (!det.editable) {
     const m = det.entrada.macros;
-    return `<div class="dia-vivo-macros">P ${fmt1(m.prot)} g · C ${fmt1(m.carb)} g · G ${fmt1(m.gras)} g</div>
-      <div class="dia-vivo-kcal">${Math.round(kcalDerivada(m))} kcal</div>`;
+    return `<div class="dia-vivo-kcal">${Math.round(kcalDerivada(m))} kcal</div>
+      <div class="dia-vivo-macros">P ${fmt1(m.prot)} g · C ${fmt1(m.carb)} g · G ${fmt1(m.gras)} g</div>`;
   }
   const { gramos, macros } = macrosDeCantidad(det.alimento, det.cantidad, det.porcion);
   const kcal = Math.round(kcalDerivada(macros));
@@ -1072,28 +1081,48 @@ function htmlVivo() {
   // La etiqueta solo asoma cuando contradice de verdad a los macros (>15 %):
   // los ±9 kcal de redondeo conocidos de la base no son noticia.
   const difiere = kcal > 0 && Math.abs(etiqueta - kcal) / kcal > 0.15;
-  return `<div class="dia-vivo-macros">P ${fmt1(macros.prot)} g · C ${fmt1(macros.carb)} g · G ${fmt1(macros.gras)} g</div>
-    <div class="dia-vivo-kcal">${kcal} kcal</div>
+  return `<div class="dia-vivo-kcal">${kcal} kcal</div>
+    <div class="dia-vivo-macros">P ${fmt1(macros.prot)} g · C ${fmt1(macros.carb)} g · G ${fmt1(macros.gras)} g</div>
     ${det.porcion ? `<div class="dia-vivo-g">${fmt1(gramos)} g en total</div>` : ''}
     ${difiere ? `<div class="dia-vivo-etq">La etiqueta dice ${etiqueta} kcal: difiere de sus propios macros.</div>` : ''}`;
+}
+
+const MENOS = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M5 12h14"/></svg>';
+// Paso del − / +: media porción casera, o 10 g (o ml) cuando se mide en gramos.
+function pasoCantidad() {
+  return det.porcion ? 0.5 : 10;
 }
 
 function htmlDetalle() {
   const porciones = det.editable && det.alimento && Array.isArray(det.alimento.porciones)
     ? det.alimento.porciones.filter(p => p && Number.isFinite(p.g) && p.g > 0)
     : [];
-  const pills = det.editable ? `<div class="dia-pills">
+  const pills = det.editable ? `<div class="dia-pills" role="group" aria-labelledby="dia-medida-lbl">
       <button type="button" class="dia-pill${det.porcion ? '' : ' dia-pill-on'}" data-accion="porcion" data-idx="-1" aria-pressed="${!det.porcion}">Gramos</button>
       ${porciones.map((p, i) => `<button type="button" class="dia-pill${det.porcion && det.porcion.nombre === p.nombre && det.porcion.g === p.g ? ' dia-pill-on' : ''}" data-accion="porcion" data-idx="${i}" aria-pressed="${!!(det.porcion && det.porcion.g === p.g && det.porcion.nombre === p.nombre)}">${esc(p.nombre)}</button>`).join('')}
     </div>` : '';
-  const campo = det.editable ? `<div class="dia-campo">
+  // Primero la medida (pieza, taza, gramos) y debajo cuántas: se lee en el
+  // orden en que se piensa y el − / + queda pegado a las calorías que cambia.
+  // La cantidad se mueve con − / + (media porción, o 10 g) sin abrir el
+  // teclado; el número del centro sigue siendo un campo para escribir otro
+  // valor. Al lado va el nombre real de la medida, no «porciones».
+  const unidad = det.editable ? (det.porcion ? `× ${esc(det.porcion.nombre)}` : unidadDe(det.alimento) === 'ml' ? 'mililitros' : 'gramos') : '';
+  // Sin porciones caseras solo existe «Gramos»: no hay nada que elegir y la
+  // medida ya va escrita junto al número.
+  const medida = porciones.length ? `<div class="dia-campo">
+      <div class="dia-lbl dia-lbl-txt" id="dia-medida-lbl">Medida</div>
+      ${pills}
+    </div>` : '';
+  const campo = det.editable ? `${medida}
+    <div class="dia-campo">
       <label class="dia-lbl" for="dia-cantidad">Cantidad</label>
       <div class="dia-cant-fila">
+        <button type="button" class="dia-paso" data-accion="cant-menos" aria-label="Disminuir cantidad"${det.cantidad > pasoCantidad() ? '' : ' disabled'}>${MENOS}</button>
         <input type="number" id="dia-cantidad" data-rol="detalle-cantidad" inputmode="decimal"
           min="0" step="${det.porcion ? '0.5' : '1'}" value="${det.cantidad}">
-        <span class="dia-cant-unidad">${det.porcion ? 'porciones' : unidadDe(det.alimento)}</span>
+        <button type="button" class="dia-paso" data-accion="cant-mas" aria-label="Aumentar cantidad">${MAS}</button>
+        <span class="dia-cant-unidad">${unidad}</span>
       </div>
-      ${pills}
     </div>` : '<p class="dia-vacio-s">Esta entrada no trae gramos: puedes moverla de comida o quitarla.</p>';
   const cta = det.modo === 'nuevo' ? `Agregar a ${COMIDA_LBL[det.comida].toLowerCase()}` : 'Guardar cambios';
   return `<div class="dia-sub-hd">
@@ -1273,6 +1302,11 @@ function alClick(ev) {
       render();
       break;
     }
+    case 'cant-menos':
+    case 'cant-mas':
+      det.cantidad = cantidadVecina(det.cantidad, pasoCantidad(), a === 'cant-mas');
+      render();
+      break;
     case 'comida-pill':
       det.comida = btn.dataset.comida;
       render();
@@ -1353,6 +1387,7 @@ function alInput(ev) {
     const c = raiz.querySelector('#dia-cantidad');
     if (c && c.getAttribute('aria-invalid') === 'true') { c.removeAttribute('aria-invalid'); raiz.querySelector('#dia-cant-error')?.remove(); }
     det.cantidad = parseFloat(ev.target.value);
+    raiz.querySelector('[data-accion="cant-menos"]')?.toggleAttribute('disabled', !(det.cantidad > pasoCantidad()));
     const zona = raiz.querySelector('[data-zona="detalle-macros"]');
     if (zona) zona.innerHTML = htmlVivo();
   }
