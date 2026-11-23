@@ -698,3 +698,15 @@ body:has(.en-descanso:not([hidden])) .en-fpie{bottom:calc(56px + 98px + env(safe
 .en-nc-on:focus-visible{outline-offset:7px}
 .en-nc-on::after{content:"";position:absolute;left:50%;bottom:-15px;margin-left:-8px;border-left:8px solid transparent;border-right:8px solid transparent;border-top:9px solid var(--text)}
 @media (max-width:340px){.en-niveles{gap:8px}.en-nc-nom{font-size:11px}}
+
+/* ── Entrenando no hay barra de pestañas (pedido de Roberto, 23-nov-2026) ─────
+   Es el único momento en que desaparece: con la sesión abierta, un toque de más
+   abajo no debe sacarte del entrenamiento. Lo que flotaba sobre ella baja a su sitio. */
+body:has(#vista-entrenar:not([hidden]) .en-vivo) .tabbar{display:none}
+body:has(#vista-entrenar:not([hidden]) .en-vivo) .en-descanso{bottom:calc(8px + env(safe-area-inset-bottom))}
+body:has(#vista-entrenar:not([hidden]) .en-vivo) .en-fpie{bottom:env(safe-area-inset-bottom)}
+body:has(#vista-entrenar:not([hidden]) .en-vivo .en-descanso:not([hidden])) .en-fpie{bottom:calc(106px + env(safe-area-inset-bottom))}
+.en-vivo{padding-bottom:140px}
+/* Descartar o borrar: pequeño, discreto y lejos del botón principal, para que no se
+   toque sin querer (además sigue pidiendo un segundo toque). */
+.en-vivo-acciones .en-peligro{margin-top:44px;font-size:12px;text-decoration:underline;text-underline-offset:3px}
