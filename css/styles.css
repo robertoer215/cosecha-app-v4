@@ -1061,15 +1061,33 @@ body:has(#vista-entrenar:not([hidden])) .tabbar{background:linear-gradient(to to
 .hoy-menu{animation-delay:.3s}
 @media (prefers-reduced-motion:reduce){.hoy-dia,.hoy-acciones .hoy-card,.hoy-semana,.hoy-menu{animation:none}}
 
-/* Pedir y Diario: cada pantalla es UNA lámina de vidrio. Va más densa que la de
-   Hoy (≥86 % blanco) porque dentro hay rótulos pequeños en verde, azul, ámbar y
-   naranja medidos contra el crema: sobre el naranja más hondo del fondo queda
-   L≈0,88 → --accent-ink 4,6:1, --amber 4,7:1, --muted 5,5:1.
-   El margen de 8px se compensa en el padding: el ancho del contenido NO cambia,
-   así que las reservas anti-salto medidas a 375px siguen valiendo. */
-:root{--hielo-denso:linear-gradient(155deg,rgba(255,255,255,.94) 0%,rgba(255,255,255,.86) 100%)}
-.screen,#vista-diario .dia-wrap{margin:16px 8px 12px;padding-inline:calc(var(--gutter) - 8px);background:var(--hielo-denso);border-radius:var(--r-hielo);-webkit-backdrop-filter:var(--hielo-filtro);backdrop-filter:var(--hielo-filtro);box-shadow:inset 0 0 0 1px var(--hielo-borde),var(--hielo-luz),var(--hielo-sombra)}
+/* ── VIDRIO COMPARTIDO (Hoy, Pedir, Diario, Entrenar) ───────────────────────
+   Roberto lo pidió «más transparente»: las láminas usan el MISMO vidrio que Hoy
+   (--hielo, 62–82 % blanco). Para que los rótulos pequeños sigan pasando AA sobre
+   el naranja más hondo del fondo (queda L≈0,67), DENTRO del vidrio los tokens de
+   tinta bajan un escalón: todo lo que se lee tiene L ≤ 0,10 → ≥ 4,7:1.
+     --accent-ink → --accent-deep · --muted y --light → --muted-ink
+     --green / --blue / --amber / --danger → la misma tinta mezclada con negro
+     --accent y --border-strong (contornos, 3:1) → --accent-ink y --muted-ink
+   Las tarjetas opacas de dentro (crema, --surface) no cambian.
+   Para vestir una superficie nueva: añadirla a la lista de TINTAS y, si es una
+   lámina de pantalla, también a la de LÁMINAS. */
+:root{
+  --v-accent:var(--accent-ink);--v-accent-ink:var(--accent-deep);
+  --v-green:color-mix(in srgb,var(--green) 85%,#000);
+  --v-blue:color-mix(in srgb,var(--blue) 88%,#000);
+  --v-amber:color-mix(in srgb,var(--amber) 75%,#000);
+  --v-danger:color-mix(in srgb,var(--danger) 90%,#000);
+}
+/* TINTAS sobre vidrio */
+.hoy-dia,.hoy-card,.hoy-retomar,.hoy-bienvenida,.hoy-semana,.hoy-menu,
+.stepper,.screen,#vista-diario .dia-wrap{
+  --accent:var(--v-accent);--accent-ink:var(--v-accent-ink);--muted:var(--muted-ink);--light:var(--muted-ink);
+  --green:var(--v-green);--blue:var(--v-blue);--amber:var(--v-amber);--danger:var(--v-danger);--border-strong:var(--muted-ink)}
+/* LÁMINAS: una por pantalla. El margen de 8px se compensa en el padding: el ancho
+   del contenido NO cambia (335px a 375), así que las reservas anti-salto valen. */
+.stepper,.screen,#vista-diario .dia-wrap{margin:12px 8px;padding-inline:calc(var(--gutter) - 8px);background:var(--hielo);border-radius:var(--r-hielo);-webkit-backdrop-filter:var(--hielo-filtro);backdrop-filter:var(--hielo-filtro);box-shadow:inset 0 0 0 1px var(--hielo-borde),var(--hielo-luz),var(--hielo-sombra)}
+.stepper{margin-bottom:0;padding-top:14px;padding-bottom:10px}
 /* La barra de macros se queda pegada arriba: vidrio casi opaco para que sus
    rótulos de 8px pasen AA también con una foto deslizándose por debajo. */
 .global-tracker{background:rgba(255,255,255,.88);border-bottom-color:var(--hielo-borde);-webkit-backdrop-filter:var(--hielo-filtro);backdrop-filter:var(--hielo-filtro)}
-
