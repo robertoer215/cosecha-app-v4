@@ -65,8 +65,17 @@
 .en-rut-acciones .en-btn{width:100%}
 
 /* ── Elegir el descanso antes de empezar una rutina ────────────────────────── */
-.en-desc-ops{display:grid;gap:10px}
-.en-desc-ops .en-desc-op{margin-bottom:0}
+/* Los cuatro tiempos fijos en dos columnas y lo que sugiere la rutina a todo
+   lo ancho, arriba: todo cabe en una pantalla, también en teléfonos chicos. */
+.en-desc-ops{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+/* Texto abajo en cada tarjeta: con la etiqueta puesta, los tiempos de una
+   misma fila siguen a la misma altura. */
+.en-desc-ops .en-desc-op{display:flex;flex-direction:column;justify-content:flex-end;margin-bottom:0}
+.en-desc-op[data-v="rutina"]{grid-column:1 / -1}
+/* La opción destacada (recomendada o la de la última vez): borde, fondo y
+   etiqueta con texto, nunca solo color. */
+.en-desc-op-on{border-color:var(--accent-ink);background:var(--accent-soft)}
+.en-desc-tag{align-self:flex-start;margin-bottom:6px;padding:2px 10px;border-radius:var(--r-pill);background:var(--accent-ink);color:var(--bg);font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase}
 
 /* ── Editor de "Crear rutina" ─────────────────────────────────────────────── */
 .en-ed-lbl{display:block;font-family:var(--sans);font-size:12px;font-weight:500;letter-spacing:normal;text-transform:none;color:var(--muted-ink);margin-bottom:6px}

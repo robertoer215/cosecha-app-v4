@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { epley1RM, volumenSesion, seriesPorGrupo, ultimaVez,
          debeArrancarDescanso, aKg, siguientePendiente, mejorSerie, resumenEjercicio, historialEjercicio,
          recordsEjercicio, prsPorEjercicio, estadisticasPeriodo, cambioPct, PESTANAS,
-         OPCIONES_DESCANSO, etiquetaDescanso, rangoDescanso, ejercicioDeRutina, limpiarEjercicioRutina,
+         OPCIONES_DESCANSO, etiquetaDescanso, rangoDescanso, descansoAnterior, ejercicioDeRutina, limpiarEjercicioRutina,
          validarBorrador, rutinaDesdeBorrador, borradorDesdeRutina,
          moverEjercicio, normalizarGrupos, MAX_SUPERSERIE,
          letraGrupo, tramos, puedeUnir, unirConSiguiente, separarDeSiguiente, moverTramo, pasoEjercicio,
@@ -336,6 +336,16 @@ test('etiquetaDescanso: minutos y segundos legibles', () => {
   assert.equal(etiquetaDescanso(180), '3 min');
   assert.equal(etiquetaDescanso(0), '—');
   assert.deepEqual(OPCIONES_DESCANSO, [60, 90, 120, 180]);
+});
+
+test('descansoAnterior: el de la última sesión de esa rutina; «rutina» si variaba; null si no hay', () => {
+  const ses = (rutinaId, inicioMs, descansos) => ({ id: 'S-' + inicioMs, rutinaId, inicioMs, ejercicios: descansos.map(descansoS => ({ descansoS, series: [] })) });
+  const sesiones = [ses('R-1', 300, [120, 120]), ses('R-1', 100, [60, 60]), ses('R-2', 400, [150, 90]), ses('R-3', 500, [])];
+  assert.equal(descansoAnterior(sesiones, 'R-1'), 120);       // la más reciente por fecha, no por orden
+  assert.equal(descansoAnterior(sesiones, 'R-2'), 'rutina');
+  assert.equal(descansoAnterior(sesiones, 'R-3'), null);      // sin ejercicios no dice nada
+  assert.equal(descansoAnterior(sesiones, 'R-9'), null);
+  assert.equal(descansoAnterior(undefined, 'R-1'), null);
 });
 
 test('rangoDescanso: mínimo y máximo del día; null si no trae descansos', () => {
