@@ -379,6 +379,15 @@ select option{font-family:sans-serif;background:var(--bg)}
    transiciones explícita en vez de 'all': 'all' interpolaba outline-color y
    outline-width (el aro de foco aparecía con un fundido de 250ms). */
 .btn{font-family:var(--sans);font-size:13px;font-weight:500;letter-spacing:-.3px;text-transform:none;padding:12px 24px;min-height:44px;border-radius:var(--r-pill);cursor:pointer;border:none;transition:background-color .25s,color .25s,border-color .25s,box-shadow .25s,transform .18s}
+/* «Siguiente» siempre a mano: el pie del paso 2 flota sobre la barra de pestañas
+   mientras se recorren las tarjetas y descansa en su sitio al llegar al final.
+   Es una pastilla de vidrio como la barra (que ocupa 62px desde abajo: quedan 8 de
+   aire). z-index por debajo de la barra de macros y de las pestañas (100). */
+.plato-pie{position:sticky;bottom:calc(70px + env(safe-area-inset-bottom));z-index:90;margin:24px 0 0;padding:8px;border-radius:var(--r-pill);background:var(--hielo);border:1px solid var(--hielo-borde);-webkit-backdrop-filter:var(--hielo-filtro);backdrop-filter:var(--hielo-filtro);box-shadow:var(--hielo-luz),var(--hielo-sombra)}
+.plato-pie .btn-row{margin-top:0;padding-top:0;border-top:0}
+.plato-pie .form-error{margin:4px 14px 8px}
+/* El foco de teclado no aterriza debajo del pie (mismo patrón que .en-descanso). */
+html:has(#vista-pedir:not([hidden]) #sc1.active){scroll-padding-bottom:calc(140px + env(safe-area-inset-bottom))}
 /* Regla del sistema: --border es filete ESTRUCTURAL entre celdas (1,29:1, no
    necesita más) y --border-strong es contorno de CONTROL (4,12:1, umbral 3:1). */
 .btn-ghost{background:transparent;color:var(--muted-ink);border:1px solid var(--border-strong)}

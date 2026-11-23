@@ -226,8 +226,12 @@
     <div id="meta-panel"></div>
     <div id="base-mods"></div>
     <div id="sugg-wrap"></div>
-    <div class="form-error" id="plato-aviso" role="alert" aria-live="polite"></div>
-    <div id="plato-btn-row" class="btn-row"></div>
+    <!-- Pie fijo: Anterior/Siguiente siempre a la vista, y el aviso justo encima
+         de donde se tocó (no al final de una página que no se está viendo). -->
+    <div class="plato-pie">
+      <div class="form-error" id="plato-aviso" role="alert" aria-live="polite"></div>
+      <div id="plato-btn-row" class="btn-row"></div>
+    </div>
   </div>
 
   <div class="screen" id="sc2">
