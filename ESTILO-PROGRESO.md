@@ -7,13 +7,15 @@ pestañas flotante. Solo estilo: sin cambiar textos, lógica ni el orden. Pidió
 
 ## Estado
 
+Las cuatro secciones están hechas, verificadas y guardadas (24-nov-2026). `node --test tests/*.test.mjs`: 254 de 254.
+
 | Pantalla | Estado | Commit |
 |---|---|---|
-| Hoy | Hecha y verificada | `ac52bde` |
+| Hoy (primera visita, con meta, con comida y «Tu semana») | Hecha y verificada; revisada otra vez con las tintas compartidas | `ac52bde` + `b293a0a` |
 | Barra de pestañas (las 4 secciones) | Hecha y verificada | `ac52bde` |
 | Pedir: perfil (fórmula y manual), armar el plato (5 pasos), resumen y ticket | Hecha y verificada | `b293a0a` |
 | Diario: día (vacío y con comida), buscador, alimento, «Tu semana», «Tus datos», aviso con Deshacer | Hecha y verificada | `0e71a27` |
-| Entrenar: rutinas, elegir descanso, sesión en vivo (preparado, serie, descanso), Ejercicios con barra de descanso, resumen, Progreso, Historial, Biblioteca, ficha, editor, hoja de técnica, aviso «Deshacer» | Hecha y verificada | commit «Estilo nuevo en Entrenar» |
+| Entrenar: rutinas, elegir descanso, sesión en vivo (preparado, serie, descanso), Ejercicios con barra de descanso, resumen, Progreso, Historial, Biblioteca, ficha, editor, hoja de técnica, aviso «Deshacer» | Hecha y verificada | `5342aa9` |
 | Avisos del Diario y burbujas de la guía (forma y filo de luz) | Hechas; la burbuja no se revisó en todas sus posiciones | `0e71a27` |
 
 ## Dónde está todo
@@ -71,4 +73,8 @@ Cómo vestir una superficie nueva:
 - La tarjeta «Tu día» del Diario (`.dia-progreso`) conserva su degradado ember opaco, igual que antes; va dentro de la lámina.
 
 ## Decisiones pendientes de Roberto
-- Ninguna por ahora.
+- ¿Le sirve la transparencia actual del vidrio en Pedir, Diario y Entrenar (la misma que Hoy)?
+- Las tarjetas de dentro (ingredientes, comidas, ejercicios) siguen opacas en crema, como las
+  del menú en Hoy. ¿Las quiere también translúcidas?
+- Hay 15 propuestas de UX (estructura) en `/Users/robertoespejelr/Code 1/cosecha-propuestas-ux`,
+  sin aplicar: se aplicarían encima de este estilo cuando él elija.
