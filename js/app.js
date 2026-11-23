@@ -385,7 +385,7 @@ function restaurarPerfil() {
   const p = estadoLocal.perfil;
   if (!p) return;
   try {
-    if (p.sexo) $('sexo').value = p.sexo;
+    if (p.sexo) window.setSexo(p.sexo);
     if (p.edad) $('edad').value = p.edad;
     if (p.peso) $('peso').value = p.peso;
     if (p.altura) $('altura').value = p.altura;
@@ -443,6 +443,19 @@ window.setMode = function(modo) {
   if (modo === 'manual') window.kcalManual();
 };
 
+// Sexo: dos botones a la vista. El valor se guarda en el campo oculto #sexo,
+// así que todo lo que lee $('sexo').value sigue igual.
+window.setSexo = function(v) {
+  const campo = $('sexo');
+  campo.value = v;
+  campo.classList.remove('invalid');
+  campo.parentElement.querySelectorAll('.st-btn').forEach(b => {
+    const on = b.dataset.v === v;
+    b.classList.toggle('st-active', on);
+    b.setAttribute('aria-pressed', String(on));
+  });
+};
+
 window.setSubMode = function(sub) {
   subModoActual = sub;
   $('sub-comida').style.display = sub === 'comida' ? 'block' : 'none';
@@ -495,7 +508,8 @@ function errorFormulario(idError, ids) {
   const hayNumeros = ids.some(idc => $(idc)?.min);
   if (box) box.textContent = `Revisa: ${partes.join(', ')}.${hayNumeros ? ` Solo números dentro del rango${cero}.` : ''}`;
   const primero = $(ids[0]);
-  if (primero) primero.focus();
+  // El sexo es un grupo de botones (su valor vive en un campo oculto): el foco va al primero.
+  if (primero) (primero.type === 'hidden' ? primero.parentElement.querySelector('button') : primero).focus();
 }
 function limpiarErrores() {
   document.querySelectorAll('input.invalid, select.invalid').forEach(el => { el.classList.remove('invalid'); el.removeAttribute('aria-invalid'); });

@@ -147,15 +147,22 @@
     </div>
 
     <div id="formula-form">
+      <div class="sec-lbl">Tus datos</div>
       <div class="form-grid">
-        <div class="fg"><label for="sexo">Sexo biológico</label><select id="sexo"><option value="" selected disabled>Elige una opción</option><option value="masculino">Masculino</option><option value="femenino">Femenino</option></select></div>
+        <!-- Dos opciones a la vista en vez de un menú: se elige con un toque. El valor vive en el campo oculto #sexo. -->
+        <div class="fg fg-ancho"><label for="sexo" id="sexo-lbl">Sexo biológico</label>
+          <input type="hidden" id="sexo" value="">
+          <div class="sub-toggle" role="group" aria-labelledby="sexo-lbl">
+            <button type="button" class="st-btn" data-v="masculino" aria-pressed="false" onclick="setSexo('masculino')">Masculino</button>
+            <button type="button" class="st-btn" data-v="femenino" aria-pressed="false" onclick="setSexo('femenino')">Femenino</button>
+          </div>
+        </div>
         <div class="fg"><label for="edad">Edad</label><input type="number" inputmode="numeric" id="edad" placeholder="Ej. 30" min="15" max="80"></div>
         <div class="fg"><label for="peso">Peso — kg</label><input type="number" inputmode="decimal" id="peso" placeholder="Ej. 70" min="40" max="200"></div>
         <div class="fg"><label for="altura">Altura — cm</label><input type="number" inputmode="numeric" id="altura" placeholder="Ej. 165" min="140" max="220"></div>
         <div class="fg"><label for="comidas">Comidas por día</label><select id="comidas"><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5</option></select></div>
       </div>
       <div class="form-error" id="formula-error" role="alert"></div>
-      <div class="divider"></div>
       <div class="sec-lbl">Objetivo</div>
       <div class="obj-grid">
         <div class="obj-card selected" data-o="perder_grasa" onclick="selObj(this)"><div class="on">Perder grasa</div><div class="od">Déficit −15%</div></div>
