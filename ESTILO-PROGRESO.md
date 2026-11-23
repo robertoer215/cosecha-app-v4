@@ -7,7 +7,7 @@ pestañas flotante. Solo estilo: sin cambiar textos, lógica ni el orden. Pidió
 
 ## Estado
 
-Las cuatro secciones están hechas, verificadas y guardadas (24-nov-2026). `node --test tests/*.test.mjs`: 254 de 254.
+Las cuatro secciones están hechas, verificadas y guardadas (24-nov-2026). `node --test tests/*.test.mjs`: 255 de 255.
 
 | Pantalla | Estado | Commit |
 |---|---|---|
@@ -17,6 +17,24 @@ Las cuatro secciones están hechas, verificadas y guardadas (24-nov-2026). `node
 | Diario: día (vacío y con comida), buscador, alimento, «Tu semana», «Tus datos», aviso con Deshacer | Hecha y verificada | `0e71a27` |
 | Entrenar: rutinas, elegir descanso, sesión en vivo (preparado, serie, descanso), Ejercicios con barra de descanso, resumen, Progreso, Historial, Biblioteca, ficha, editor, hoja de técnica, aviso «Deshacer» | Hecha y verificada | `5342aa9` |
 | Avisos del Diario y burbujas de la guía (forma y filo de luz) | Hechas; la burbuja no se revisó en todas sus posiciones | `0e71a27` |
+
+## Cambio de estructura: Rutinas COSECHA por nivel (24-nov-2026)
+
+Pedido de Roberto: en Entrenar › Rutinas, tres cuadros (Principiante, Intermedio, Avanzado)
+y al tocar uno salen sus rutinas. Esto NO es solo estilo; va en su propio commit.
+
+- `js/entreno.js`: `NIVELES` y `rutinasPorNivel()` (puras, exportadas y probadas), el estado
+  `nivelAbierto` y, en `pintarPanelRutinas`, los cuadros (`cuadroNivel`) y `pintarNivel()`, que
+  abre, cierra o cambia de nivel en sitio para no perder el foco.
+- `css/entreno.css`: bloque «Rutinas COSECHA por nivel» (`.en-niveles`, `.en-nc*`).
+- `js/guia.js`: el consejo «Rutinas listas» señala ahora el primer cuadro (`.en-nc`).
+- `tests/entreno.test.mjs`: prueba de `rutinasPorNivel`.
+- Decisiones tomadas: las rutinas salen DEBAJO de los cuadros (no en pantalla aparte); todo
+  empieza cerrado; un nivel sin rutinas no pinta cuadro; una rutina sin nivel conocido sale
+  suelta bajo los cuadros; el nivel abierto se recuerda al volver de «Descanso entre series».
+- No se tocó «Crear rutina», «Empezar sesión vacía» ni «Tus rutinas».
+- Verificado a 375×812 y 320×568: abrir, cambiar, cerrar, `aria-expanded`, foco, empezar una
+  rutina desde la lista, consejo de la guía, sin desborde horizontal ni errores en consola.
 
 ## Dónde está todo
 
@@ -73,6 +91,7 @@ Cómo vestir una superficie nueva:
 - La tarjeta «Tu día» del Diario (`.dia-progreso`) conserva su degradado ember opaco, igual que antes; va dentro de la lámina.
 
 ## Decisiones pendientes de Roberto
+- Cuadros por nivel: ¿le sirve que las rutinas salgan debajo y que todo empiece cerrado?
 - ¿Le sirve la transparencia actual del vidrio en Pedir, Diario y Entrenar (la misma que Hoy)?
 - Las tarjetas de dentro (ingredientes, comidas, ejercicios) siguen opacas en crema, como las
   del menú en Hoy. ¿Las quiere también translúcidas?

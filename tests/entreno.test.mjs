@@ -12,7 +12,8 @@ import { epley1RM, volumenSesion, seriesPorGrupo, ultimaVez,
          moverEjercicio, normalizarGrupos, MAX_SUPERSERIE,
          letraGrupo, tramos, puedeUnir, unirConSiguiente, separarDeSiguiente, moverTramo, pasoEjercicio,
          TECNICAS, limpiarTecnica, normalizarPlan, planEsNormal, repsDeSerie, volumenDeSerie, pesoBajada,
-         siguienteParte, textoSerie, planDesdeSeries, sinCalentamientos, resumenTecnica, tecnicaDe, previasPorSerie } from '../js/entreno.js';
+         siguienteParte, textoSerie, planDesdeSeries, sinCalentamientos, resumenTecnica, tecnicaDe, previasPorSerie,
+         rutinasPorNivel, NIVELES } from '../js/entreno.js';
 import { migrar, importarJSON } from '../js/almacen.js';
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
@@ -730,4 +731,14 @@ test('una W de una sesión de antes se sigue marcando y explicando', () => {
   assert.equal(tecnicaDe({ tipo: 'drop' }).insignia, 'D');
   assert.equal(tecnicaDe({}), null);   // serie normal de una sesión: sin tipo
   assert.equal(resumenTecnica({ tipo: 'calentamiento' }), 'Calentamiento de antes · no cuenta como serie');
+});
+
+test('rutinasPorNivel: tres niveles en orden fijo, sin cuadros vacíos y sin perder rutinas', () => {
+  const r = (id, nivel) => ({ id, nivel });
+  const g = rutinasPorNivel([r('a', 'avanzado'), r('b', 'principiante'), r('c', 'avanzado'), r('d', null), r('e', 'experto')]);
+  assert.deepEqual(g.niveles.map(x => x.nivel), ['principiante', 'avanzado']);   // intermedio no tiene: no sale
+  assert.deepEqual(g.niveles[1].rutinas.map(x => x.id), ['a', 'c']);             // conserva el orden de la lista
+  assert.deepEqual(g.otras.map(x => x.id), ['d', 'e']);                          // sin nivel conocido: aparte
+  assert.deepEqual(rutinasPorNivel(undefined), { niveles: [], otras: [] });
+  assert.deepEqual(NIVELES, ['principiante', 'intermedio', 'avanzado']);
 });

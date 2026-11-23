@@ -38,6 +38,7 @@ import { crearDescanso, formatear, pedirWakeLock, liberarWakeLock,
          prepararAudio, avisarFin, pedirPermisoAvisos, avisosPorPreguntar, programarAvisoNativo,
          vibrarSerie } from './temporizador.js';
 import { resolvePreset, MODE_DRAWS } from './vendor/thinking-orbs.js';
+import { puntos } from './puntos.js';
 
 // ── Funciones puras (exportadas para tests/entreno.test.mjs) ─────────────────
 
@@ -661,6 +662,18 @@ let sesion = null;
 // va primero y es la que se abre al entrar, haya o no sesiones guardadas.
 export const PESTANAS = ['rutinas', 'progreso', 'historial', 'biblioteca'];
 
+// Rutinas COSECHA por nivel, en orden fijo (pedido de Roberto, 24-nov-2026: tres
+// cuadros y al tocar uno salen sus rutinas). Un nivel sin rutinas no sale; las
+// que no traen uno de los tres niveles van aparte para que nunca se pierdan.
+export const NIVELES = ['principiante', 'intermedio', 'avanzado'];
+export function rutinasPorNivel(rutinas) {
+  const lista = Array.isArray(rutinas) ? rutinas : [];
+  return {
+    niveles: NIVELES.map(nivel => ({ nivel, rutinas: lista.filter(r => r?.nivel === nivel) })).filter(g => g.rutinas.length),
+    otras: lista.filter(r => !NIVELES.includes(r?.nivel))
+  };
+}
+
 let subtab = PESTANAS[0];    // 'rutinas' | 'progreso' | 'historial' | 'biblioteca'
 let periodoProg = '1m';      // '1m' | '6m' (gráficas y comparaciones de Progreso)
 let detalleTab = 'progreso'; // pestaña del detalle de un ejercicio
@@ -670,6 +683,7 @@ let erroresBorrador = {};
 let relojDeshacer = null;    // cierra el aviso «Quitaste… · Deshacer» del editor    // errores del último intento de guardar (se ven junto a su campo)
 let inicioPendiente = null;  // { rutina, dia }: falta elegir el descanso antes de empezar
 let rutinaAbiertaId = null;  // rutina recién guardada: su tarjeta se pinta abierta una vez
+let nivelAbierto = null;     // nivel de Rutinas COSECHA con su lista desplegada (o ninguno)
 let avisoRutina = '';        // "Rutina guardada" / "Cambios guardados" para lectores de pantalla
 let menuEjIdx = null;        // ejercicio del editor con su menú "⋯" abierto
 let asaLevantada = null;     // reordenar con teclado: { tipo: 'ej'|'grupo', idx, idxInicio, inicio, sucioAntes }
@@ -1367,6 +1381,35 @@ function pintarPanelRutinas(panel) {
       </div>` : ''}
     </details>`;
   };
+  // Rutinas COSECHA: un cuadro por nivel; al tocarlo salen debajo sus rutinas,
+  // con las mismas tarjetas. Las barras del icono dicen el nivel sin depender
+  // del color; la cifra de puntos es el número de rutinas (el texto lo repite).
+  const grupos = rutinasPorNivel(rutinasBase);
+  const cuadroNivel = g => {
+    const n = g.rutinas.length, llenas = NIVELES.indexOf(g.nivel) + 1;
+    const barra = (i, x, y, h) => `<rect x="${x}" y="${y}" width="4" height="${h}" rx="1"${i > llenas ? ' opacity=".35"' : ''}/>`;
+    return `<button type="button" class="en-nc en-nc-${g.nivel}" data-acc="nivel" data-nivel="${g.nivel}" aria-expanded="false" aria-controls="en-nc-lista">
+      <svg class="en-nc-ico" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">${barra(1, 4, 14, 6)}${barra(2, 10, 10, 10)}${barra(3, 16, 5, 15)}</svg>
+      <span class="en-nc-nom">${capital(g.nivel)}</span>
+      <span class="en-nc-num">${puntos(n)}</span>
+      <span class="en-nc-sub">${n === 1 ? '1 rutina' : n + ' rutinas'}</span>
+    </button>`;
+  };
+  // Abrir, cerrar o cambiar de nivel se hace EN SITIO (sin repintar la pestaña):
+  // el foco se queda en el cuadro que se tocó.
+  const pintarNivel = () => {
+    const cont = panel.querySelector('#en-nc-lista');
+    if (!cont) return;
+    const g = grupos.niveles.find(x => x.nivel === nivelAbierto);
+    panel.querySelectorAll('.en-nc').forEach(b => {
+      const on = !!g && b.dataset.nivel === g.nivel;
+      b.classList.toggle('en-nc-on', on);
+      b.setAttribute('aria-expanded', String(on));
+    });
+    cont.innerHTML = g ? g.rutinas.map(r => htmlRutina(r, 'base')).join('')
+                       : '<p class="en-vacio">Elige tu nivel para ver sus rutinas.</p>';
+    if (g) cont.setAttribute('aria-label', 'Rutinas de nivel ' + g.nivel); else cont.removeAttribute('aria-label');
+  };
   // Una sola acción principal: crear la rutina propia. Entrenar sin plan
   // sigue a un toque, pero como secundaria (pedido de Roberto, 30-oct-2026).
   panel.innerHTML = `
@@ -1378,16 +1421,23 @@ function pintarPanelRutinas(panel) {
     ${guardadas.length ? `<div class="en-sec-lbl">Tus rutinas</div>${guardadas.map(r => htmlRutina(r, 'mia')).join('')}` : ''}
     <div class="en-sec-lbl">Rutinas COSECHA</div>
     ${rutEstado === 'listo' && rutinasBase.length
-      ? rutinasBase.map(r => htmlRutina(r, 'base')).join('')
+      ? `${grupos.niveles.length ? `<div class="en-niveles" role="group" aria-label="Rutinas por nivel">${grupos.niveles.map(cuadroNivel).join('')}</div>
+        <div class="en-nc-lista" id="en-nc-lista" role="region"></div>` : ''}${grupos.otras.map(r => htmlRutina(r, 'base')).join('')}`
       : rutEstado === 'fallo' || (rutEstado === 'listo' && !rutinasBase.length)
         ? '<p class="en-vacio">Aún no hay rutinas sugeridas. Crea la tuya con «Crear rutina».</p>'
         : '<p class="en-vacio">Cargando rutinas…</p>'}`;
+  pintarNivel();
   panel.addEventListener('click', e => {
     // La tarjeta recién guardada se abre una vez; cualquier toque la libera.
     rutinaAbiertaId = null;
     avisoRutina = '';
     const b = e.target.closest('[data-acc]');
     if (!b) return;
+    if (b.dataset.acc === 'nivel') {
+      nivelAbierto = nivelAbierto === b.dataset.nivel ? null : b.dataset.nivel;
+      pintarNivel();
+      return;
+    }
     if (b.dataset.acc === 'editar-rutina') {
       const r = estado.entreno.rutinas.find(x => String(x.id) === b.dataset.rid);
       if (!r) return;

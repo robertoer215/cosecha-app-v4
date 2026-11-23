@@ -656,3 +656,29 @@ body:has(.en-descanso:not([hidden])) .en-fpie{bottom:calc(56px + 98px + env(safe
 .en-permiso-s{font-family:var(--sans);font-size:13px;line-height:1.45;color:var(--muted-ink);margin:0 0 14px}
 .en-permiso-btns{display:flex;gap:8px}
 .en-permiso-btns .en-btn{flex:1;padding-left:12px;padding-right:12px}
+
+/* ── Rutinas COSECHA por nivel (24-nov-2026) ──────────────────────────────────
+   Tres cuadros «almohada» como los del prototipo: el sol --ember arriba que se
+   funde en el color del nivel (los mismos de .en-nivel-*: verde, azul, naranja).
+   Son botones: al tocar uno salen debajo sus rutinas. El texto blanco empieza al
+   39 % de la altura, donde el fondo ya es el color pleno (L ≤ 0,10 → ≥ 7:1).
+   El abierto se marca con doble aro y una flecha hacia su lista, no solo con color. */
+.en-niveles{display:flex;gap:10px;margin:4px 0 20px}
+.en-nc{--c:var(--green);position:relative;flex:1 1 0;min-width:0;min-height:124px;padding:14px 4px 12px;border:0;border-radius:30px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;color:#fff;font-family:var(--sans);cursor:pointer;transition:transform .15s;
+  background:radial-gradient(125% 55% at 50% -8%,var(--ember) 0%,transparent 60%),linear-gradient(180deg,color-mix(in srgb,var(--ember) 45%,var(--c)) 0%,var(--c) 30%,color-mix(in srgb,var(--c) 62%,#000) 72%,color-mix(in srgb,var(--c) 36%,#000) 100%);
+  box-shadow:0 18px 26px -18px rgba(95,45,14,.75),inset 0 1.5px 0 rgba(255,255,255,.5),inset 0 0 0 1px rgba(255,255,255,.12)}
+.en-nc-intermedio{--c:var(--blue)}
+.en-nc-avanzado{--c:var(--accent-ink)}
+.en-nc::before{content:"";position:absolute;inset:0;border-radius:inherit;background-image:var(--grano);mix-blend-mode:soft-light;opacity:.5;pointer-events:none}
+.en-nc>*{position:relative}
+.en-nc-ico{width:18px;height:18px}
+.en-nc-nom{margin-top:4px;font-size:12px;font-weight:500;letter-spacing:-.2px;line-height:16px;white-space:nowrap}
+.en-nc-num{margin-top:6px}
+.en-nc-num .puntos{width:auto;height:22px}
+.en-nc-sub{margin-top:5px;font-size:11px;font-weight:500;line-height:13px;white-space:nowrap}
+.en-nc:active{transform:scale(.97)}
+.en-nc:focus-visible{outline:2px solid var(--text);outline-offset:3px}
+.en-nc-on{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--text),0 18px 26px -18px rgba(95,45,14,.75),inset 0 1.5px 0 rgba(255,255,255,.5)}
+.en-nc-on:focus-visible{outline-offset:7px}
+.en-nc-on::after{content:"";position:absolute;left:50%;bottom:-15px;margin-left:-8px;border-left:8px solid transparent;border-right:8px solid transparent;border-top:9px solid var(--text)}
+@media (max-width:340px){.en-niveles{gap:8px}.en-nc-nom{font-size:11px}}

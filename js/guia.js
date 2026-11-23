@@ -12,7 +12,7 @@ export const TIPS = [
   { id: 'pedir-barra', sel: '#global-tracker.visible', t: 'Tu meta en vivo', m: 'Esta barra se llena con cada ingrediente que eliges y te dice cuánto te falta.' },
   { id: 'pedir-qr', sel: '.qr-section', t: 'Así pides', m: 'Muestra este código en caja y te preparan tu plato con las porciones exactas.' },
   { id: 'diario-agregar', sel: '.dia-vacia-btn', t: 'Registra lo que comes', m: 'Toca aquí y busca tu alimento. Hay porciones caseras, como «1 pieza grande».' },
-  { id: 'entrenar-rutinas', sel: '.en-rut .en-card-nombre', t: 'Rutinas listas', m: 'Ábrela para ver sus ejercicios y empezarla.' },
+  { id: 'entrenar-rutinas', sel: '.en-nc', t: 'Rutinas listas', m: 'Elige tu nivel y abre una rutina para ver sus ejercicios y empezarla.' },
   { id: 'sesion-serie', sel: '[data-acc="empezar-serie"]', t: 'Tu serie', m: 'Tócalo al empezar y otra vez al terminar. El descanso corre solo.' },
   { id: 'pestanas', sel: '.tabbar', t: 'Todo a un toque', m: 'Aquí cambias entre Hoy, Pedir, Diario y Entrenar.' },
 ];
