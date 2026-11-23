@@ -3,6 +3,8 @@ import { precio, mac, calcularMeta, metaManualComida, metaManualTotal,
          porcionar, explicarCambio, proponerCierre, tamanosPermitidos, UMBRAL_G, cubrenGrasa, nombreCorto } from './calc.js';
 import { armarPedido, clavePedido, compararConCocina, llamarCocina, K_DE_ETIQUETA, origenMeta } from './cocina.js';
 import * as almacen from './almacen.js';
+import { iniciarGuia } from './guia.js';
+import { puntos } from './puntos.js';
 
 let meta = {}, selBase = {}, szBase = {}, selExtra = {}, szExtra = {};
 
@@ -198,7 +200,8 @@ function renderHoy() {
       const sobra = kcal > metaDia.kcal;
       $('hoy-consumido').textContent = kcal;
       $('hoy-meta').textContent = metaDia.kcal;
-      $('hoy-restan').textContent = Math.abs(metaDia.kcal - kcal);
+      // Cifra en matriz de puntos (solo aspecto; el número accesible va en el aria-label del anillo).
+      $('hoy-restan').innerHTML = puntos(Math.round(Math.abs(metaDia.kcal - kcal)));
       $('hoy-restan-l').textContent = sobra ? 'kcal de más' : 'kcal por comer';
       const anillo = $('hoy-anillo');
       anillo.style.setProperty('--pd', Math.min(1, frac).toFixed(3));
@@ -1617,3 +1620,4 @@ restaurarPerfil();
 prepararMetaGuardada();
 renderHoy();
 montarSesionActiva();
+iniciarGuia();

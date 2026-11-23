@@ -260,7 +260,9 @@ export function migrar(crudo) {
     entreno: migrarEntreno(crudo.entreno),
     recientes: migrarRecientes(crudo.recientes),
     preferencias: {
-      unidadPeso: (esObjeto(crudo.preferencias) ? crudo.preferencias.unidadPeso : crudo.perfil?.unidadPeso) === 'lb' ? 'lb' : 'kg'
+      unidadPeso: (esObjeto(crudo.preferencias) ? crudo.preferencias.unidadPeso : crudo.perfil?.unidadPeso) === 'lb' ? 'lb' : 'kg',
+      // Consejos de la guía ya vistos (js/guia.js): solo textos, lo demás se descarta.
+      ...(Array.isArray(crudo.preferencias?.guia) ? { guia: crudo.preferencias.guia.filter(x => typeof x === 'string') } : {})
     }
   };
 }

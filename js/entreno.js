@@ -37,6 +37,7 @@ import { construirMaestros, buscarMaestros, filtrosVacios, cuentaFiltros, marcar
 import { crearDescanso, formatear, pedirWakeLock, liberarWakeLock,
          prepararAudio, avisarFin, pedirPermisoAvisos, avisosPorPreguntar, programarAvisoNativo,
          vibrarSerie } from './temporizador.js';
+import { resolvePreset, MODE_DRAWS } from './vendor/thinking-orbs.js';
 
 // ── Funciones puras (exportadas para tests/entreno.test.mjs) ─────────────────
 
@@ -3320,6 +3321,7 @@ function pintarVivo(raiz) {
 
   if (vista === 'ejercicios') conectarBarraDescanso(raiz);
   pintarDescanso();
+  arrancarOrbe();
   arrancarReloj();
 }
 
@@ -3402,8 +3404,9 @@ function htmlFoco(unidad) {
   return `
   <div class="en-foco">
     <div class="en-foco-fila">
-      <div class="en-foco-anillo" data-estado="${ef.tipo}" style="--p:${progresoDescanso()}">
+      <div class="en-foco-anillo" data-estado="${ef.tipo}">
         <div class="en-foco-centro">
+          <canvas class="en-foco-orbe" aria-hidden="true"></canvas>
           <span class="en-foco-lbl">${ef.lbl}</span>
           <span class="en-foco-t" role="timer">${tiempoFoco(ef)}</span>
         </div>
@@ -3420,10 +3423,63 @@ function htmlFoco(unidad) {
   </div>`;
 }
 
-function progresoDescanso() {
-  if (!descansoObj || !sesion?.descanso?.duracionS) return 0;
-  return Math.max(0, Math.min(1, descansoObj.restanteS() / sesion.descanso.duracionS)).toFixed(3);
+// ── Orbe del foco ─────────────────────────────────────────────────────────────
+// Un anillo de puntos (thinking-orbs, estado breathing) que hace de rueda en
+// todos los estados del foco. Siempre respira; además:
+//   descanso / micro   se va CONSUMIENDO con el tiempo que queda
+//   activo / parte     gira mientras dura la serie
+// Un solo bucle que busca el lienzo en cada cuadro: así sobrevive a los render
+// y se apaga solo al salir de la vista. El color de cada estado sale del CSS.
+const ORBE_ZOOM = 1.17;   // el diseño de 64 px deja el anillo al 79 % del radio: se lleva al borde, por fuera del tiempo
+const ORBE_RITMO = 0.5;   // más lento que el original: acompaña, no apura
+const ORBE_GIRO = 0.9;    // rad/s en la serie activa: una vuelta cada 7 s
+let orbeRaf = 0;
+
+function dibujarOrbe(lienzo, t, quieto) {
+  const lado = lienzo.clientWidth, dpr = Math.min(2, window.devicePixelRatio || 1);
+  if (!lado) return;
+  const px = Math.round(lado * dpr), c = px / 2;
+  if (lienzo.width !== px) lienzo.width = lienzo.height = px;
+  const estado = lienzo.closest('.en-foco-anillo')?.dataset.estado;
+  const gira = estado === 'activo' || estado === 'parte';
+  const { mode, speed, opts } = resolvePreset('breathing', 64);
+  const g = lienzo.getContext('2d'), k = px / 64 * ORBE_ZOOM;
+  g.setTransform(1, 0, 0, 1, 0, 0);
+  g.globalCompositeOperation = 'source-over';
+  g.clearRect(0, 0, px, px);
+  g.save();
+  if (estado === 'descanso' || estado === 'micro') {
+    // Queda el arco desde las 12 en punto hasta lo que resta del descanso, como
+    // la rueda que sustituye. Se calcula del fin real: baja suave, no a saltos.
+    const d = sesion?.descanso;
+    const resta = descansoObj && d?.duracionS ? Math.max(0, Math.min(1, (descansoObj.finMs - Date.now()) / (d.duracionS * 1000))) : 0;
+    g.beginPath(); g.moveTo(c, c);
+    g.arc(c, c, px, -Math.PI / 2, -Math.PI / 2 + resta * 2 * Math.PI);
+    g.closePath(); g.clip();
+  }
+  g.translate(c, c);
+  if (gira && !quieto) g.rotate(t * ORBE_GIRO);
+  g.scale(k, k); g.translate(-32, -32);
+  MODE_DRAWS[mode](g, 64, (quieto ? 0.6 : t) * speed * ORBE_RITMO, false, opts);
+  g.restore();
+  // La librería pinta en gris: se tiñe con el color del CSS (.en-foco-orbe).
+  g.globalCompositeOperation = 'source-in';
+  g.fillStyle = getComputedStyle(lienzo).color;
+  g.fillRect(0, 0, px, px);
 }
+
+function animarOrbe() {
+  orbeRaf = 0;
+  const lienzo = ctx.raiz?.querySelector('.en-foco-orbe');
+  if (!lienzo) return;
+  // Con "reducir movimiento" no hay bucle: ni respira ni gira, y lo que resta
+  // del descanso se repinta una vez por segundo desde pintarFoco.
+  const quieto = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  dibujarOrbe(lienzo, performance.now() / 1000, quieto);
+  if (!quieto) orbeRaf = requestAnimationFrame(animarOrbe);
+}
+
+function arrancarOrbe() { if (!orbeRaf) animarOrbe(); }
 
 // Repinta SOLO lo que cambia cada segundo en el foco; si el estado de fondo
 // cambió (el descanso acabó), repinta la vista entera una vez.
@@ -3432,9 +3488,9 @@ function pintarFoco() {
   if (!anillo) return;
   const ef = estadoFoco();
   if (anillo.dataset.estado !== ef.tipo) { render(); return; }
-  anillo.style.setProperty('--p', progresoDescanso());
   const t = anillo.querySelector('.en-foco-t');
   if (t) t.textContent = tiempoFoco(ef);
+  arrancarOrbe();
 }
 
 function htmlListaVivo(unidad) {

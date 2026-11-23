@@ -375,13 +375,17 @@
 .en-vivo-tabs{margin-bottom:24px}
 .en-vivo-foco{padding-bottom:48px}
 .en-foco{display:grid;justify-items:center;gap:18px}
-/* El anillo: color sólido por estado; en descanso, progreso con conic-gradient
-   (cambia por tic, no se anima: reduced-motion no tiene nada que apagar). */
-.en-foco-anillo{--p:0;position:relative;width:min(240px,64vw);aspect-ratio:1;border-radius:50%;background:var(--amber)}
-.en-foco-anillo[data-estado="activo"]{background:var(--green)}
-.en-foco-anillo[data-estado="descanso"]{background:conic-gradient(var(--accent) calc(var(--p) * 1turn),var(--border) 0)}
-.en-foco-anillo[data-estado="fin"]{background:var(--border-strong)}
+/* El anillo ya no tiene rueda sólida: la dibuja el orbe (.en-foco-orbe), con un color por estado. */
+.en-foco-anillo{position:relative;width:min(240px,64vw);aspect-ratio:1;border-radius:50%}
 .en-foco-centro{position:absolute;inset:10px;border-radius:50%;background:var(--bg);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+/* Orbe del foco (js/entreno.js, dibujarOrbe): es la rueda. Ocupa el anillo entero, 10px más que
+   el centro, y toma su tinta de `color`: ámbar en preparado y listo, naranja al descansar,
+   verde en la serie y apagado cuando ya no quedan series. */
+.en-foco-orbe{position:absolute;left:-10px;top:-10px;width:calc(100% + 20px);height:calc(100% + 20px);color:var(--amber);pointer-events:none}
+.en-foco-anillo:is([data-estado="descanso"],[data-estado="micro"]) .en-foco-orbe{color:var(--accent-ink)}
+.en-foco-anillo:is([data-estado="activo"],[data-estado="parte"]) .en-foco-orbe{color:var(--green)}
+.en-foco-anillo[data-estado="fin"] .en-foco-orbe{color:var(--muted-ink)}
+.en-foco-lbl,.en-foco-t{position:relative}
 .en-foco-lbl{font-family:var(--mono);font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted-ink)}
 .en-foco-anillo[data-estado="activo"] .en-foco-lbl{color:var(--green)}
 .en-foco-anillo[data-estado="descanso"] .en-foco-lbl{color:var(--accent-ink)}
@@ -608,9 +612,7 @@ body:has(.en-descanso:not([hidden])) .en-fpie{bottom:calc(56px + 98px + env(safe
 /* ── Técnicas en la sesión en vivo (fase 4) ──────────────────────────────────
    El círculo no se mueve: micro-descanso con el mismo anillo de progreso que
    el descanso; mini-serie o bajada en verde, como una serie activa. */
-.en-foco-anillo[data-estado="micro"]{background:conic-gradient(var(--accent) calc(var(--p) * 1turn),var(--border) 0)}
 .en-foco-anillo[data-estado="micro"] .en-foco-lbl{color:var(--accent-ink)}
-.en-foco-anillo[data-estado="parte"]{background:var(--green)}
 .en-foco-anillo[data-estado="parte"] .en-foco-lbl{color:var(--green)}
 /* Insignia de técnica: naranja lleno para que se vea de un vistazo (pedido de Roberto, 31-oct-2026). --bg sobre --accent-ink: 5,0:1. */
 .en-tec{display:inline-block;padding:2px 8px;border-radius:var(--r-pill);background:var(--accent-ink);color:var(--bg);font-family:var(--mono);font-size:12px;font-weight:700;letter-spacing:.04em;line-height:1.4;vertical-align:middle}
