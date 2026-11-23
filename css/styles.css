@@ -353,18 +353,18 @@ select option{font-family:sans-serif;background:var(--bg)}
 .qr-hd{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center}
 .qr-hd-lbl{font-size:9px;letter-spacing:2px;text-transform:uppercase;font-family:var(--sans);color:var(--muted)}
 .qr-hd-tag{font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:var(--sans);background:var(--ember);border:1px solid var(--ember);border-radius:var(--r-pill);color:var(--text);padding:4px 10px}
-.qr-body{display:grid;grid-template-columns:auto 1fr;gap:0}
-/* El ancho fijo va de la mano de la reserva de .qr-pedido: esta columna es 'auto' en
-   .qr-body y sin él el id del pedido la ensancha de 169 a 183px al llegar la
-   confirmación. 169px es lo que ya medía: 120 del canvas + 48 de padding + 1 de filete. */
-.qr-code-wrap{width:169px;padding:1.5rem;border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:.75rem;background:var(--surface)}
+/* El código va APILADO y a todo el ancho: arriba el QR, grande y centrado (es lo
+   que se enseña en caja); debajo las porciones, que en una columna de ~130px
+   partían cada línea en cuatro. Al ir a todo el ancho ya no hay columna 'auto'
+   que el id del pedido pueda ensanchar. */
+.qr-code-wrap{padding:1.5rem;border-bottom:1px solid var(--border);display:flex;flex-direction:column;align-items:center;gap:.75rem;background:var(--surface)}
 .qr-code-wrap p{font-size:9px;letter-spacing:1px;text-transform:uppercase;font-family:var(--sans);color:var(--muted);text-align:center}
 /* mix-blend-mode:darken porque app.js:1057 cocina el QR con colorLight:'#F4F2EE'
    (el --surface VIEJO) y ese color vive en JS. darken hace mínimo por canal: los
    módulos claros colapsan contra el fondo cálido y los oscuros sobreviven, así que
    el código sigue escaneando. VERIFICAR con un móvil real antes de publicar; si
    darken fallara, la salida sin tocar JS es .qr-code-wrap{background:#F4F2EE}. */
-#qr-canvas{width:120px;height:120px;mix-blend-mode:darken}
+#qr-canvas{width:168px;height:168px;mix-blend-mode:darken}
 .qr-instructions{padding:1.5rem}
 .qr-inst-title{font-size:10px;letter-spacing:2px;text-transform:uppercase;font-family:var(--sans);color:var(--muted);margin-bottom:1rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
 .qr-inst-item{display:flex;gap:12px;margin-bottom:.875rem;align-items:flex-start}
@@ -549,18 +549,16 @@ input.invalid,select.invalid{border-bottom-color:var(--danger)}
 @media (max-width:340px){.cocina-body{min-height:320px}.cocina-skel span{margin-bottom:23px}}
 /* "Total a pagar · según cocina" es más largo: que se parta la etiqueta, no la cifra. */
 .res-total-val{white-space:nowrap;flex-shrink:0;margin-left:12px}
-/* 49px = TRES líneas de mono a 12px x 1.35 (48,6px), medidas, no calculadas: el id
-   real que devuelve n8n ('Pedido PED-20260920170527-P01C01V01G01', 38 caracteres) no
-   cabe en dos en una columna de 169px — el mono de 12px mete ~16 caracteres por línea.
-   Con la reserva de 34px la caja saltaba 14,56px en el momento exacto en que llega la
-   confirmación de cocina, que es lo único que este invariante existe para impedir.
-   El width:100% es la otra mitad del arreglo, junto con el ancho fijo de .qr-code-wrap:
-   sin ellos la contribución max-content del id ensancha la columna 'auto' de .qr-body
-   de 169 a 183px y la sección entera crece 69,59px.
+/* 33px = DOS líneas de mono a 12px x 1.35 (32,4px). Con el código a todo el ancho,
+   el id real que devuelve n8n ('Pedido PED-20260920170527-P01C01V01G01', 38
+   caracteres) cabe en dos líneas a 375 y a 320px. La reserva existe para que la caja
+   NO crezca en el momento en que llega la confirmación de cocina; ahora importa más,
+   porque el código va por encima de «Diferencia» y de «Cocina» y un salto aquí los
+   empujaría.
    Aquí NO se declaran font-size ni font-family a propósito: el barrido de micro-rótulos
    del final los pisa a 12px IBM Plex Mono con la misma especificidad, así que cualquier
    valor escrito aquí sería letra muerta (lo era: decía 9px Inter y renderizaba 12 mono). */
-.qr-pedido{min-height:49px;width:100%;color:var(--muted-ink);text-align:center;word-break:break-all;line-height:1.35}
+.qr-pedido{min-height:33px;width:100%;color:var(--muted-ink);text-align:center;word-break:break-all;line-height:1.35}
 
 /* A3 · La tarjeta responde a otra pregunta. Ya no "¿cuánto?" sino "¿qué tan
    cerca me deja?". El pie tiene ALTURA FIJA y el mismo alto esté o no elegida

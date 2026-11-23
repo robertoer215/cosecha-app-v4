@@ -1321,7 +1321,9 @@ function propuestaHTML({ it, descripcion, extra }, reservado) {
 // queda por encima de lo visible, el scroll se compensa con lo que creció o
 // encogió (lo que hace el anclaje de scroll del navegador, pero en todos).
 function sinSalto(idRegion, fn) {
-  const ancla = document.querySelector('.qr-section');
+  // El ancla es lo que queda DEBAJO de cocina y su propuesta: antes era el código,
+  // que ahora va arriba, junto al total; hoy es la fila de botones del resumen.
+  const ancla = document.querySelector('#sc2 > .btn-row');
   const region = document.getElementById(idRegion);
   const bAntes = region ? region.getBoundingClientRect().bottom : 1;
   const tAntes = ancla ? ancla.getBoundingClientRect().top : null;
@@ -1493,7 +1495,7 @@ function dibujarQR() {
   const el = $('qr-canvas');
   if (!el || !window.QRCode) return;
   el.innerHTML = '';
-  try { new QRCode(el, { text: buildQRText(), width: 120, height: 120, colorDark: '#1a1a18', colorLight: '#F4F2EE', correctLevel: QRCode.CorrectLevel.M }); }
+  try { new QRCode(el, { text: buildQRText(), width: 168, height: 168, colorDark: '#1a1a18', colorLight: '#F4F2EE', correctLevel: QRCode.CorrectLevel.M }); }
   catch (e) { el.innerHTML = '<div class="qr-fallo">QR no disponible</div>'; console.warn('QR:', e.message); }
 }
 
@@ -1551,6 +1553,9 @@ function pintarResumen() {
   const prediccion = predecirPropuesta();
   $('res-content').innerHTML=`
     <div class="res-wrap">${rows}<div class="res-total"><div class="res-total-lbl" id="res-total-lbl">Total a pagar</div><div class="res-total-val" id="res-total-val">$${total} MXN</div></div></div>
+    <div class="qr-section"><div class="qr-hd"><div class="qr-hd-lbl">Código para cocina</div><div class="qr-hd-tag">Escanear en caja</div></div>
+      <div class="qr-body"><div class="qr-code-wrap"><div id="qr-canvas"></div><p>Escanea para ver orden</p><div class="qr-pedido" id="qr-pedido"></div></div>
+      <div class="qr-instructions"><div class="qr-inst-title">Porciones exactas</div>${instHTML}</div></div></div>
     <div class="gap-wrap"><div class="gap-hd">Diferencia vs tu meta</div><div class="gap-grid">
       <div class="gap-blk"><div class="gap-num ${clsKcal(dK)}">${fmtKcal(dK)}</div><div class="gap-lbl">kcal</div></div>
       <div class="gap-blk"><div class="gap-num ${clsMacro(dP)}">${fmtMacro(dP,'g')}</div><div class="gap-lbl">proteína</div></div>
@@ -1561,10 +1566,7 @@ function pintarResumen() {
       <div class="gap-hd"><span>Cocina</span><span class="cocina-estado" id="cocina-estado">${ESTADO_LBL.confirmando}</span></div>
       <div class="cocina-body" id="cocina-body">${SKEL(8)}</div>
     </div>
-    <div id="cocina-propuesta" aria-live="polite">${prediccion ? propuestaHTML(prediccion, true) : ''}</div>
-    <div class="qr-section"><div class="qr-hd"><div class="qr-hd-lbl">Código para cocina</div><div class="qr-hd-tag">Escanear en caja</div></div>
-      <div class="qr-body"><div class="qr-code-wrap"><div id="qr-canvas"></div><p>Escanea para<br>ver orden</p><div class="qr-pedido" id="qr-pedido"></div></div>
-      <div class="qr-instructions"><div class="qr-inst-title">Porciones exactas</div>${instHTML}</div></div></div>`;
+    <div id="cocina-propuesta" aria-live="polite">${prediccion ? propuestaHTML(prediccion, true) : ''}</div>`;
   // Un plato nuevo en el resumen rearma el botón del diario (vive fuera de
   // res-content a propósito: así no se repinta con cada respuesta de cocina).
   const bd = $('btn-diario-plato');
