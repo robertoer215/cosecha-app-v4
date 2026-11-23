@@ -3258,6 +3258,7 @@ function pintarVivo(raiz) {
 
   raiz.innerHTML = `
   <div class="en-wrap en-vivo${vista === 'foco' ? ' en-vivo-foco' : ''}">
+    <button type="button" class="en-volver" data-acc="salir-vivo">${SVG_VOLVER}<span>Inicio</span></button>
     <header class="en-vivo-hd">
       <div>
         <div class="en-ey">Sesión en curso</div>
@@ -3283,6 +3284,7 @@ function pintarVivo(raiz) {
     const b = e.target.closest('[data-acc]');
     if (!b) return;
     const acc = b.dataset.acc;
+    if (acc === 'salir-vivo') { globalThis.goTab?.('hoy'); return; }  // sin barra de pestañas, esta es la salida; la sesión sigue viva
     if (acc === 'vista') { vistaVivo = b.dataset.v; render(); return; }
     if (acc === 'avisos-si' || acc === 'avisos-no') {
       if (acc === 'avisos-si') pedirPermisoAvisos();   // dentro del toque: iOS muestra su ventana
