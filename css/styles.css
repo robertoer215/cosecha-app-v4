@@ -1108,3 +1108,8 @@ body::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;
    que el vidrio. Siguen oscuros con texto claro: van ENCIMA del contenido. */
 :root{--r-burbuja:22px;--burbuja-luz:inset 0 1px 0 rgba(255,255,255,.28)}
 .guia,body .dia-toast{border-radius:var(--r-burbuja);box-shadow:var(--burbuja-luz),var(--hielo-sombra)}
+
+/* Texto de ejemplo de los campos («Ej. 30»): el gris del navegador (#757575) daba
+   4,4:1 sobre el crema y baja a 3,1:1 sobre el vidrio. Con --muted-ink pasa AA en
+   los dos (7,6 y 5,4). opacity:1 porque Firefox lo atenúa por su cuenta. */
+::placeholder{color:var(--muted-ink);opacity:1}

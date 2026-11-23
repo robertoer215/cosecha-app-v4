@@ -7,7 +7,7 @@ pestañas flotante. Solo estilo: sin cambiar textos, lógica ni el orden. Pidió
 
 ## Estado
 
-Las cuatro secciones están hechas, verificadas y guardadas (24-nov-2026). `node --test tests/*.test.mjs`: 255 de 255.
+Las cuatro secciones están hechas, verificadas y guardadas (24-nov-2026). `node --test tests/*.test.mjs`: 258 de 258.
 
 | Pantalla | Estado | Commit |
 |---|---|---|
@@ -17,6 +17,24 @@ Las cuatro secciones están hechas, verificadas y guardadas (24-nov-2026). `node
 | Diario: día (vacío y con comida), buscador, alimento, «Tu semana», «Tus datos», aviso con Deshacer | Hecha y verificada | `0e71a27` |
 | Entrenar: rutinas, elegir descanso, sesión en vivo (preparado, serie, descanso), Ejercicios con barra de descanso, resumen, Progreso, Historial, Biblioteca, ficha, editor, hoja de técnica, aviso «Deshacer» | Hecha y verificada | `5342aa9` |
 | Avisos del Diario y burbujas de la guía (forma y filo de luz) | Hechas; la burbuja no se revisó en todas sus posiciones | `0e71a27` |
+
+## Unión con las propuestas de UX (24-nov-2026)
+
+`git merge v4.2-ux` en el commit `3a96db2`, sin conflictos. Trae 13 propuestas que eligió
+Roberto, una por commit: H2, H3 (Hoy), P1, P2, P3 (Pedir), D1, D2, D3 (Diario), E2, E3
+(Entrenar), G1, G2, G3 (perfil y cabecera). Las hizo otra sesión sobre este estilo.
+
+- Revisado tras la unión, a 375×812 y con el recorrido de contraste (0 fallos): Hoy (persona
+  nueva y con perfil), Pedir (perfil, los cinco pasos del plato con la pastilla «Anterior /
+  Siguiente», resumen), Diario (día, buscador, alimento con − y +), Entrenar (cuadros por
+  nivel, descanso con «Recomendado», sesión en vivo, resumen con «Guardar sesión»).
+- Piezas nuevas con el vidrio compartido: `.plato-pie` (`css/styles.css`) y `.en-guardar-pie`
+  (`css/entreno.css`). Son `position:sticky`, así que conviven con el `backdrop-filter` de las
+  láminas (el problema es solo con `position:fixed`).
+- Ajuste propio en commit aparte: el texto de ejemplo de los campos (`::placeholder`) pasa a
+  `--muted-ink`; el gris del navegador no llegaba a AA sobre el vidrio.
+- No revisado tras la unión: «Tu semana» y «Tus datos» del Diario, Progreso, Historial,
+  Biblioteca, ficha y editor de Entrenar (no los tocan las propuestas), ni 320×568.
 
 ## Cambio de estructura: Rutinas COSECHA por nivel (24-nov-2026)
 
@@ -95,5 +113,5 @@ Cómo vestir una superficie nueva:
 - ¿Le sirve la transparencia actual del vidrio en Pedir, Diario y Entrenar (la misma que Hoy)?
 - Las tarjetas de dentro (ingredientes, comidas, ejercicios) siguen opacas en crema, como las
   del menú en Hoy. ¿Las quiere también translúcidas?
-- Hay 15 propuestas de UX (estructura) en `/Users/robertoespejelr/Code 1/cosecha-propuestas-ux`,
-  sin aplicar: se aplicarían encima de este estilo cuando él elija.
+- De las 15 propuestas de UX, 13 ya están unidas (ver arriba). Quedan fuera H1 y E1, que
+  Roberto no eligió.
