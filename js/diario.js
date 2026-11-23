@@ -847,29 +847,49 @@ function htmlEntrada(e, comida, i) {
   </button></li>`;
 }
 
+const REPETIR = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
+
 function htmlComidas(sumas) {
   const dia = estado.diario[fecha] || {};
-  const ayer = estado.diario[sumarDias(fecha, -1)] || {};
+  const fAyer = sumarDias(fecha, -1);
+  const ayer = estado.diario[fAyer] || {};
+  const sumasAyer = sumarDia(estado.diario[fAyer]);
+  const esHoy = fecha === almacen.hoyISO();
   return COMIDAS.map(c => {
     const lista = dia[c] || [];
     const sub = sumas.comidas[c];
+    const lbl = COMIDA_LBL[c].toLowerCase();
     // Sin entradas el subtotal se queda vacío: un "—" junto al botón de +
     // se leía como un botón de menos (visto en el humo con Chrome).
     const kcal = lista.length ? `${Math.round(sub.kcal)} kcal` : '';
-    const repetir = !lista.length && (ayer[c] || []).length
-      ? `<div class="dia-vacia-zona"><button type="button" class="dia-chip" data-accion="repetir-ayer" data-comida="${c}">
-           <span class="dia-chip-nm">Repetir lo de ayer</span><span class="dia-chip-sub">${(ayer[c]).length === 1 ? '1 alimento' : (ayer[c]).length + ' alimentos'}</span>
-         </button></div>`
+    // Una comida vacía ocupa UNA fila: su nombre y «Agregar» en el mismo sitio
+    // donde las demás llevan el +. Así el día en blanco cabe en una pantalla y
+    // cada comida tiene un solo botón para agregar, no dos.
+    const mas = lista.length
+      ? `<button type="button" class="dia-mas" data-accion="abrir-buscar" data-comida="${c}" aria-label="Agregar a ${lbl}">${MAS}</button>`
+      : `<button type="button" class="dia-mas dia-vacia-btn" data-accion="abrir-buscar" data-comida="${c}" aria-label="Agregar a ${lbl}">${MAS}<span>Agregar</span></button>`;
+    // «Repetir lo de ayer» dice QUÉ se va a repetir y cuánto suma, no solo
+    // cuántos alimentos: se decide de un vistazo, sin ir a ver el día anterior.
+    const deAyer = ayer[c] || [];
+    const repetir = !lista.length && deAyer.length
+      ? `<button type="button" class="dia-repetir" data-accion="repetir-ayer" data-comida="${c}">
+           <span class="dia-repetir-ico">${REPETIR}</span>
+           <span class="dia-e-main">
+             <span class="dia-e-nm">${esHoy ? 'Repetir lo de ayer' : 'Repetir lo del día anterior'}</span>
+             <span class="dia-e-sub dia-repetir-que">${esc(deAyer.map(e => e.nombre).join(', '))}</span>
+           </span>
+           <span class="dia-e-kcal">${Math.round(sumasAyer.comidas[c].kcal)} kcal</span>
+         </button>`
       : '';
     const cuerpo = lista.length
       ? `<ul class="dia-lista">${lista.map((e, i) => htmlEntrada(e, c, i)).join('')}</ul>`
-      : `<button type="button" class="dia-vacia-btn" data-accion="abrir-buscar" data-comida="${c}">Agrega tu ${COMIDA_LBL[c].toLowerCase()}</button>${repetir}`;
-    return `<section class="dia-comida" aria-label="${COMIDA_LBL[c]}">
+      : repetir;
+    return `<section class="dia-comida${cuerpo ? '' : ' dia-comida-sola'}" aria-label="${COMIDA_LBL[c]}">
       <header class="dia-comida-hd">
         <svg class="dia-comida-ico dia-ico-${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${COMIDA_ICO[c]}</svg>
         <span class="dia-comida-nm">${COMIDA_LBL[c]}</span>
         <span class="dia-comida-kcal">${kcal}</span>
-        <button type="button" class="dia-mas" data-accion="abrir-buscar" data-comida="${c}" aria-label="Agregar a ${COMIDA_LBL[c].toLowerCase()}">${MAS}</button>
+        ${mas}
       </header>
       ${cuerpo}
     </section>`;
