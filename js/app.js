@@ -721,18 +721,15 @@ function updateGlobalTracker() {
   renderPorque();
 }
 
+// Solo el contexto de la meta (por comida, cuántas, objetivo): los gramos ya
+// están en la barra fija de arriba y repetirlos empujaba la comida fuera de la
+// primera pantalla.
 function renderMeta() {
   $('meta-panel').innerHTML=`
   <div class="meta-panel">
     <div class="meta-top">
       <div><div class="meta-ey">Meta por comida</div><div class="meta-ctx">${meta.objetivo === 'manual' ? (meta.comidas === 1 ? 'Macros personalizados por comida' : `${meta.comidas} comidas · Macros personalizados`) : `${meta.comidas} comidas · ${OBJ_LABEL[meta.objetivo]}`}</div></div>
       <div class="meta-tag">${meta.kcal} kcal</div>
-    </div>
-    <div class="meta-nums">
-      <div class="mn"><div class="mn-val">${meta.prot}<span class="mn-unit">g</span></div><div class="mn-lbl p">Proteína</div></div>
-      <div class="mn"><div class="mn-val">${meta.carb}<span class="mn-unit">g</span></div><div class="mn-lbl c">Carbos</div></div>
-      <div class="mn"><div class="mn-val">${meta.gras}<span class="mn-unit">g</span></div><div class="mn-lbl g">Grasas</div></div>
-      <div class="mn"><div class="mn-val">${meta.kcal}<span class="mn-unit" style="font-size:9px">cal</span></div><div class="mn-lbl k">Energía</div></div>
     </div>
     ${meta.ajusteCarb ? `<div class="meta-warn">Con tu perfil, la proteína y grasa objetivo cubren prácticamente todas tus calorías del día, así que tu meta de carbohidratos por comida quedó en 0 g. Te recomendamos validar tu plan con un especialista.</div>` : ''}
   </div>`;
@@ -1069,17 +1066,26 @@ function renderPlatoButtons() {
 // de ocurrir. Se limpian al navegar.
 function olvidarPorque(){ porque = null; idsRecalc = []; }
 
+// Al cambiar de categoría la pantalla se queda EN la categoría, justo bajo la
+// barra fija: volver al principio obligaba a bajar otra vez en cada paso.
+function verCategoria() {
+  const nav = document.querySelector('.plato-subnav');
+  if (!nav) return;
+  nav.style.scrollMarginTop = $('global-tracker').offsetHeight + 'px';
+  nav.scrollIntoView({ block: 'start', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+}
+
 window.nextCat = function() {
   platoCatIdx = Math.min(platoCatIdx + 1, 4);
   olvidarPorque();
   renderBase();
-  window.scrollTo({top:0,behavior:'smooth'});
+  verCategoria();
 };
 window.prevCat = function() {
   platoCatIdx = Math.max(platoCatIdx - 1, 0);
   olvidarPorque();
   renderBase();
-  window.scrollTo({top:0,behavior:'smooth'});
+  verCategoria();
 };
 
 window.selBI = function(id,cat) {

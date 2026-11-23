@@ -205,8 +205,9 @@ select option{font-family:sans-serif;background:var(--bg)}
 .act-card.selected .ad{color:rgba(255,255,255,.92)}
 .an{font-size:10px;font-family:var(--sans);font-weight:500;color:var(--text);margin-bottom:1px}
 .ad{font-size:9px;color:var(--light);font-family:var(--sans)}
-.meta-panel{border:1px solid var(--border);padding:24px;margin-bottom:24px;border-radius:var(--r-md)}
-.meta-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1.25rem}
+/* Una fila sin caja: el contexto de la meta. Los gramos viven en la barra fija. */
+.meta-top{display:flex;justify-content:space-between;align-items:center;gap:12px}
+#sc1 .ssub{margin-bottom:16px}
 .meta-ey{font-size:9px;letter-spacing:2px;text-transform:uppercase;color:var(--light);font-family:var(--sans);margin-bottom:3px}
 .meta-ctx{font-size:12px;color:var(--muted);font-family:var(--sans)}
 /* Ni un padding tocado en los badges: a 9999px el radio se recorta a la mitad de
@@ -214,15 +215,6 @@ select option{font-family:sans-serif;background:var(--bg)}
    --accent-soft se queda como está: llevarlo a ember hundiría --accent-ink encima
    de él de 4,54 a 4,24:1. */
 .meta-tag{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-family:var(--sans);padding:5px 12px;background:var(--ember);border:1px solid var(--ember);border-radius:var(--r-pill);color:var(--text)}
-.meta-nums{display:grid;grid-template-columns:repeat(4,1fr);gap:0;border-top:1px solid var(--border);padding-top:1.25rem}
-.mn{text-align:center;border-right:1px solid var(--border)}
-.mn:last-child{border-right:none}
-.mn-val{font-size:26px;font-weight:300;letter-spacing:-1px;line-height:1}
-.mn-unit{font-size:10px;color:var(--light);font-family:var(--sans)}
-.mn-lbl{font-size:9px;letter-spacing:1.5px;text-transform:uppercase;font-family:var(--sans);margin-top:5px}
-/* .k en --accent-ink y no en --accent: es el rótulo 'ENERGÍA' a 12px, o sea texto con
-   umbral 4,5, y --accent se queda en 4,26. Sus tres hermanos ya pasaban (6,00/6,21/5,05). */
-.mn-lbl.p{color:var(--green)}.mn-lbl.c{color:var(--blue)}.mn-lbl.g{color:var(--amber)}.mn-lbl.k{color:var(--accent-ink)}
 .meta-warn{margin-top:1rem;padding:.75rem 1rem;border:1px solid var(--amber);border-radius:var(--r-sm);background:var(--accent-soft);font-family:var(--sans);font-size:11px;line-height:1.5;color:var(--text)}
 .cat-sec{margin-bottom:24px}
 .cat-hd{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:.75rem;padding-bottom:.5rem;border-bottom:1px solid var(--border)}
@@ -399,7 +391,7 @@ select option{font-family:sans-serif;background:var(--bg)}
 .btn-main{background:var(--accent-ink);color:#fff;box-shadow:var(--lift-cta)}
 .btn-main:hover{background:var(--accent-deep);transform:translateY(-2px);box-shadow:var(--lift-cta-hover)}
 .btn-main:active{transform:translateY(0) scale(.985)}
-.plato-subnav{display:flex;flex-direction:column;align-items:center;gap:.75rem;padding:24px 0;margin-bottom:8px}
+.plato-subnav{display:flex;flex-direction:column;align-items:center;gap:.75rem;padding:16px 0;margin-bottom:8px}
 .psn-steps{display:flex;align-items:center}
 .psn-dot{width:22px;height:22px;border-radius:50%;border:1px solid var(--border-strong);display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--sans);color:var(--muted);background:var(--bg);flex-shrink:0;transition:background-color .25s,border-color .25s,color .25s}
 .psn-dot.psn-active{border-color:var(--accent);color:var(--accent-ink)}
@@ -726,7 +718,6 @@ input.invalid,select.invalid{border-bottom-color:var(--danger)}
    extra lo absorbe el ellipsis de .i-size-val, que ya va con nowrap y min-width:0. */
 .i-size-val,.ss-pill{font-family:var(--sans);font-size:12px;letter-spacing:.5px}
 .gt-bar-val{font-weight:600}
-.mn-unit{font-size:12px!important}   /* app.js:333 lo pinta con style="font-size:9px" en línea */
 .sugg-ok-lbl[style]{font-size:12px!important;color:var(--muted-ink)!important}  /* inline de app.js:731 */
 .qr-inst-text span[style]{font-size:12px!important}  /* el '(extra)' inline de app.js:1096 */
 .qr-inst-text{--accent:var(--accent-ink)}  /* alcanza el color de ese inline sin !important */
