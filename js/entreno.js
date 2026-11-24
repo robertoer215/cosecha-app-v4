@@ -3362,9 +3362,6 @@ function pintarVivo(raiz) {
       const sinHacer = sesion.ejercicios.some(ej => ej.series.some(s => !s.hecha));
       if (sinHacer && !armarDosToques(b, 'Hay series sin hacer · toca otra vez')) return;
       terminarSesion();
-    } else if (acc === 'descartar') {
-      if (!armarDosToques(b, 'Se pierde la sesión · toca otra vez')) return;
-      descartarSesion();
     }
   });
 
@@ -3398,7 +3395,7 @@ function htmlFoco(unidad) {
     return `<div class="en-foco">
       <p class="en-vacio">Agrega tu primer ejercicio para empezar.</p>
       <button type="button" class="en-btn en-btn-main" data-acc="agregar">+ Agregar ejercicio</button>
-      <div class="en-vivo-acciones"><button type="button" class="en-peligro" data-acc="descartar">Descartar sesión</button></div>
+      <div class="en-vivo-acciones">${htmlDesliza()}</div>
     </div>`;
   }
   const ef = estadoFoco();
@@ -3488,7 +3485,7 @@ function htmlFoco(unidad) {
     ${tarjeta}
     ${boton}
     <span class="en-sr en-sr-descanso" aria-live="polite"></span>
-    ${ef.tipo !== 'fin' ? `<div class="en-vivo-acciones"><button type="button" class="en-btn en-btn-ghost en-foco-terminar" data-acc="terminar">Terminar sesión</button><button type="button" class="en-peligro" data-acc="descartar">Descartar sesión</button></div>` : ''}
+    ${ef.tipo !== 'fin' ? `<div class="en-vivo-acciones"><button type="button" class="en-btn en-btn-ghost en-foco-terminar" data-acc="terminar">Terminar sesión</button>${htmlDesliza()}</div>` : ''}
   </div>`;
 }
 
@@ -3629,7 +3626,7 @@ function htmlListaVivo(unidad) {
     <button type="button" class="en-btn en-btn-ghost en-add-ej" data-acc="agregar">+ Agregar ejercicio</button>
     <div class="en-vivo-acciones">
       <button type="button" class="en-btn en-btn-main" data-acc="terminar">Terminar sesión</button>
-      <button type="button" class="en-peligro" data-acc="descartar">Descartar sesión</button>
+      ${htmlDesliza()}
     </div>`;
 }
 
@@ -3648,6 +3645,60 @@ function armarDosToques(btn, texto) {
     if (btn.isConnected && btn.dataset.armado === '1') { delete btn.dataset.armado; btn.textContent = original; }
   }, 4000);
   return false;
+}
+
+// ── Deslizar para descartar ──────────────────────────────────────────────────
+// Destruir una sesión pide un gesto entero (arrastrar la perilla hasta el final),
+// no un toque: un toque suelto no hace nada.
+
+const SVG_DESLIZA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6.5l5.5 5.5L6 17.5M12.5 6.5L18 12l-5.5 5.5"/></svg>';
+
+function htmlDesliza() {
+  return `<div class="en-desliza">
+    <span class="en-desliza-txt" aria-live="polite">Desliza para descartar</span>
+    <button type="button" class="en-desliza-perilla" aria-label="Descartar sesión: desliza a la derecha, o pulsa Enter dos veces">${SVG_DESLIZA}</button>
+  </div>`;
+}
+
+if (typeof document !== 'undefined') {
+  let arrastre = null;   // { pista, x0, x, max }
+  const poner = (pista, x, max) => {
+    pista.style.setProperty('--x', `${x}px`);
+    pista.style.setProperty('--p', max > 0 ? x / max : 0);
+  };
+  document.addEventListener('pointerdown', e => {
+    const perilla = e.target.closest?.('.en-desliza-perilla');
+    if (!perilla) return;
+    const pista = perilla.parentElement;
+    arrastre = { pista, x0: e.clientX, x: 0, max: pista.clientWidth - perilla.offsetWidth - 8 };
+    pista.classList.add('en-desliza-toma');
+    perilla.setPointerCapture?.(e.pointerId);
+  });
+  document.addEventListener('pointermove', e => {
+    if (!arrastre) return;
+    arrastre.x = Math.max(0, Math.min(arrastre.max, e.clientX - arrastre.x0));
+    poner(arrastre.pista, arrastre.x, arrastre.max);
+  });
+  const soltar = completo => {
+    if (!arrastre) return;
+    const { pista, x, max } = arrastre;
+    arrastre = null;
+    pista.classList.remove('en-desliza-toma');
+    if (completo && max > 0 && x >= max * 0.92) {
+      poner(pista, max, max);
+      setTimeout(descartarSesion, 160);   // deja ver la perilla llegar al final
+    } else poner(pista, 0, max);
+  };
+  document.addEventListener('pointerup', () => soltar(true));
+  document.addEventListener('pointercancel', () => soltar(false));
+  // Teclado y lectores de pantalla (clic sin puntero, detail 0): doble pulsación.
+  // shortcut: VoiceOver táctil usa su gesto de arrastre; si hiciera falta, añadir una acción propia.
+  document.addEventListener('click', e => {
+    const perilla = e.target.closest?.('.en-desliza-perilla');
+    if (!perilla || e.detail !== 0) return;
+    if (!armarDosToques(perilla.parentElement.querySelector('.en-desliza-txt'), 'Pulsa otra vez para descartar')) return;
+    descartarSesion();
+  });
 }
 
 // ── Barra de descanso (fija, encima de la tabbar) ────────────────────────────
@@ -3821,7 +3872,7 @@ function pintarResumen(raiz, ses, { editable }) {
       </div>
     </div>
     <div class="en-guardar-pie"><button type="button" class="en-btn en-btn-main en-guardar" data-acc="guardar">Guardar sesión</button></div>
-    <div class="en-vivo-acciones"><button type="button" class="en-peligro" data-acc="descartar-fin">Descartar esta sesión</button></div>`
+    <div class="en-vivo-acciones">${htmlDesliza()}</div>`
     : `${ses.notas ? `<div class="en-sec-lbl">Notas</div><p class="en-notas-ro">${esc(ses.notas)}</p>` : ''}
        <div class="en-vivo-acciones"><button type="button" class="en-peligro" data-acc="borrar-sesion">Borrar del historial</button></div>`}
     <p class="en-aviso-storage" hidden>No se pudo guardar en este dispositivo. Exporta un respaldo desde Diario antes de cerrar.</p>
@@ -3846,10 +3897,6 @@ function pintarResumen(raiz, ses, { editable }) {
       persistir();
       pedirWakeLock();
       render();
-    } else if (acc === 'descartar-fin') {
-      // Doble toque: destruir una sesión no puede costar un solo toque.
-      if (b.dataset.confirmar === '1') descartarSesion();
-      else { b.dataset.confirmar = '1'; b.textContent = 'Toca otra vez para descartarla'; }
     }
     else if (acc === 'guardar') guardarSesionFinal();
     else if (acc === 'como-rutina') {

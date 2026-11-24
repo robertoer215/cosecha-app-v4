@@ -710,3 +710,15 @@ body:has(#vista-entrenar:not([hidden]) .en-vivo .en-descanso:not([hidden])) .en-
 /* Descartar o borrar: pequeño, discreto y lejos del botón principal, para que no se
    toque sin querer (además sigue pidiendo un segundo toque). */
 .en-vivo-acciones .en-peligro{margin-top:44px;font-size:12px;text-decoration:underline;text-underline-offset:3px}
+
+/* Deslizar para descartar: pista de cristal y perilla en los tonos de COSECHA. */
+.en-desliza{position:relative;justify-self:stretch;width:100%;max-width:340px;height:54px;margin:44px auto 0;overflow:hidden;border:1px solid rgba(192,90,31,.3);border-radius:var(--r-pill);background:var(--hielo);box-shadow:var(--hielo-luz),var(--hielo-sombra);backdrop-filter:var(--hielo-filtro);-webkit-backdrop-filter:var(--hielo-filtro);touch-action:pan-y;user-select:none;-webkit-user-select:none;--x:0px;--p:0}
+.en-desliza::before{content:"";position:absolute;inset:0 auto 0 0;width:calc(var(--x) + 50px);border-radius:inherit;background:linear-gradient(90deg,rgba(192,90,31,.08),rgba(192,90,31,.36));opacity:var(--p)}
+.en-desliza-txt{position:absolute;inset:0;display:grid;place-items:center;padding-left:40px;font-family:var(--sans);font-size:14px;font-weight:500;color:var(--accent-deep);opacity:calc(1 - var(--p) * 1.8);pointer-events:none;background:linear-gradient(90deg,var(--accent-deep) 38%,#F2B47E 50%,var(--accent-deep) 62%) 0 0/250% 100%;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:en-desliza-brillo 2.8s linear infinite}
+.en-desliza-perilla{position:absolute;left:4px;top:4px;display:grid;place-items:center;width:44px;height:44px;padding:0;border:1px solid rgba(255,255,255,.55);border-radius:50%;background:linear-gradient(155deg,#D9772F,var(--accent-deep));color:#fff;box-shadow:0 4px 12px rgba(95,45,14,.28),inset 0 1px 0 rgba(255,255,255,.45);transform:translateX(var(--x));transition:transform .28s cubic-bezier(.2,.8,.2,1);touch-action:none;cursor:grab}
+.en-desliza-perilla svg{width:20px;height:20px}
+.en-desliza-toma .en-desliza-perilla{transition:none;cursor:grabbing}
+.en-desliza-perilla:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+@keyframes en-desliza-brillo{from{background-position:100% 0}to{background-position:-50% 0}}
+@media (prefers-reduced-motion:reduce){.en-desliza-txt{animation:none}.en-desliza-perilla{transition:none}}
+.en-vivo-acciones:has(.en-desliza){justify-self:stretch}
