@@ -1323,7 +1323,7 @@ function pintarInicio(raiz) {
       <span>Unidad de peso</span>
       ${['kg', 'lb'].map(u => `<button type="button" class="en-unidad-btn${unidadPeso() === u ? ' en-unidad-on' : ''}" aria-pressed="${unidadPeso() === u}" data-unidad="${u}">${u}</button>`).join('')}
     </div>` : ''}
-    <p class="en-fuentes">Ejercicios e imágenes: free-exercise-db (dominio público). Tus entrenamientos viven solo en este dispositivo.</p>
+    <p class="en-fuentes">Ejercicios e imágenes: free-exercise-db (dominio público).</p>
   </div>`;
   raiz.querySelector('.en-unidad')?.addEventListener('click', e => {
     const b = e.target.closest('[data-unidad]');

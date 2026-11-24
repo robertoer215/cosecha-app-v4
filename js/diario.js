@@ -910,7 +910,7 @@ function htmlDatos() {
       <span class="dia-datos-chev" aria-hidden="true">${CHEV}</span>
     </summary>
     <div class="dia-datos-body">
-      <p>Tu diario vive solo en este dispositivo: nada sale a ningún servidor. Llévate un respaldo en JSON o restaura uno.</p>
+      <p>Llévate un respaldo en JSON o restaura uno.</p>
       <p class="dia-fuentes">Datos nutricionales: USDA FoodData Central (dominio público, CC0 1.0) y carta COSECHA. Los desvíos de etiqueta van marcados, no corregidos.</p>
       <div class="dia-datos-botones">
         <button type="button" class="btn btn-ghost" data-accion="exportar">Exportar respaldo</button>
