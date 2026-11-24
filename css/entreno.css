@@ -722,3 +722,4 @@ body:has(#vista-entrenar:not([hidden]) .en-vivo .en-descanso:not([hidden])) .en-
 @keyframes en-desliza-brillo{from{background-position:100% 0}to{background-position:-50% 0}}
 @media (prefers-reduced-motion:reduce){.en-desliza-txt{animation:none}.en-desliza-perilla{transition:none}}
 .en-vivo-acciones:has(.en-desliza){justify-self:stretch}
+.en-desliza-terminar{margin-top:10px}

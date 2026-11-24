@@ -3395,7 +3395,7 @@ function htmlFoco(unidad) {
     return `<div class="en-foco">
       <p class="en-vacio">Agrega tu primer ejercicio para empezar.</p>
       <button type="button" class="en-btn en-btn-main" data-acc="agregar">+ Agregar ejercicio</button>
-      <div class="en-vivo-acciones">${htmlDesliza()}</div>
+      <div class="en-vivo-acciones">${htmlDesliza('terminar')}</div>
     </div>`;
   }
   const ef = estadoFoco();
@@ -3485,7 +3485,7 @@ function htmlFoco(unidad) {
     ${tarjeta}
     ${boton}
     <span class="en-sr en-sr-descanso" aria-live="polite"></span>
-    ${ef.tipo !== 'fin' ? `<div class="en-vivo-acciones"><button type="button" class="en-btn en-btn-ghost en-foco-terminar" data-acc="terminar">Terminar sesión</button>${htmlDesliza()}</div>` : ''}
+    ${ef.tipo !== 'fin' ? `<div class="en-vivo-acciones">${htmlDesliza('terminar')}</div>` : ''}
   </div>`;
 }
 
@@ -3625,8 +3625,7 @@ function htmlListaVivo(unidad) {
     ${trozos.join('') || '<p class="en-vacio">Agrega tu primer ejercicio para empezar.</p>'}
     <button type="button" class="en-btn en-btn-ghost en-add-ej" data-acc="agregar">+ Agregar ejercicio</button>
     <div class="en-vivo-acciones">
-      <button type="button" class="en-btn en-btn-main" data-acc="terminar">Terminar sesión</button>
-      ${htmlDesliza()}
+      ${htmlDesliza('terminar')}
     </div>`;
 }
 
@@ -3653,15 +3652,19 @@ function armarDosToques(btn, texto) {
 
 const SVG_DESLIZA = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 6.5l5.5 5.5L6 17.5M12.5 6.5L18 12l-5.5 5.5"/></svg>';
 
-function htmlDesliza() {
-  return `<div class="en-desliza">
-    <span class="en-desliza-txt" aria-live="polite">Desliza para descartar</span>
-    <button type="button" class="en-desliza-perilla" aria-label="Descartar sesión: desliza a la derecha, o pulsa Enter dos veces">${SVG_DESLIZA}</button>
+// Durante la sesión solo se ofrece terminar; descartar aparece ya terminada,
+// para que los dos gestos nunca queden juntos.
+function htmlDesliza(que = 'descartar') {
+  const verbo = que === 'terminar' ? 'Terminar' : 'Descartar';
+  return `<div class="en-desliza en-desliza-${que}" data-que="${que}">
+    <span class="en-desliza-txt" aria-live="polite">Desliza para ${verbo.toLowerCase()}</span>
+    <button type="button" class="en-desliza-perilla" aria-label="${verbo} sesión: desliza a la derecha, o pulsa Enter dos veces">${SVG_DESLIZA}</button>
   </div>`;
 }
 
 if (typeof document !== 'undefined') {
   let arrastre = null;   // { pista, x0, x, max }
+  const cumplir = pista => { if (sesion) (pista.dataset.que === 'terminar' ? terminarSesion : descartarSesion)(); };
   const poner = (pista, x, max) => {
     pista.style.setProperty('--x', `${x}px`);
     pista.style.setProperty('--p', max > 0 ? x / max : 0);
@@ -3686,7 +3689,7 @@ if (typeof document !== 'undefined') {
     pista.classList.remove('en-desliza-toma');
     if (completo && max > 0 && x >= max * 0.92) {
       poner(pista, max, max);
-      setTimeout(descartarSesion, 160);   // deja ver la perilla llegar al final
+      setTimeout(() => cumplir(pista), 160);   // deja ver la perilla llegar al final
     } else poner(pista, 0, max);
   };
   document.addEventListener('pointerup', () => soltar(true));
@@ -3696,8 +3699,9 @@ if (typeof document !== 'undefined') {
   document.addEventListener('click', e => {
     const perilla = e.target.closest?.('.en-desliza-perilla');
     if (!perilla || e.detail !== 0) return;
-    if (!armarDosToques(perilla.parentElement.querySelector('.en-desliza-txt'), 'Pulsa otra vez para descartar')) return;
-    descartarSesion();
+    const pista = perilla.parentElement;
+    if (!armarDosToques(pista.querySelector('.en-desliza-txt'), `Pulsa otra vez para ${pista.dataset.que}`)) return;
+    cumplir(pista);
   });
 }
 
