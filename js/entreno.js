@@ -3398,6 +3398,7 @@ function htmlFoco(unidad) {
     return `<div class="en-foco">
       <p class="en-vacio">Agrega tu primer ejercicio para empezar.</p>
       <button type="button" class="en-btn en-btn-main" data-acc="agregar">+ Agregar ejercicio</button>
+      <div class="en-vivo-acciones"><button type="button" class="en-peligro" data-acc="descartar">Descartar sesión</button></div>
     </div>`;
   }
   const ef = estadoFoco();
@@ -3487,7 +3488,7 @@ function htmlFoco(unidad) {
     ${tarjeta}
     ${boton}
     <span class="en-sr en-sr-descanso" aria-live="polite"></span>
-    ${ef.tipo !== 'fin' ? `<div class="en-vivo-acciones"><button type="button" class="en-btn en-btn-ghost en-foco-terminar" data-acc="terminar">Terminar sesión</button></div>` : ''}
+    ${ef.tipo !== 'fin' ? `<div class="en-vivo-acciones"><button type="button" class="en-btn en-btn-ghost en-foco-terminar" data-acc="terminar">Terminar sesión</button><button type="button" class="en-peligro" data-acc="descartar">Descartar sesión</button></div>` : ''}
   </div>`;
 }
 
