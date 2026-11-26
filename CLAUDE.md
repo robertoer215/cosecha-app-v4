@@ -6,6 +6,10 @@ Una sola app con cuatro pestañas que comparten un perfil y una meta: **Hoy**
 es una COPIA independiente de `cosecha-macro-calculator`: el original es de
 solo lectura y aquí `MODO_DEMO` queda encendido (ver "Modo demo").
 
+**Una sola versión (26-nov-2026):** todo se trabaja en `main`, que es lo que publica
+GitHub Pages; la build de iOS (`npm run ios`) también sale de `main`. La rama
+`privacidad` (aviso LFPDPPP, 3-oct) sigue aparte, pendiente de integrar.
+
 ## Arquitectura v4 (1-oct-2026)
 
 - `index.html` — cuatro `<main>` hermanos (`vista-hoy`, `vista-pedir`,
