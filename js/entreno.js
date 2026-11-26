@@ -729,6 +729,9 @@ let rutEstado = 'nada';
 let rutinasBase = [];
 
 const URL_IMG = 'https://raw.githubusercontent.com/yuhonas/free-exercise-db/main/exercises/';
+// Ejercicios con fotos propias en assets/ejercicios/<id>/{0,1}.jpg; el resto sigue en free-exercise-db.
+const FOTOS_PROPIAS = new Set(['Barbell_Bench_Press_-_Medium_Grip', 'Barbell_Curl', 'Barbell_Deadlift', 'Barbell_Hip_Thrust', 'Barbell_Incline_Bench_Press_-_Medium_Grip', 'Barbell_Squat', 'Bent_Over_Barbell_Row', 'Bodyweight_Squat', 'Butterfly', 'Cable_Crossover', 'Crunches', 'Dumbbell_Bench_Press', 'Dumbbell_Bicep_Curl', 'Dumbbell_Shrug', 'EZ-Bar_Skullcrusher', 'Goblet_Squat', 'Hack_Squat', 'Hammer_Curls', 'Incline_Dumbbell_Press', 'Leg_Extensions', 'Leg_Press', 'Lying_Leg_Curls', 'One-Arm_Dumbbell_Row', 'Parallel_Bar_Dip', 'Pullups', 'Pushups', 'Romanian_Deadlift', 'Seated_Cable_Rows', 'Seated_Dumbbell_Press', 'Seated_Leg_Curl', 'Side_Lateral_Raise', 'Split_Squat_with_Dumbbells', 'Standing_Bent-Over_One-Arm_Dumbbell_Triceps_Extension', 'Standing_Calf_Raises', 'Standing_Military_Press', 'Stiff-Legged_Dumbbell_Deadlift', 'Triceps_Pushdown', 'Triceps_Pushdown_-_Rope_Attachment', 'Wide-Grip_Lat_Pulldown']);
+const urlImg = (ruta) => (FOTOS_PROPIAS.has(ruta.split('/')[0]) ? 'assets/ejercicios/' : URL_IMG) + ruta;
 
 // ── Entrada del shell ────────────────────────────────────────────────────────
 
@@ -1323,7 +1326,7 @@ function pintarInicio(raiz) {
       <span>Unidad de peso</span>
       ${['kg', 'lb'].map(u => `<button type="button" class="en-unidad-btn${unidadPeso() === u ? ' en-unidad-on' : ''}" aria-pressed="${unidadPeso() === u}" data-unidad="${u}">${u}</button>`).join('')}
     </div>` : ''}
-    <p class="en-fuentes">Ejercicios e imágenes: free-exercise-db (dominio público).</p>
+    <p class="en-fuentes">Ejercicios: free-exercise-db (dominio público). Imágenes: COSECHA y free-exercise-db.</p>
   </div>`;
   raiz.querySelector('.en-unidad')?.addEventListener('click', e => {
     const b = e.target.closest('[data-unidad]');
@@ -2547,7 +2550,7 @@ function htmlResultadosBiblioteca(destino, res) {
 // bajan las que entran en pantalla (el CDN sirve los JPG completos, así que
 // sin tope ni lazy recorrer la lista costaba ~55 MB).
 function htmlFoto(e) {
-  return `<span class="en-thumb">${e.imagenes?.[0] ? `<img loading="lazy" src="${esc(URL_IMG + e.imagenes[0])}" alt="">` : ''}</span>`;
+  return `<span class="en-thumb">${e.imagenes?.[0] ? `<img loading="lazy" src="${esc(urlImg(e.imagenes[0]))}" alt="">` : ''}</span>`;
 }
 
 function htmlFilaEjercicio(e, accion) {
@@ -2674,7 +2677,7 @@ function pintarFicha(raiz, id) {
     <h2 class="en-titulo">${esc(e.nombre)}</h2>
     <p class="en-sub">${esc([capital(e.equipo), capital(e.nivel)].filter(Boolean).join(' · '))}</p>
     ${fotos.length ? `<div class="en-ficha-fotos">${fotos.map((f, i) => `
-      <span class="en-ficha-foto"><img loading="lazy" src="${esc(URL_IMG + f)}" alt="${esc(e.nombre)}, ${pos[i]}"></span>`).join('')}
+      <span class="en-ficha-foto"><img loading="lazy" src="${esc(urlImg(f))}" alt="${esc(e.nombre)}, ${pos[i]}"></span>`).join('')}
     </div>` : ''}
     <div class="en-sec-lbl">Músculos</div>
     <p class="en-ficha-txt"><b>Principales:</b> ${esc((e.musculosPrimarios || []).map(capital).join(', ') || '—')}${
@@ -2682,7 +2685,7 @@ function pintarFicha(raiz, id) {
     ${(e.instrucciones || []).length ? `<div class="en-sec-lbl">Cómo se hace</div>
     <ol class="en-ficha-pasos">${e.instrucciones.map(p => `<li>${esc(p)}</li>`).join('')}</ol>` : ''}
     ${enSesion ? '' : '<button type="button" class="en-btn en-btn-main en-ficha-cta" data-acc="ficha-empezar">Empezar sesión con este ejercicio</button>'}
-    <p class="en-fuentes">Ejercicio e imágenes: free-exercise-db (dominio público).</p>
+    <p class="en-fuentes">${FOTOS_PROPIAS.has(e.id) ? 'Ejercicio: free-exercise-db (dominio público). Imágenes: COSECHA.' : 'Ejercicio e imágenes: free-exercise-db (dominio público).'}</p>
   </div>${enSesion ? htmlBarraDescanso() : ''}`;
   raiz.querySelector('.en-wrap').addEventListener('click', ev => {
     const b = ev.target.closest('[data-acc]');
@@ -2947,7 +2950,7 @@ function pintarDetalleEjercicio(raiz, id) {
       <p class="en-ficha-txt"><b>Principales:</b> ${esc((f.musculosPrimarios || []).map(capital).join(', ') || '—')}${
         (f.musculosSecundarios || []).length ? `<br><b>Secundarios:</b> ${esc(f.musculosSecundarios.map(capital).join(', '))}` : ''}</p>
       ${(f.instrucciones || []).length ? `<div class="en-sec-lbl">Cómo se hace</div><ol class="en-ficha-pasos">${f.instrucciones.map(p => `<li>${esc(p)}</li>`).join('')}</ol>` : ''}
-      ${(f.imagenes || [])[1] ? `<div class="en-ficha-fotos">${f.imagenes.slice(0, 2).map((im, i) => `<span class="en-ficha-foto"><img loading="lazy" src="${esc(URL_IMG + im)}" alt="${esc(nombre)}, ${i ? 'posición final' : 'posición inicial'}"></span>`).join('')}</div>` : ''}`
+      ${(f.imagenes || [])[1] ? `<div class="en-ficha-fotos">${f.imagenes.slice(0, 2).map((im, i) => `<span class="en-ficha-foto"><img loading="lazy" src="${esc(urlImg(im))}" alt="${esc(nombre)}, ${i ? 'posición final' : 'posición inicial'}"></span>`).join('')}</div>` : ''}`
       : '<p class="en-vacio">Este ejercicio lo registraste a mano: no tiene ficha en la biblioteca.</p>';
   } else if (detalleTab === 'historial') {
     cuerpo = hist.length ? [...hist].reverse().map(h => htmlSesionEjercicio(h, unidad, 0)).join('')
@@ -2986,7 +2989,7 @@ function pintarDetalleEjercicio(raiz, id) {
   raiz.innerHTML = `
   <div class="en-wrap en-detalle">
     <button type="button" class="en-volver" data-acc="det-volver">${SVG_VOLVER}<span>${subtab === 'historial' ? 'Historial' : 'Progreso'}</span></button>
-    ${f?.imagenes?.[0] ? `<div class="en-det-foto"><img src="${esc(URL_IMG + f.imagenes[0])}" alt="" decoding="async"></div>` : ''}
+    ${f?.imagenes?.[0] ? `<div class="en-det-foto"><img src="${esc(urlImg(f.imagenes[0]))}" alt="" decoding="async"></div>` : ''}
     <h2 class="en-titulo">${esc(nombre)}</h2>
     ${f ? `<p class="en-sub">${esc([capital(f.musculosPrimarios?.[0]), capital(f.equipo)].filter(Boolean).join(' · '))}</p>` : ''}
     <div class="en-tabs en-det-tabs" role="group" aria-label="Secciones del ejercicio">
@@ -3031,7 +3034,7 @@ function miniatura(idEjercicio, clase = 'en-thumb') {
 }
 function htmlImgFoto(idEjercicio) {
   const img = porId.get(idEjercicio)?.imagenes?.[0];
-  return img ? `<img loading="lazy" src="${esc(URL_IMG + img)}" alt="">` : '';
+  return img ? `<img loading="lazy" src="${esc(urlImg(img))}" alt="">` : '';
 }
 // Si el catálogo llega cuando la pantalla ya está pintada, las miniaturas se
 // llenan en su sitio: repintar todo movería el foco y la posición.
